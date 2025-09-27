@@ -1,0 +1,185 @@
+# ==============================================
+# Campus Marketplace Application Configuration
+# ==============================================
+
+# Application Information
+spring:
+  application:
+    name: campusmarketplace
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+  session:
+    store-type: jdbc
+    timeout: 1800s
+    jdbc:
+      cleanup-cron: "0 0 4 * * *"
+
+server:
+  port: ${PORT:8080}
+  servlet:
+    context-path: /api
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:myVerySecureSecretKeyForJWTTokensThatShouldBeAtLeast256BitsLongForHS256AlgorithmUpdated2024}
+  access-token:
+    expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000}
+  refresh-token:
+    expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800000}
+
+# Logging Configuration
+logging:
+  level:
+    com.commandlinecommandos.campusmarketplace: ${LOG_LEVEL:INFO}
+    org.springframework.security: WARN
+    org.hibernate.SQL: ${SQL_LOG_LEVEL:WARN}
+    org.hibernate.type.descriptor.sql.BasicBinder: ${SQL_BIND_LOG_LEVEL:WARN}
+  pattern:
+    console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Actuator Configuration (Production Monitoring)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info,metrics,prometheus"
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+---
+# ==============================================
+# DEVELOPMENT PROFILE (H2 Database)
+# ==============================================
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:h2:mem:campusmarketplace
+    driverClassName: org.h2.Driver
+    username: sa
+    password: password
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    format-sql: true
+    properties:
+      hibernate:
+        generate_statistics: true
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: true
+
+# Development Logging
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    com.commandlinecommandos.campusmarketplace: DEBUG
+
+---
+# ==============================================
+# PRODUCTION PROFILE (PostgreSQL Database)
+# ==============================================
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:campus_marketplace}?sslmode=${SSL_MODE:require}&serverTimezone=UTC
+    username: ${DB_APP_USER:cm_app_user}
+    password: ${DB_APP_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      idle-timeout: 300000
+      pool-name: CampusMarketplacePool
+      max-lifetime: 600000
+      connection-timeout: 20000
+      validation-timeout: 5000
+      leak-detection-threshold: 60000
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    format-sql: false
+    properties:
+      hibernate:
+        default_schema: public
+        jdbc:
+          time_zone: UTC
+          batch_size: 20
+        connection:
+          provider_disables_autocommit: true
+        cache:
+          use_second_level_cache: false
+          use_query_cache: false
+        generate_statistics: false
+        order_inserts: true
+        order_updates: true
+
+# Production Security
+server:
+  ssl:
+    enabled: ${SSL_ENABLED:false}
+    key-store: ${SSL_KEYSTORE_PATH:}
+    key-store-password: ${SSL_KEYSTORE_PASSWORD:}
+    key-store-type: ${SSL_KEYSTORE_TYPE:PKCS12}
+
+# Production Logging
+logging:
+  level:
+    org.hibernate.SQL: WARN
+    com.commandlinecommandos.campusmarketplace: INFO
+  file:
+    name: logs/campus-marketplace.log
+  logback:
+    rollingpolicy:
+      max-file-size: 100MB
+      total-size-cap: 1GB
+
+---
+# ==============================================
+# TEST PROFILE (H2 In-Memory Database)
+# ==============================================
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driverClassName: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    format-sql: false
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+
+# Test Logging
+logging:
+  level:
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: WARN
+    com.commandlinecommandos.campusmarketplace: DEBUG
