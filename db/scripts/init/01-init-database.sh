@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # Database Initialization Script for Campus Marketplace
 # This script runs automatically when PostgreSQL container starts for the first time
 

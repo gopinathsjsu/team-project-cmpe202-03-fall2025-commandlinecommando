@@ -112,9 +112,12 @@ cd backend
 ## Documentation
 
 ### Database Documentation
-- **[Database Setup Guide](db/docs/DATABASE_SETUP.md)** - Complete setup instructions
-- **[Troubleshooting Guide](db/docs/TROUBLESHOOTING.md)** - Common issues and solutions
-- **[Security Guide](db/docs/SECURITY.md)** - Security best practices
+- **[📚 Complete Team Setup Guide](db/docs/TEAM_SETUP_GUIDE.md)** - Comprehensive guide for teams to set up and use the database
+- **[⚡ Quick Reference Card](db/docs/QUICK_REFERENCE.md)** - Daily commands and quick troubleshooting
+- **[✅ New Team Member Onboarding](db/docs/ONBOARDING_CHECKLIST.md)** - Step-by-step checklist for new developers
+- **[🔧 Database Setup Guide](db/docs/DATABASE_SETUP.md)** - Complete setup instructions
+- **[🚨 Troubleshooting Guide](db/docs/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[🔐 Security Guide](db/docs/SECURITY.md)** - Security best practices
 
 ### API Documentation
 - **Authentication**: JWT-based with refresh tokens
