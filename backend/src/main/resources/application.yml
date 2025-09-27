@@ -101,7 +101,7 @@ spring:
     activate:
       on-profile: prod
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:campus_marketplace}?sslmode=${SSL_MODE:require}&serverTimezone=UTC
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/campusmarketplace_db?sslmode=${SSL_MODE:disable}&serverTimezone=UTC
     username: ${DB_APP_USER:cm_app_user}
     password: ${DB_APP_PASSWORD}
     driver-class-name: org.postgresql.Driver
