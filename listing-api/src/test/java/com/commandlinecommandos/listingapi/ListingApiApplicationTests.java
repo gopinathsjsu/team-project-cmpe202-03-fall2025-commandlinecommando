@@ -1,10 +1,10 @@
-package com.commandlinecommandos.campusmarketplace;
+package com.commandlinecommandos.listingapi;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class CampusmarketplaceApplicationTests {
+class ListingApiApplicationTests {
 
 	@Test
 	void contextLoads() {
