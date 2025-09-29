@@ -296,7 +296,7 @@ class FileStorageServiceTest {
         String originalFileName1 = "test-image1.jpg";
         String originalFileName2 = "test-image2.png";
         String fileContent = "test image content";
-        int displayOrder = 1;
+        int[] displayOrders = {1, 2};
         
         List<MultipartFile> files = Arrays.asList(multipartFile, multipartFile2);
         
@@ -305,15 +305,15 @@ class FileStorageServiceTest {
         when(multipartFile2.getOriginalFilename()).thenReturn(originalFileName2);
         when(multipartFile2.getInputStream()).thenReturn(new ByteArrayInputStream(fileContent.getBytes()));
         
-        ListingImage savedImage1 = new ListingImage(testListing, "path/to/file1", originalFileName1, displayOrder);
-        ListingImage savedImage2 = new ListingImage(testListing, "path/to/file2", originalFileName2, displayOrder);
+        ListingImage savedImage1 = new ListingImage(testListing, "path/to/file1", originalFileName1, displayOrders[0]);
+        ListingImage savedImage2 = new ListingImage(testListing, "path/to/file2", originalFileName2, displayOrders[1]);
         
         when(listingImageRepository.save(any(ListingImage.class)))
             .thenReturn(savedImage1)
             .thenReturn(savedImage2);
 
         // Act
-        List<ListingImage> results = fileStorageService.storeFiles(files, testListing, displayOrder);
+        List<ListingImage> results = fileStorageService.storeFiles(files, testListing, displayOrders);
 
         // Assert
         assertNotNull(results);
@@ -328,10 +328,10 @@ class FileStorageServiceTest {
     void testStoreFiles_EmptyList() {
         // Arrange
         List<MultipartFile> files = new ArrayList<>();
-        int displayOrder = 1;
+        int[] displayOrders = {1, 2};
 
         // Act
-        List<ListingImage> results = fileStorageService.storeFiles(files, testListing, displayOrder);
+        List<ListingImage> results = fileStorageService.storeFiles(files, testListing, displayOrders);
 
         // Assert
         assertNotNull(results);

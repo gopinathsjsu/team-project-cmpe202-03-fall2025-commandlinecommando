@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,14 +55,18 @@ public class FileStorageService {
         }
     }
 
-    public List<ListingImage> storeFiles(List<MultipartFile> files, Listing listing, int displayOrder) {
-        return files.stream()
-            .map(file -> storeFile(file, listing, displayOrder))
+    public List<ListingImage> storeFiles(List<MultipartFile> files, Listing listing, int[] displayOrders) {
+        if (displayOrders.length != files.size()) {
+            throw new FileStorageException("Number of display orders does not match number of files");
+        }
+
+        return IntStream.range(0, files.size())
+            .mapToObj(i -> storeFile(files.get(i), listing, displayOrders[i]))
             .collect(Collectors.toList());
     }
 
     public List<ListingImage> getImagesByListing(Listing listing) {
-        List<ListingImage> images =listingImageRepository.findByListingOrderedByDisplayOrder(listing)
+        List<ListingImage> images = listingImageRepository.findByListingOrderedByDisplayOrder(listing)
             .orElseThrow(() -> new FileStorageException("Could not find images for listing " + listing.getListingId() + ". Please try again!"));
         return images;
     }
