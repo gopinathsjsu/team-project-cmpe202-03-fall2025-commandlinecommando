@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document provides comprehensive information about the Authentication and Authorization module for the Campus Marketplace project. The module implements JWT-based authentication with role-based access control (RBAC) supporting two user roles: **Student** and **Admin**.
+This document provides comprehensive technical documentation for the Authentication and Authorization module of the Campus Marketplace project. The module implements JWT-based authentication with role-based access control (RBAC) supporting two user roles: **Student** and **Admin**.
 
 ## Architecture
 
@@ -11,7 +11,7 @@ This document provides comprehensive information about the Authentication and Au
 - **Role-Based Access Control (RBAC)** with Student and Admin roles
 - **Refresh Token Support** for long-lived sessions (7 days)
 - **Spring Security Integration** with custom filters and aspects
-- **Database Integration** with H2 (testing in development) and PostgreSQL (production)
+- **Database Integration** with PostgreSQL
 
 ### Key Classes
 - `User` (base class with inheritance for Student/Admin)
@@ -23,7 +23,7 @@ This document provides comprehensive information about the Authentication and Au
 
 ---
 
-## API Endpoints
+## 📋 Complete API Endpoints
 
 ### Authentication Endpoints
 
@@ -36,9 +36,9 @@ Content-Type: application/json
 **Request Body:**
 ```json
 {
-    "username": "string",
-    "password": "string", 
-    "deviceInfo": "string (optional)"
+    "username": "student",
+    "password": "password123",
+    "deviceInfo": "Postman Test Device"
 }
 ```
 
@@ -48,22 +48,80 @@ Content-Type: application/json
     "accessToken": "eyJhbGciOiJIUzUxMiJ9...",
     "refreshToken": "eyJhbGciOiJIUzUxMiJ9...",
     "tokenType": "Bearer",
-    "expiresIn": 3600,
-    "role": "STUDENT|ADMIN",
-    "username": "string",
-    "userId": 1
+    "expiresIn": 3600000,
+    "role": "STUDENT",
+    "username": "student",
+    "userId": 1,
+    "email": "student@sjsu.edu",
+    "firstName": "John",
+    "lastName": "Student",
+    "phone": "555-0101",
+    "active": true
 }
 ```
 
-**Error Response (401):**
+#### 2. **Register New Student**
+```http
+POST /api/auth/register
+Content-Type: application/json
+```
+
+**Request Body:**
 ```json
 {
-    "error": "Authentication failed",
-    "message": "Invalid username or password"
+    "username": "newstudent",
+    "email": "newstudent@sjsu.edu",
+    "password": "password123",
+    "role": "STUDENT",
+    "firstName": "John",
+    "lastName": "Doe",
+    "phone": "555-0123",
+    "studentId": "STU999",
+    "major": "Computer Science",
+    "graduationYear": 2025,
+    "campusLocation": "San Jose Main Campus"
 }
 ```
 
-#### 2. **Token Refresh**
+**Success Response (200):**
+```json
+{
+    "accessToken": "eyJhbGciOiJIUzUxMiJ9...",
+    "refreshToken": "eyJhbGciOiJIUzUxMiJ9...",
+    "tokenType": "Bearer",
+    "expiresIn": 3600000,
+    "role": "STUDENT",
+    "username": "newstudent",
+    "userId": 2,
+    "email": "newstudent@sjsu.edu",
+    "firstName": "John",
+    "lastName": "Doe",
+    "phone": "555-0123",
+    "active": true
+}
+```
+
+#### 3. **Register New Admin**
+```http
+POST /api/auth/register
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+    "username": "newadmin",
+    "email": "newadmin@sjsu.edu",
+    "password": "password123",
+    "role": "ADMIN",
+    "firstName": "Jane",
+    "lastName": "Admin",
+    "phone": "555-0124",
+    "adminLevel": "SUPER_ADMIN"
+}
+```
+
+#### 4. **Token Refresh**
 ```http
 POST /api/auth/refresh
 Content-Type: application/json
@@ -76,20 +134,7 @@ Content-Type: application/json
 }
 ```
 
-**Success Response (200):**
-```json
-{
-    "accessToken": "eyJhbGciOiJIUzUxMiJ9...",
-    "refreshToken": "eyJhbGciOiJIUzUxMiJ9...",
-    "tokenType": "Bearer",
-    "expiresIn": 3600,
-    "role": "STUDENT|ADMIN",
-    "username": "string",
-    "userId": 1
-}
-```
-
-#### 3. **Token Validation**
+#### 5. **Token Validation**
 ```http
 GET /api/auth/validate
 Authorization: Bearer <access_token> (optional)
@@ -116,35 +161,13 @@ Authorization: Bearer <access_token> (optional)
 }
 ```
 
-#### 4. **Current User Info**
+#### 6. **Current User Info**
 ```http
 GET /api/auth/me
 Authorization: Bearer <access_token>
 ```
 
-**Success Response (200):**
-```json
-{
-    "id": 1,
-    "username": "student",
-    "email": "student@sjsu.edu",
-    "role": "STUDENT",
-    "firstName": "John",
-    "lastName": "Student",
-    "phone": null,
-    "isActive": true
-}
-```
-
-**Error Response (401):**
-```json
-{
-    "error": "Unauthorized",
-    "message": "User not authenticated"
-}
-```
-
-#### 5. **Logout**
+#### 7. **Logout**
 ```http
 POST /api/auth/logout
 Content-Type: application/json
@@ -157,39 +180,13 @@ Content-Type: application/json
 }
 ```
 
-**Success Response (200):**
-```json
-{
-    "message": "Logged out successfully"
-}
-```
-
-#### 6. **Logout All Devices**
+#### 8. **Logout All Devices**
 ```http
 POST /api/auth/logout-all
 Authorization: Bearer <access_token>
 ```
 
-**Success Response (200):**
-```json
-{
-    "message": "Logged out from all devices successfully"
-}
-```
-
-**Error Response (401):**
-```json
-{
-    "error": "Unauthorized",
-    "message": "User not authenticated"
-}
-```
-
----
-
-### Student Endpoints
-
-> **Access:** Requires `ROLE_STUDENT` authority
+### Student Endpoints (Requires Authentication)
 
 #### 1. **Student Dashboard**
 ```http
@@ -197,27 +194,10 @@ GET /api/student/dashboard
 Authorization: Bearer <student_access_token>
 ```
 
-**Success Response (200):**
-```json
-{
-    "message": "Welcome to Student Dashboard",
-    "myListings": 5,
-    "watchlist": 12,
-    "messages": 3
-}
-```
-
 #### 2. **My Listings**
 ```http
 GET /api/student/listings
 Authorization: Bearer <student_access_token>
-```
-
-**Success Response (200):**
-```json
-{
-    "message": "Listing all items posted by the student."
-}
 ```
 
 #### 3. **Create Listing**
@@ -230,39 +210,21 @@ Content-Type: application/json
 **Request Body:**
 ```json
 {
-    "title": "iPhone 13 Pro",
-    "description": "Excellent condition",
-    "price": 800.00
+    "title": "MacBook Pro 13-inch",
+    "description": "Excellent condition MacBook Pro, barely used",
+    "price": 1200.00,
+    "category": "Electronics",
+    "condition": "Like New",
+    "location": "San Jose Campus"
 }
 ```
 
-**Success Response (200):**
-```json
-{
-    "message": "New listing created by student: iPhone 13 Pro"
-}
-```
-
----
-
-### Admin Endpoints
-
-> **Access:** Requires `ROLE_ADMIN` authority
+### Admin Endpoints (Requires Authentication)
 
 #### 1. **Admin Dashboard**
 ```http
 GET /api/admin/dashboard
 Authorization: Bearer <admin_access_token>
-```
-
-**Success Response (200):**
-```json
-{
-    "message": "Welcome to Admin Dashboard",
-    "totalUsers": 150,
-    "totalListings": 450,
-    "pendingApprovals": 12
-}
 ```
 
 #### 2. **Users Management**
@@ -271,364 +233,276 @@ GET /api/admin/users
 Authorization: Bearer <admin_access_token>
 ```
 
-**Success Response (200):**
-```json
-{
-    "message": "Admin access: All users data",
-    "userCount": 150
-}
-```
-
 #### 3. **Moderate Listing**
 ```http
-POST /api/admin/moderate/{id}
+POST /api/admin/moderate/123?action=approve
 Authorization: Bearer <admin_access_token>
-```
-
-**Success Response (200):**
-```json
-{
-    "message": "Listing 123 moderated by Admin",
-    "listingId": 123
-}
 ```
 
 #### 4. **Delete User**
 ```http
-DELETE /api/admin/users/{id}
+DELETE /api/admin/users/456
 Authorization: Bearer <admin_access_token>
 ```
 
-**Success Response (200):**
+### Public Endpoints
+
+#### 1. **Home**
+```http
+GET /
+```
+
+#### 2. **Test Hello**
+```http
+GET /api/test/hello
+```
+
+---
+
+## 🧪 Postman Testing Guide
+
+### **Base URL**
+```
+http://localhost:8080
+```
+
+### **Environment Variables Setup**
+Create these variables in Postman:
+- `base_url`: `http://localhost:8080`
+- `student_token`: (set after student login)
+- `admin_token`: (set after admin login)
+- `refresh_token`: (set after login)
+
+### **Complete Postman Collection**
+
+#### **1. Authentication Flow**
+
+**Login as Student:**
+```http
+POST {{base_url}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "student",
+  "password": "password123",
+  "deviceInfo": "Postman Test Device"
+}
+```
+*Save `accessToken` and `refreshToken` from response*
+
+**Login as Admin:**
+```http
+POST {{base_url}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "password123",
+  "deviceInfo": "Postman Test Device"
+}
+```
+
+**Register New Student:**
+```http
+POST {{base_url}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "newstudent",
+  "email": "newstudent@sjsu.edu",
+  "password": "password123",
+  "role": "STUDENT",
+  "firstName": "John",
+  "lastName": "Doe",
+  "phone": "555-0123",
+  "studentId": "STU999",
+  "major": "Computer Science",
+  "graduationYear": 2025,
+  "campusLocation": "San Jose Main Campus"
+}
+```
+
+**Register New Admin:**
+```http
+POST {{base_url}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "newadmin",
+  "email": "newadmin@sjsu.edu",
+  "password": "password123",
+  "role": "ADMIN",
+  "firstName": "Jane",
+  "lastName": "Admin",
+  "phone": "555-0124",
+  "adminLevel": "SUPER_ADMIN"
+}
+```
+
+#### **2. Token Management**
+
+**Validate Token:**
+```http
+GET {{base_url}}/api/auth/validate
+Authorization: Bearer {{student_token}}
+```
+
+**Get Current User:**
+```http
+GET {{base_url}}/api/auth/me
+Authorization: Bearer {{student_token}}
+```
+
+**Refresh Token:**
+```http
+POST {{base_url}}/api/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refresh_token}}"
+}
+```
+
+**Logout:**
+```http
+POST {{base_url}}/api/auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refresh_token}}"
+}
+```
+
+**Logout All Devices:**
+```http
+POST {{base_url}}/api/auth/logout-all
+Authorization: Bearer {{student_token}}
+```
+
+#### **3. Student Endpoints**
+
+**Student Dashboard:**
+```http
+GET {{base_url}}/api/student/dashboard
+Authorization: Bearer {{student_token}}
+```
+
+**Get My Listings:**
+```http
+GET {{base_url}}/api/student/listings
+Authorization: Bearer {{student_token}}
+```
+
+**Create New Listing:**
+```http
+POST {{base_url}}/api/student/listings
+Authorization: Bearer {{student_token}}
+Content-Type: application/json
+
+{
+  "title": "MacBook Pro 13-inch",
+  "description": "Excellent condition MacBook Pro, barely used",
+  "price": 1200.00,
+  "category": "Electronics",
+  "condition": "Like New",
+  "location": "San Jose Campus"
+}
+```
+
+#### **4. Admin Endpoints**
+
+**Admin Dashboard:**
+```http
+GET {{base_url}}/api/admin/dashboard
+Authorization: Bearer {{admin_token}}
+```
+
+**Get All Users:**
+```http
+GET {{base_url}}/api/admin/users
+Authorization: Bearer {{admin_token}}
+```
+
+**Moderate Listing:**
+```http
+POST {{base_url}}/api/admin/moderate/123?action=approve
+Authorization: Bearer {{admin_token}}
+```
+
+**Delete User:**
+```http
+DELETE {{base_url}}/api/admin/users/456
+Authorization: Bearer {{admin_token}}
+```
+
+#### **5. Public Endpoints**
+
+**Home:**
+```http
+GET {{base_url}}/
+```
+
+**Test Hello:**
+```http
+GET {{base_url}}/api/test/hello
+```
+
+### **Testing Workflow**
+
+1. **Start Application**: `mvn spring-boot:run`
+2. **Test Public Endpoints**: Home, Test Hello
+3. **Test Authentication**: Login as student and admin
+4. **Test Registration**: Register new users
+5. **Test Token Management**: Validate, refresh, logout
+6. **Test Student Features**: Dashboard, listings, create listing
+7. **Test Admin Features**: Dashboard, users, moderation
+8. **Test Authorization**: Cross-role access (should fail)
+
+### **Expected Responses**
+
+**Successful Login:**
 ```json
 {
-    "message": "User 123 has been deleted",
-    "userId": 123
+  "accessToken": "eyJhbGciOiJIUzUxMiJ9...",
+  "refreshToken": "eyJhbGciOiJIUzUxMiJ9...",
+  "tokenType": "Bearer",
+  "expiresIn": 3600000,
+  "role": "STUDENT",
+  "username": "student",
+  "userId": 1,
+  "email": "student@sjsu.edu",
+  "firstName": "John",
+  "lastName": "Student",
+  "phone": "555-0101",
+  "active": true
+}
+```
+
+**Error Response:**
+```json
+{
+  "error": "Authentication failed",
+  "message": "Invalid username or password"
 }
 ```
 
 ---
 
-## Testing Guide
+## 🔒 Security Implementation
 
-### Prerequisites
-
-1. **Start the Application:**
-```bash
-cd backend
-mvn spring-boot:run
-```
-
-2. **Test Users Created Automatically:**
-- **Student:** `username=student`, `password=password123`
-- **Admin:** `username=admin`, `password=admin123`
-
-### 🔧 Sample Test Commands
-
-#### **Authentication Flow Testing**
-
-**1. Student Login:**
-```bash
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"student","password":"password123","deviceInfo":"Test Device"}'
-```
-
-**2. Admin Login:**
-```bash
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123","deviceInfo":"Test Device"}'
-```
-
-**3. Token Validation:**
-```bash
-# Replace [TOKEN] with actual access token from login response
-curl -H "Authorization: Bearer [TOKEN]" http://localhost:8080/api/auth/validate
-```
-
-**4. Get Current User:**
-```bash
-curl -H "Authorization: Bearer [TOKEN]" http://localhost:8080/api/auth/me
-```
-
-**5. Refresh Token:**
-```bash
-# Replace [REFRESH_TOKEN] with actual refresh token from login response
-curl -X POST http://localhost:8080/api/auth/refresh \
-  -H "Content-Type: application/json" \
-  -d '{"refreshToken":"[REFRESH_TOKEN]"}'
-```
-
-**6. Logout:**
-```bash
-curl -X POST http://localhost:8080/api/auth/logout \
-  -H "Content-Type: application/json" \
-  -d '{"refreshToken":"[REFRESH_TOKEN]"}'
-```
-
-**7. Logout All Devices:**
-```bash
-curl -X POST http://localhost:8080/api/auth/logout-all \
-  -H "Authorization: Bearer [TOKEN]"
-```
-
-#### **Role-Based Access Testing**
-
-**Student Endpoints:**
-```bash
-# Student accessing student dashboard (SUCCESS)
-curl -H "Authorization: Bearer [STUDENT_TOKEN]" http://localhost:8080/api/student/dashboard
-
-# Admin accessing student dashboard (BLOCKED)
-curl -H "Authorization: Bearer [ADMIN_TOKEN]" http://localhost:8080/api/student/dashboard
-
-# Unauthenticated access (BLOCKED)
-curl http://localhost:8080/api/student/dashboard
-```
-
-**Admin Endpoints:**
-```bash
-# Admin accessing admin dashboard (SUCCESS)
-curl -H "Authorization: Bearer [ADMIN_TOKEN]" http://localhost:8080/api/admin/dashboard
-
-# Student accessing admin dashboard (BLOCKED)
-curl -H "Authorization: Bearer [STUDENT_TOKEN]" http://localhost:8080/api/admin/dashboard
-
-# Unauthenticated access (BLOCKED)
-curl http://localhost:8080/api/admin/dashboard
-```
-
-#### **Complete Test Script**
-
-```bash
-#!/bin/bash
-
-echo "=== Campus Marketplace Authentication Testing ==="
-
-# 1. Test Student Login
-echo "1. Testing Student Login..."
-STUDENT_RESPONSE=$(curl -s -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"student","password":"password123","deviceInfo":"Test Device"}')
-STUDENT_TOKEN=$(echo $STUDENT_RESPONSE | jq -r '.accessToken')
-echo "Student Login: SUCCESS"
-
-# 2. Test Admin Login  
-echo "2. Testing Admin Login..."
-ADMIN_RESPONSE=$(curl -s -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123","deviceInfo":"Test Device"}')
-ADMIN_TOKEN=$(echo $ADMIN_RESPONSE | jq -r '.accessToken')
-echo "Admin Login: SUCCESS"
-
-# 3. Test Token Validation
-echo "3. Testing Token Validation..."
-curl -s -H "Authorization: Bearer $STUDENT_TOKEN" http://localhost:8080/api/auth/validate | jq .
-echo "Token Validation: SUCCESS"
-
-# 4. Test Student Dashboard Access
-echo "4. Testing Student Dashboard..."
-curl -s -H "Authorization: Bearer $STUDENT_TOKEN" http://localhost:8080/api/student/dashboard
-echo "Student Dashboard: SUCCESS"
-
-# 5. Test Admin Dashboard Access
-echo "5. Testing Admin Dashboard..."
-curl -s -H "Authorization: Bearer $ADMIN_TOKEN" http://localhost:8080/api/admin/dashboard
-echo "Admin Dashboard: SUCCESS"
-
-# 6. Test Cross-Role Access (Should Fail)
-echo "6. Testing Cross-Role Access..."
-curl -s -H "Authorization: Bearer $STUDENT_TOKEN" http://localhost:8080/api/admin/dashboard
-echo "Cross-Role Block: SUCCESS (401 as expected)"
-
-echo "=== All Tests Complete ==="
-```
-
----
-
-## Security Features
-
-### **JWT Token Configuration**
+### **JWT Configuration**
 - **Algorithm:** HS512 (HMAC with SHA-512)
-- **Access Token Expiration:** 1 hour (3600 seconds)
-- **Refresh Token Expiration:** 7 days (604800 seconds)
+- **Access Token Expiration:** 1 hour (3600000 milliseconds)
+- **Refresh Token Expiration:** 7 days (604800000 milliseconds)
 - **Token Claims:** role, userId, email, username
 
 ### **Role-Based Access Control**
+- **URL-Level Security:** Spring Security configuration
+- **Method-Level Security:** Custom `@RequireRole` annotation
+- **Password Security:** BCrypt hashing with salt
+- **Token Management:** Refresh token storage and revocation
 
-#### **URL-Level Security (Spring Security)**
-```java
-// Public endpoints
-.requestMatchers("/api/auth/**").permitAll()
-
-// Admin only endpoints
-.requestMatchers("/api/admin/**").hasRole("ADMIN")
-
-// Student and Admin endpoints
-.requestMatchers("/api/student/**").hasRole("STUDENT")
-.requestMatchers("/api/user/**").hasAnyRole("STUDENT", "ADMIN")
-```
-
-#### **Method-Level Security (Custom Aspect)**
-```java
-@RequireRole(UserRole.ADMIN)
-public ResponseEntity<String> adminOnlyMethod() { ... }
-
-@RequireRole(UserRole.STUDENT)  
-public ResponseEntity<String> studentOnlyMethod() { ... }
-
-@RequireRole({UserRole.STUDENT, UserRole.ADMIN})
-public ResponseEntity<String> authenticatedMethod() { ... }
-```
-
-### **Database Security**
-- **Password Hashing:** BCrypt with salt
-- **Refresh Token Storage:** Encrypted and revocable
-- **User Status:** Active/inactive account management
-- **Session Management:** Multi-device logout support
-
----
-
-## 📊 Endpoint Classification
-
-### **Public Endpoints** (No Authentication Required)
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/auth/login` | POST | User authentication |
-| `/api/auth/refresh` | POST | Token refresh |
-| `/api/auth/validate` | GET | Token validation (returns info for any state) |
-
-### **Authenticated Endpoints** (Valid JWT Required)
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/auth/me` | GET | Get current user information |
-| `/api/auth/logout` | POST | Logout from current device |
-| `/api/auth/logout-all` | POST | Logout from all devices |
-
-### **Student-Only Endpoints** (`ROLE_STUDENT` Required)
-| Endpoint | Method | Purpose | Sample Response |
-|----------|--------|---------|-----------------|
-| `/api/student/dashboard` | GET | Student dashboard | `{"message":"Welcome to Student Dashboard","myListings":5,"watchlist":12,"messages":3}` |
-| `/api/student/listings` | GET | Get student's listings | `{"message":"Listing all items posted by the student."}` |
-| `/api/student/listings` | POST | Create new listing | `{"message":"New listing created by student: [title]"}` |
-
-### **Admin-Only Endpoints** (`ROLE_ADMIN` Required)
-| Endpoint | Method | Purpose | Sample Response |
-|----------|--------|---------|-----------------|
-| `/api/admin/dashboard` | GET | Admin dashboard | `{"message":"Welcome to Admin Dashboard","totalUsers":150,"totalListings":450,"pendingApprovals":12}` |
-| `/api/admin/users` | GET | User management | `{"message":"Admin access: All users data","userCount":150}` |
-| `/api/admin/moderate/{id}` | POST | Moderate listing | `{"message":"Listing {id} moderated by Admin","listingId":{id}}` |
-| `/api/admin/users/{id}` | DELETE | Delete user | `{"message":"User {id} has been deleted","userId":{id}}` |
-
----
-
-## Testing Data
-
-### **Test Users**
-The application automatically creates test users on startup:
-
-| Role | Username | Password | Email | Details |
-|------|----------|----------|--------|---------|
-| **Student** | `student` | `password123` | `student@sjsu.edu` | John Student, CS Major, Graduation: 2025 |
-| **Admin** | `admin` | `admin123` | `admin@sjsu.edu` | Jane Admin, Full permissions |
-
-### **Sample Test Tokens**
-After login, you'll receive tokens similar to:
-
-**Student Access Token (1 hour):**
-```
-eyJhbGciOiJIUzUxMiJ9.eyJyb2xlIjoiU1RVREVOVCIsInVzZXJJZCI6MSwiZW1haWwiOiJzdHVkZW50QHNqc3UuZWR1Iiwic3ViIjoic3R1ZGVudCIsImlhdCI6MTc1ODU4OTY4MiwiZXhwIjoxNzU4NTkzMjgyfQ.pnC7ZSqlOjTje6sI3CeCN1sTgDEPdRVMbdoPWSdtdFqSpvMGrYkMa6lSHDsFJxt4QuHg6cF_8YBwCdICGzXglQ
-```
-
-**Student Refresh Token (7 days):**
-```
-eyJhbGciOiJIUzUxMiJ9.eyJ0b2tlblR5cGUiOiJyZWZyZXNoIiwidXNlcklkIjoxLCJzdWIiOiJzdHVkZW50IiwiaWF0IjoxNzU4NTg5NjgyLCJleHAiOjE3NTkxOTQ0ODJ9.awfDJNlnB81BnhGOs3G7l4jEsm-b6EPRTvByJbYH1k34QyTEWjawTzQ9yPuaBRpvY9k6shMwhMfERHBj_GpqWw
-```
-
----
-
-## Testing Scenarios
-
-### **Positive Test Cases**
-
-1. **Successful Authentication**
-   - Student login with valid credentials
-   - Admin login with valid credentials
-   - Token validation with valid JWT
-   - User info retrieval with authentication
-
-2. **Token Management**
-   - Access token refresh with valid refresh token
-   - Logout with valid refresh token
-   - Multi-device logout with valid access token
-
-3. **Role-Based Access**
-   - Student accessing student-only endpoints
-   - Admin accessing admin-only endpoints
-   - Both roles accessing shared endpoints
-
-### **Negative Test Cases**
-
-1. **Authentication Failures**
-   - Login with invalid username/password
-   - Token validation with invalid/expired tokens
-   - Access to protected endpoints without authentication
-
-2. **Authorization Failures**
-   - Student attempting to access admin endpoints
-   - Admin attempting to access student-only endpoints
-   - Cross-role access attempts
-
-3. **Input Validation**
-   - Empty username/password in login
-   - Malformed JSON requests
-   - Missing required fields
-
----
-
-## Getting Started
-
-### **1. Run the Application**
-```bash
-cd backend
-mvn spring-boot:run
-```
-
-### **2. Verify Application is Running**
-```bash
-curl http://localhost:8080/api/auth/validate
-# Should return: {"valid":false,"message":"No valid token found"}
-```
-
-### **3. Test Authentication Flow**
-```bash
-# Login as student
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"student","password":"password123","deviceInfo":"Test Device"}'
-
-# Use the returned accessToken for authenticated requests
-curl -H "Authorization: Bearer [ACCESS_TOKEN]" http://localhost:8080/api/student/dashboard
-```
-
-### **4. Run Unit Tests**
-```bash
-# Run all authentication tests
-mvn test -Dtest="JwtUtilTest,AuthServiceTest,AuthControllerTest,RoleBasedAccessTest"
-
-# Run specific test suites
-mvn test -Dtest=JwtUtilTest        # JWT utility tests (6 tests)
-mvn test -Dtest=AuthServiceTest    # Authentication service tests (11 tests)
-mvn test -Dtest=AuthControllerTest # Controller integration tests (12 tests)
-mvn test -Dtest=RoleBasedAccessTest # Role-based access tests (17 tests)
-```
-
----
-
-## Configuration
-
-### **JWT Configuration** (`application.properties`)
+### **Security Configuration** (`application.properties`)
 ```properties
 # JWT Secret (256-bit minimum for HS512)
 jwt.secret=myVerySecureSecretKeyForJWTTokensThatShouldBeAtLeast256BitsLongForHS256Algorithm
@@ -636,35 +510,53 @@ jwt.secret=myVerySecureSecretKeyForJWTTokensThatShouldBeAtLeast256BitsLongForHS2
 # Token Expiration (in milliseconds)
 jwt.access-token.expiration=3600000   # 1 hour
 jwt.refresh-token.expiration=604800000 # 7 days
-```
 
-### **Database Configuration**
-```properties
-# Development (H2)
-spring.datasource.url=jdbc:h2:mem:campusmarketplace
-spring.datasource.username=sa
-spring.datasource.password=password
-
-# Production (PostgreSQL) - use application-prod.properties
-spring.datasource.url=${DATABASE_URL:jdbc:postgresql://localhost:5432/campusmarketplace}
+# Database Configuration
+spring.datasource.url=jdbc:postgresql://localhost:5432/campus_marketplace
+spring.datasource.username=vineetkia
+spring.datasource.password=
+spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
+spring.jpa.hibernate.ddl-auto=validate
 ```
 
 ---
 
-### **Production Recommendations ToDo:**
-1. **Environment Variables** - Store JWT secret in environment variables
-2. **HTTPS Only** - Use HTTPS in production
-3. **Rate Limiting** - Implement rate limiting for login endpoints
-4. **Audit Logging** - Log authentication and authorization events
-5. **Token Blacklisting** - Consider JWT blacklisting for immediate revocation
+## 🧪 Testing Implementation
+
+### **Test Users**
+| Role | Username | Password | Email | Details |
+|------|----------|----------|--------|---------|
+| **Student** | `student` | `password123` | `student@sjsu.edu` | John Student, CS Major, Graduation: 2025 |
+| **Admin** | `admin` | `password123` | `admin@sjsu.edu` | Jane Admin, Full permissions |
+
+### **Unit Testing**
+```bash
+# Run all authentication tests
+mvn test
+
+# Run specific test suites
+mvn test -Dtest=JwtUtilTest        # JWT utility tests
+mvn test -Dtest=AuthServiceTest    # Authentication service tests
+mvn test -Dtest=AuthControllerTest # Controller integration tests
+mvn test -Dtest=RoleBasedAccessTest # Role-based access tests
+```
 
 ---
 
-### ** Key Features**
+## 🏗️ Implementation Details
+
+### **Key Features**
 - **JWT Authentication** with HS512 signing
 - **Refresh Token Management** with 7-day expiration
 - **Role-Based Authorization** with Student/Admin separation
 - **Spring Security Integration** with custom filters and aspects
 - **Database Inheritance** with User/Student/Admin models
-- **Comprehensive Testing** with 100% pass rate
+- **User Registration** with role-specific fields
+- **Comprehensive Testing** with Postman collection
 - **Production Configuration** for PostgreSQL deployment
+
+### **Database Schema**
+- **Single Table Inheritance** for User/Student/Admin models
+- **Refresh Token Storage** with expiration management
+- **Password Hashing** with BCrypt salt
+- **Role-Based Access Control** with database-level constraints
