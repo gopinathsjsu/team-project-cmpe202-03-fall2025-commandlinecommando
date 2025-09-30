@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import com.commandlinecommandos.campusmarketplace.dto.AuthRequest;
 import com.commandlinecommandos.campusmarketplace.dto.AuthResponse;
 import com.commandlinecommandos.campusmarketplace.dto.RefreshTokenRequest;
+import com.commandlinecommandos.campusmarketplace.dto.RegisterRequest;
 import com.commandlinecommandos.campusmarketplace.model.User;
 import com.commandlinecommandos.campusmarketplace.repository.UserRepository;
 import com.commandlinecommandos.campusmarketplace.service.AuthService;
@@ -47,6 +48,24 @@ public class AuthController {
             Map<String, String> error = new HashMap<>();
             error.put("error", "Internal server error");
             error.put("message", "An unexpected error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+    
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest registerRequest) {
+        try {
+            AuthResponse authResponse = authService.register(registerRequest);
+            return ResponseEntity.ok(authResponse);
+        } catch (BadCredentialsException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Registration failed");
+            error.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        } catch (Exception e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Internal server error");
+            error.put("message", "An unexpected error occurred during registration");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
