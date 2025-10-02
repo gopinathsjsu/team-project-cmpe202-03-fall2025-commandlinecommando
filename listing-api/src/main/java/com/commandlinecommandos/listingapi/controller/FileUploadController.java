@@ -12,7 +12,6 @@ import com.commandlinecommandos.listingapi.model.ListingImage;
 import com.commandlinecommandos.listingapi.service.FileStorageService;
 import com.commandlinecommandos.listingapi.service.ListingService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
@@ -32,8 +31,7 @@ public class FileUploadController {
     public ResponseEntity<String> uploadFile(
             @PathVariable Long listingId,
             @RequestParam("file") MultipartFile file,
-            @RequestParam("displayOrder") int displayOrder,
-            Authentication authentication) {
+            @RequestParam("displayOrder") int displayOrder) {
 
         try {
             Listing listing = listingService.getListingById(listingId);
@@ -58,8 +56,7 @@ public class FileUploadController {
     public ResponseEntity<String> uploadMultipleFiles(
             @PathVariable Long listingId,
             @RequestParam("files") List<MultipartFile> files,
-            @RequestParam("displayOrders") int[] displayOrders,
-            Authentication authentication) {
+            @RequestParam("displayOrders") int[] displayOrders) {
 
         try {
             Listing listing = listingService.getListingById(listingId);

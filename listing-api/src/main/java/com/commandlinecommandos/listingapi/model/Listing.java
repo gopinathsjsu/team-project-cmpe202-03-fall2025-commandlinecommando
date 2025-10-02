@@ -227,4 +227,26 @@ public class Listing {
             removeImage(image);
         }
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        Listing listing = (Listing) obj;
+        return listingId.equals(listing.listingId);
+    }
+
+    @Override
+    public int hashCode() {
+        return listingId.hashCode();
+    }
+    
+    @Override
+    public String toString() {
+        return "Listing [listingId=" + listingId + ", \ntitle=" + title + 
+        ", \ndescription=" + description + ", \ncategory=" + category + 
+        ", \nprice=" + price + ", \ncondition=" + condition + ", \nstatus=" + status + 
+        ", \nlocation=" + location + ", \ncreatedAt=" + createdAt + ", \nupdatedAt=" + updatedAt + 
+        ", \nviewCount=" + viewCount + ", \nimages=" + images + "]";
+    }
 }

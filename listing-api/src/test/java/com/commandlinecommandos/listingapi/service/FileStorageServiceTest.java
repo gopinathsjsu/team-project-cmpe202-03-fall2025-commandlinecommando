@@ -80,12 +80,15 @@ class FileStorageServiceTest {
         String originalFileName = "test-image.jpg";
         String fileContent = "test image content";
         int displayOrder = 1;
+        String filePath = testUploadDir + originalFileName;
         
         when(multipartFile.getOriginalFilename()).thenReturn(originalFileName);
         when(multipartFile.getInputStream()).thenReturn(new ByteArrayInputStream(fileContent.getBytes()));
         
-        ListingImage savedImage = new ListingImage(testListing, "path/to/file", originalFileName, displayOrder);
-        when(listingImageRepository.save(any(ListingImage.class))).thenReturn(savedImage);
+        when(listingImageRepository.save(any(ListingImage.class))).thenAnswer(invocation -> {
+            ListingImage image = invocation.getArgument(0);
+            return image;
+        });
 
         // Act
         ListingImage result = fileStorageService.storeFile(multipartFile, testListing, displayOrder);
@@ -115,12 +118,14 @@ class FileStorageServiceTest {
         when(multipartFile.getOriginalFilename()).thenReturn(originalFileName);
         when(multipartFile.getInputStream()).thenReturn(new ByteArrayInputStream(fileContent.getBytes()));
         
-        ListingImage savedImage = new ListingImage(testListing, "path/to/file", originalFileName, displayOrder);
-        when(listingImageRepository.save(any(ListingImage.class))).thenReturn(savedImage);
+        when(listingImageRepository.save(any(ListingImage.class))).thenAnswer(invocation -> {
+            ListingImage image = invocation.getArgument(0);
+            return image;
+        });
 
         // Act
         ListingImage result = fileStorageService.storeFile(multipartFile, testListing, displayOrder);
-
+        
         // Assert
         assertNotNull(result);
         assertTrue(result.getImageUrl().endsWith(".")); // No extension
@@ -136,8 +141,10 @@ class FileStorageServiceTest {
         when(multipartFile.getOriginalFilename()).thenReturn(null);
         when(multipartFile.getInputStream()).thenReturn(new ByteArrayInputStream(fileContent.getBytes()));
         
-        ListingImage savedImage = new ListingImage(testListing, "path/to/file", null, displayOrder);
-        when(listingImageRepository.save(any(ListingImage.class))).thenReturn(savedImage);
+        when(listingImageRepository.save(any(ListingImage.class))).thenAnswer(invocation -> {
+            ListingImage image = invocation.getArgument(0);
+            return image;
+        });
 
         // Act
         ListingImage result = fileStorageService.storeFile(multipartFile, testListing, displayOrder);
@@ -158,14 +165,14 @@ class FileStorageServiceTest {
         when(multipartFile.getOriginalFilename()).thenReturn(originalFileName);
         when(multipartFile.getInputStream()).thenReturn(new ByteArrayInputStream(fileContent.getBytes()));
         
-        ListingImage savedImage = new ListingImage(testListing, "path/to/file", originalFileName, displayOrder);
+        ListingImage savedImage = new ListingImage(testListing, "path/to/file/" + originalFileName, originalFileName, displayOrder);
         when(listingImageRepository.save(any(ListingImage.class))).thenReturn(savedImage);
 
         // Act
         ListingImage result = fileStorageService.storeFile(multipartFile, testListing, displayOrder);
 
         // Assert
-        assertNotNull(result);
+        assertNotNull(result); 
         assertTrue(result.getImageUrl().endsWith(".png"));
         verify(listingImageRepository).save(any(ListingImage.class));
     }
@@ -180,8 +187,10 @@ class FileStorageServiceTest {
         when(multipartFile.getOriginalFilename()).thenReturn(originalFileName);
         when(multipartFile.getInputStream()).thenReturn(new ByteArrayInputStream(fileContent.getBytes()));
         
-        ListingImage savedImage = new ListingImage(testListing, "path/to/file", originalFileName, displayOrder);
-        when(listingImageRepository.save(any(ListingImage.class))).thenReturn(savedImage);
+        when(listingImageRepository.save(any(ListingImage.class))).thenAnswer(invocation -> {
+            ListingImage image = invocation.getArgument(0);
+            return image;
+        });
 
         // Act
         ListingImage result = fileStorageService.storeFile(multipartFile, testListing, displayOrder);
@@ -227,7 +236,7 @@ class FileStorageServiceTest {
         when(multipartFile.getOriginalFilename()).thenReturn(originalFileName);
         when(multipartFile.getInputStream()).thenReturn(new ByteArrayInputStream(fileContent.getBytes()));
         
-        ListingImage savedImage = new ListingImage(testListing, "path/to/file", originalFileName, displayOrder);
+        ListingImage savedImage = new ListingImage(testListing, "path/to/file/" + originalFileName, originalFileName, displayOrder);
         when(listingImageRepository.save(any(ListingImage.class))).thenReturn(savedImage);
 
         // Act
@@ -248,13 +257,15 @@ class FileStorageServiceTest {
         when(multipartFile.getOriginalFilename()).thenReturn(originalFileName);
         when(multipartFile.getInputStream()).thenReturn(new ByteArrayInputStream(fileContent.getBytes()));
         
-        ListingImage savedImage = new ListingImage(testListing, "path/to/file", originalFileName, displayOrder);
-        when(listingImageRepository.save(any(ListingImage.class))).thenReturn(savedImage);
+        when(listingImageRepository.save(any(ListingImage.class))).thenAnswer(invocation -> {
+            ListingImage image = invocation.getArgument(0);
+            return image;
+        });
 
         // Act
         ListingImage result1 = fileStorageService.storeFile(multipartFile, testListing, displayOrder);
         ListingImage result2 = fileStorageService.storeFile(multipartFile, testListing, displayOrder);
-
+        
         // Assert
         assertNotNull(result1);
         assertNotNull(result2);
@@ -277,7 +288,7 @@ class FileStorageServiceTest {
         when(multipartFile.getOriginalFilename()).thenReturn(originalFileName);
         when(multipartFile.getInputStream()).thenReturn(new ByteArrayInputStream(fileContent.getBytes()));
         
-        ListingImage savedImage = new ListingImage(testListing, "path/to/file", "test-image.jpg", displayOrder);
+        ListingImage savedImage = new ListingImage(testListing, "path/to/file/" + originalFileName, "test-image.jpg", displayOrder);
         when(listingImageRepository.save(any(ListingImage.class))).thenReturn(savedImage);
 
         // Act
@@ -305,8 +316,8 @@ class FileStorageServiceTest {
         when(multipartFile2.getOriginalFilename()).thenReturn(originalFileName2);
         when(multipartFile2.getInputStream()).thenReturn(new ByteArrayInputStream(fileContent.getBytes()));
         
-        ListingImage savedImage1 = new ListingImage(testListing, "path/to/file1", originalFileName1, displayOrders[0]);
-        ListingImage savedImage2 = new ListingImage(testListing, "path/to/file2", originalFileName2, displayOrders[1]);
+        ListingImage savedImage1 = new ListingImage(testListing, "path/to/file1/" + originalFileName1, originalFileName1, displayOrders[0]);
+        ListingImage savedImage2 = new ListingImage(testListing, "path/to/file2/" + originalFileName2, originalFileName2, displayOrders[1]);
         
         when(listingImageRepository.save(any(ListingImage.class)))
             .thenReturn(savedImage1)
@@ -342,8 +353,8 @@ class FileStorageServiceTest {
     @Test
     void testGetImagesByListing_Success() {
         // Arrange
-        ListingImage image1 = new ListingImage(testListing, "path1", "image1.jpg", 1);
-        ListingImage image2 = new ListingImage(testListing, "path2", "image2.jpg", 2);
+        ListingImage image1 = new ListingImage(testListing, "path1/" + "image1.jpg", "image1.jpg", 1);
+        ListingImage image2 = new ListingImage(testListing, "path2/" + "image2.jpg", "image2.jpg", 2);
         List<ListingImage> expectedImages = Arrays.asList(image1, image2);
         
         when(listingImageRepository.findByListingOrderedByDisplayOrder(testListing))
@@ -378,7 +389,7 @@ class FileStorageServiceTest {
     @Test
     void testGetPrimaryImageByListing_Success() {
         // Arrange
-        ListingImage primaryImage = new ListingImage(testListing, "path", "primary.jpg", 1);
+        ListingImage primaryImage = new ListingImage(testListing, "path/" + "primary.jpg", "primary.jpg", 1);
         
         when(listingImageRepository.findPrimaryImageByListing(testListing))
             .thenReturn(Optional.of(primaryImage));

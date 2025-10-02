@@ -12,7 +12,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
@@ -32,9 +31,6 @@ class FileUploadControllerTest {
 
     @Mock
     private ListingService listingService;
-
-    @Mock
-    private Authentication authentication;
 
     @InjectMocks
     private FileUploadController fileUploadController;
@@ -91,7 +87,7 @@ class FileUploadControllerTest {
             .thenReturn(testListingImage);
 
         // Act
-        ResponseEntity<String> response = fileUploadController.uploadFile(1L, testFile, 1, authentication);
+        ResponseEntity<String> response = fileUploadController.uploadFile(1L, testFile, 1);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -106,7 +102,7 @@ class FileUploadControllerTest {
         when(listingService.getListingById(1L)).thenReturn(null);
 
         // Act
-        ResponseEntity<String> response = fileUploadController.uploadFile(1L, testFile, 1, authentication);
+        ResponseEntity<String> response = fileUploadController.uploadFile(1L, testFile, 1);
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
@@ -122,7 +118,7 @@ class FileUploadControllerTest {
             .thenThrow(new RuntimeException("Storage error"));
 
         // Act
-        ResponseEntity<String> response = fileUploadController.uploadFile(1L, testFile, 1, authentication);
+        ResponseEntity<String> response = fileUploadController.uploadFile(1L, testFile, 1);
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
@@ -143,7 +139,7 @@ class FileUploadControllerTest {
             .thenReturn(expectedImages);
 
         // Act
-        ResponseEntity<String> response = fileUploadController.uploadMultipleFiles(1L, testFiles, displayOrders, authentication);
+        ResponseEntity<String> response = fileUploadController.uploadMultipleFiles(1L, testFiles, displayOrders);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -160,7 +156,7 @@ class FileUploadControllerTest {
         when(listingService.getListingById(1L)).thenReturn(testListing);
 
         // Act
-        ResponseEntity<String> response = fileUploadController.uploadMultipleFiles(1L, emptyFiles, displayOrders, authentication);
+        ResponseEntity<String> response = fileUploadController.uploadMultipleFiles(1L, emptyFiles, displayOrders);
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -176,7 +172,7 @@ class FileUploadControllerTest {
         when(listingService.getListingById(1L)).thenReturn(null);
 
         // Act
-        ResponseEntity<String> response = fileUploadController.uploadMultipleFiles(1L, testFiles, displayOrders, authentication);
+        ResponseEntity<String> response = fileUploadController.uploadMultipleFiles(1L, testFiles, displayOrders);
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
@@ -193,7 +189,7 @@ class FileUploadControllerTest {
             .thenThrow(new RuntimeException("Storage error"));
 
         // Act
-        ResponseEntity<String> response = fileUploadController.uploadMultipleFiles(1L, testFiles, displayOrders, authentication);
+        ResponseEntity<String> response = fileUploadController.uploadMultipleFiles(1L, testFiles, displayOrders);
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
@@ -321,7 +317,7 @@ class FileUploadControllerTest {
             .thenThrow(new IllegalArgumentException("File cannot be null"));
 
         // Act
-        ResponseEntity<String> response = fileUploadController.uploadFile(1L, null, 1, authentication);
+        ResponseEntity<String> response = fileUploadController.uploadFile(1L, null, 1);
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
@@ -334,7 +330,7 @@ class FileUploadControllerTest {
         int[] displayOrders = {1};
 
         // Act
-        ResponseEntity<String> response = fileUploadController.uploadMultipleFiles(1L, null, displayOrders, authentication);
+        ResponseEntity<String> response = fileUploadController.uploadMultipleFiles(1L, null, displayOrders);
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
@@ -350,7 +346,7 @@ class FileUploadControllerTest {
             .thenThrow(new RuntimeException("Display orders mismatch"));
 
         // Act
-        ResponseEntity<String> response = fileUploadController.uploadMultipleFiles(1L, testFiles, displayOrders, authentication);
+        ResponseEntity<String> response = fileUploadController.uploadMultipleFiles(1L, testFiles, displayOrders);
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());

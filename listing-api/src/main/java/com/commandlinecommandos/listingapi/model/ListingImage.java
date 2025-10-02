@@ -71,4 +71,23 @@ public class ListingImage {
     public void setDisplayOrder(Integer displayOrder) {
         this.displayOrder = displayOrder;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        ListingImage listingImage = (ListingImage) obj;
+        return imageId.equals(listingImage.imageId);
+    }
+
+    @Override
+    public int hashCode() {
+        return imageId.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "ListingImage [imageId=" + imageId + ", \nimageUrl=" + imageUrl + 
+        ", \naltText=" + altText + ", \ndisplayOrder=" + displayOrder + "]";
+    }
 }

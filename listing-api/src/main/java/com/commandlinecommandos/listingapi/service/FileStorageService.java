@@ -5,6 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -56,6 +57,10 @@ public class FileStorageService {
     }
 
     public List<ListingImage> storeFiles(List<MultipartFile> files, Listing listing, int[] displayOrders) {
+        if (files.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
         if (displayOrders.length != files.size()) {
             throw new FileStorageException("Number of display orders does not match number of files");
         }
@@ -97,7 +102,7 @@ public class FileStorageService {
         try {
             Files.deleteIfExists(Paths.get(listingImage.getImageUrl()));
         } catch (IOException e) {
-            throw new RuntimeException("Could not delete file " + listingImage.getImageUrl(), e);
+            throw new FileStorageException("Could not delete file " + listingImage.getImageUrl() + ". Please try again!", e);
         }
         
         listingImageRepository.delete(listingImage);
