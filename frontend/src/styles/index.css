@@ -1,9 +1,26 @@
-/* Global styles entry */
+
+/* src/styles/index.css - Tailwind v4 global stylesheet */
+@import "tailwindcss";
+
+/* global CSS variables */
 :root {
-  --bg: #ffffff;
+  --font-size: 16px;
+  --radius: 0.625rem;
 }
+
+html {
+  font-size: var(--font-size);
+}
+
+@layer components {
+  /* You’re adding this class to <html> in main.tsx */
+  .app-body {
+    @apply bg-white text-gray-900 antialiased;
+  }
+}
+
+/* keep body reset separate */
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
-  background: var(--bg);
 }
+

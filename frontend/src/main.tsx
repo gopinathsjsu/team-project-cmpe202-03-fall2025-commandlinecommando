@@ -4,6 +4,9 @@ import { createRoot } from 'react-dom/client'
 import App from './App'
 import './styles/index.css'
 
+// add global class so @layer components .app-body applies
+document.documentElement.classList.add('app-body')
+
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />
