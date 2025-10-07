@@ -1,15 +1,14 @@
 package com.commandlinecommandos.campusmarketplace.security;
 
-import com.github.bucket4j.Bucket;
 import com.commandlinecommandos.campusmarketplace.config.RateLimitingConfig;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -21,12 +20,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Aspect
 @Component
+@ConditionalOnProperty(name = "rate.limiting.enabled", havingValue = "true", matchIfMissing = true)
 public class RateLimitingAspect {
 
     private static final Logger logger = LoggerFactory.getLogger(RateLimitingAspect.class);
     
     @Autowired
-    private Map<String, Bucket> rateLimitBuckets;
+    private Map<String, RateLimitingConfig.RateLimitData> rateLimitBuckets;
 
     @Around("@annotation(org.springframework.web.bind.annotation.PostMapping) && " +
             "(execution(* com.commandlinecommandos.campusmarketplace.controller.AuthController.login(..)) || " +
@@ -41,9 +41,9 @@ public class RateLimitingAspect {
         String clientIp = getClientIpAddress(request);
         String bucketKey = "auth_" + clientIp;
 
-        Bucket bucket = rateLimitBuckets.computeIfAbsent(bucketKey, k -> RateLimitingConfig.createAuthRateLimiter());
+        RateLimitingConfig.RateLimitData rateLimiter = rateLimitBuckets.computeIfAbsent(bucketKey, k -> RateLimitingConfig.createAuthRateLimiter());
 
-        if (bucket.tryConsume(1)) {
+        if (rateLimiter.tryConsume()) {
             logger.debug("Rate limit check passed for IP: {}", clientIp);
             return joinPoint.proceed();
         } else {
