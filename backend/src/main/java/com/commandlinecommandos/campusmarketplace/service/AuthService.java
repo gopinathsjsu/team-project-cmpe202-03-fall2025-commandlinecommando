@@ -198,7 +198,11 @@ public class AuthService {
             admin.setLastName(registerRequest.getLastName());
             admin.setPhone(registerRequest.getPhone());
             if (registerRequest.getAdminLevel() != null) {
-                admin.setAdminLevel(AdminLevel.valueOf(registerRequest.getAdminLevel()));
+                try {
+                    admin.setAdminLevel(AdminLevel.valueOf(registerRequest.getAdminLevel()));
+                } catch (IllegalArgumentException e) {
+                    throw new BadCredentialsException("Invalid admin level: " + registerRequest.getAdminLevel());
+                }
             }
             user = admin;
         } else {
