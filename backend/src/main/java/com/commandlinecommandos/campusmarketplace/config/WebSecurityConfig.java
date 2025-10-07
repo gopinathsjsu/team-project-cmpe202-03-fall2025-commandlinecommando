@@ -87,7 +87,7 @@ public class WebSecurityConfig {
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         
         // For H2 Console (development only)
-        http.headers(headers -> headers.frameOptions().deny());
+        http.headers(headers -> headers.frameOptions(frameOptions -> frameOptions.deny()));
         
         return http.build();
     }
@@ -95,9 +95,31 @@ public class WebSecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        
+        // Allow specific origins instead of all origins
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+            "http://localhost:3000",           // React development server
+            "http://localhost:3001",           // Alternative React port
+            "http://127.0.0.1:3000",          // Localhost alternative
+            "http://127.0.0.1:3001",          // Localhost alternative
+            "https://campus-marketplace.sjsu.edu",  // Production domain
+            "https://*.sjsu.edu"              // SJSU subdomains
+        ));
+        
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(Arrays.asList(
+            "Authorization", 
+            "Content-Type", 
+            "X-Requested-With", 
+            "Accept", 
+            "Origin", 
+            "Access-Control-Request-Method", 
+            "Access-Control-Request-Headers"
+        ));
+        configuration.setExposedHeaders(Arrays.asList(
+            "Access-Control-Allow-Origin", 
+            "Access-Control-Allow-Credentials"
+        ));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
         

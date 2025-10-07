@@ -16,17 +16,20 @@ import com.commandlinecommandos.campusmarketplace.dto.RegisterRequest;
 import com.commandlinecommandos.campusmarketplace.model.User;
 import com.commandlinecommandos.campusmarketplace.repository.UserRepository;
 import com.commandlinecommandos.campusmarketplace.service.AuthService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import jakarta.validation.Valid;
 import java.util.HashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/auth")
 @Validated
-@CrossOrigin(origins = "*", maxAge = 3600)
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001", "https://campus-marketplace.sjsu.edu"}, maxAge = 3600)
 public class AuthController {
+    
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
     
     @Autowired
     private AuthService authService;
@@ -36,33 +39,41 @@ public class AuthController {
     
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody AuthRequest authRequest) {
+        logger.info("Login attempt for username: {}", authRequest.getUsername());
         try {
             AuthResponse authResponse = authService.login(authRequest);
+            logger.info("Successful login for username: {}", authRequest.getUsername());
             return ResponseEntity.ok(authResponse);
         } catch (BadCredentialsException e) {
+            logger.warn("Authentication failed for username: {} - {}", authRequest.getUsername(), e.getMessage());
             Map<String, String> error = new HashMap<>();
             error.put("error", "Authentication failed");
             error.put("message", e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
         } catch (Exception e) {
+            logger.error("Unexpected error during login for username: {}", authRequest.getUsername(), e);
             Map<String, String> error = new HashMap<>();
             error.put("error", "Internal server error");
-            error.put("message", "An unexpected error occurred");
+            error.put("message", "An unexpected error occurred during login");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
     
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest registerRequest) {
+        logger.info("Registration attempt for username: {} with role: {}", registerRequest.getUsername(), registerRequest.getRole());
         try {
             AuthResponse authResponse = authService.register(registerRequest);
+            logger.info("Successful registration for username: {} with role: {}", registerRequest.getUsername(), registerRequest.getRole());
             return ResponseEntity.ok(authResponse);
         } catch (BadCredentialsException e) {
+            logger.warn("Registration failed for username: {} - {}", registerRequest.getUsername(), e.getMessage());
             Map<String, String> error = new HashMap<>();
             error.put("error", "Registration failed");
             error.put("message", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         } catch (Exception e) {
+            logger.error("Unexpected error during registration for username: {}", registerRequest.getUsername(), e);
             Map<String, String> error = new HashMap<>();
             error.put("error", "Internal server error");
             error.put("message", "An unexpected error occurred during registration");
@@ -72,30 +83,37 @@ public class AuthController {
     
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
+        logger.debug("Token refresh attempt");
         try {
             AuthResponse authResponse = authService.refreshToken(request);
+            logger.debug("Token refresh successful");
             return ResponseEntity.ok(authResponse);
         } catch (BadCredentialsException e) {
+            logger.warn("Token refresh failed - {}", e.getMessage());
             Map<String, String> error = new HashMap<>();
             error.put("error", "Token refresh failed");
             error.put("message", e.getMessage());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
         } catch (Exception e) {
+            logger.error("Unexpected error during token refresh", e);
             Map<String, String> error = new HashMap<>();
             error.put("error", "Internal server error");
-            error.put("message", "An unexpected error occurred");
+            error.put("message", "An unexpected error occurred during token refresh");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
     
     @PostMapping("/logout")
     public ResponseEntity<?> logout(@Valid @RequestBody RefreshTokenRequest request) {
+        logger.debug("Logout attempt");
         try {
             authService.logout(request.getRefreshToken());
+            logger.debug("Logout successful");
             Map<String, String> response = new HashMap<>();
             response.put("message", "Logged out successfully");
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            logger.error("Error during logout", e);
             Map<String, String> error = new HashMap<>();
             error.put("error", "Logout failed");
             error.put("message", "An error occurred during logout");
@@ -108,6 +126,7 @@ public class AuthController {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+                logger.warn("Logout all devices attempted without authentication");
                 Map<String, String> error = new HashMap<>();
                 error.put("error", "Unauthorized");
                 error.put("message", "User not authenticated");
@@ -115,11 +134,14 @@ public class AuthController {
             }
             
             String username = authentication.getName();
+            logger.info("Logout all devices attempt for username: {}", username);
             authService.logoutAllDevices(username);
+            logger.info("Logout all devices successful for username: {}", username);
             Map<String, String> response = new HashMap<>();
             response.put("message", "Logged out from all devices successfully");
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            logger.error("Error during logout all devices", e);
             Map<String, String> error = new HashMap<>();
             error.put("error", "Logout failed");
             error.put("message", "An error occurred during logout");
@@ -171,9 +193,10 @@ public class AuthController {
                 return ResponseEntity.ok(userInfo);
             }
         } catch (Exception e) {
+            logger.error("Error getting current user", e);
             Map<String, String> error = new HashMap<>();
             error.put("error", "Internal server error");
-            error.put("message", "An unexpected error occurred: " + e.getMessage());
+            error.put("message", "An unexpected error occurred while retrieving user information");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
@@ -195,6 +218,7 @@ public class AuthController {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
             }
         } catch (Exception e) {
+            logger.error("Error validating token", e);
             Map<String, Object> response = new HashMap<>();
             response.put("valid", false);
             response.put("error", "Token validation failed");

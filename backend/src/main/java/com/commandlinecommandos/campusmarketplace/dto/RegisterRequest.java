@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import com.commandlinecommandos.campusmarketplace.model.UserRole;
 
 public class RegisterRequest {
@@ -18,6 +19,8 @@ public class RegisterRequest {
     
     @NotBlank(message = "Password is required")
     @Size(min = 8, message = "Password must be at least 8 characters")
+    @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d@$!%*#?&]{8,}$",
+             message = "Password must be 8+ characters with at least one letter and one number")
     private String password;
     
     @NotBlank(message = "First name is required")
