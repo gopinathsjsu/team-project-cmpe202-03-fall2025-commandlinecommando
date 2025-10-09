@@ -1,5 +1,6 @@
 package com.commandlinecommandos.listingapi.model;
 
+import lombok.extern.slf4j.Slf4j;
 import jakarta.persistence.*;
 import java.util.List;
 import java.math.BigDecimal;
@@ -10,6 +11,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Max;
 
+@Slf4j
 @Entity
 @Table(name = "listings")
 public class Listing {
@@ -157,7 +159,10 @@ public class Listing {
     }
 
     public void markAsSold() {
+        log.info("Marking listing ID: {} as sold - previous status: {}", 
+                this.listingId, this.status);
         setStatus(ListingStatus.SOLD);
+        log.info("Successfully marked listing ID: {} as sold", this.listingId);
     }
     
     public String getLocation() {
@@ -194,7 +199,13 @@ public class Listing {
 
     public void incrementViewCount() {
         if (getStatus() == ListingStatus.ACTIVE) {
-            setViewCount(getViewCount() + 1);
+            int previousCount = getViewCount();
+            setViewCount(previousCount + 1);
+            log.debug("Incremented view count for listing ID: {} from {} to {}", 
+                    this.listingId, previousCount, getViewCount());
+        } else {
+            log.debug("View count not incremented for listing ID: {} - status is not ACTIVE: {}", 
+                    this.listingId, this.status);
         }
     }
     
@@ -207,25 +218,39 @@ public class Listing {
     }
 
     public void addImage(ListingImage image) {
+        log.debug("Adding image to listing ID: {} - image display order: {}", 
+                this.listingId, image.getDisplayOrder());
         this.images.add(image);
         image.setListing(this);
+        log.debug("Successfully added image to listing ID: {} - total images: {}", 
+                this.listingId, this.images.size());
     }
 
     public void addImages(List<ListingImage> images) {
+        log.debug("Adding {} images to listing ID: {}", images.size(), this.listingId);
         for (ListingImage image : images) {
             addImage(image);
         }
+        log.debug("Successfully added {} images to listing ID: {} - total images: {}", 
+                images.size(), this.listingId, this.images.size());
     }
 
     public void removeImage(ListingImage image) {
+        log.debug("Removing image ID: {} from listing ID: {}", 
+                image.getImageId(), this.listingId);
         this.images.remove(image);
         image.setListing(null);
+        log.debug("Successfully removed image from listing ID: {} - remaining images: {}", 
+                this.listingId, this.images.size());
     }
 
     public void removeImages(List<ListingImage> images) {
+        log.debug("Removing {} images from listing ID: {}", images.size(), this.listingId);
         for (ListingImage image : images) {
             removeImage(image);
         }
+        log.debug("Successfully removed {} images from listing ID: {} - remaining images: {}", 
+                images.size(), this.listingId, this.images.size());
     }
 
     @Override

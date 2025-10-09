@@ -1,5 +1,6 @@
 package com.commandlinecommandos.listingapi.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,6 +29,7 @@ import java.util.List;
 import java.math.BigDecimal;
 import jakarta.validation.Valid;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/listings")
 public class ListingController {
@@ -45,8 +47,15 @@ public class ListingController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDirection) {
 
+        log.info("Getting all listings with pagination - page: {}, size: {}, sortBy: {}, sortDirection: {}", 
+                page, size, sortBy, sortDirection);
+        
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
         Page<Listing> listings = listingService.getAllListings(pageable);
+        
+        log.info("Successfully retrieved {} listings (page {} of {})", 
+                listings.getContent().size(), page + 1, listings.getTotalPages());
+        
         return ResponseEntity.ok(listings);
     }
 
@@ -64,8 +73,16 @@ public class ListingController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDirection) {
 
+        log.info("Searching listings with filters - status: {}, keyword: {}, category: {}, condition: {}, " +
+                "minPrice: {}, maxPrice: {}, location: {}, page: {}, size: {}", 
+                status, keyword, category, condition, minPrice, maxPrice, location, page, size);
+        
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
         Page<Listing> listings = listingService.getListingsWithFilters(status, keyword, category, condition, minPrice, maxPrice, location, pageable);
+        
+        log.info("Search completed - found {} listings matching criteria (page {} of {})", 
+                listings.getContent().size(), page + 1, listings.getTotalPages());
+        
         return ResponseEntity.ok(listings);
     }
 
@@ -77,15 +94,28 @@ public class ListingController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDirection) {
 
+        log.info("Getting listings for seller ID: {} with pagination - page: {}, size: {}", 
+                sellerId, page, size);
+        
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
         Page<Listing> listings = listingService.getListingsBySellerId(sellerId, pageable);
+        
+        log.info("Successfully retrieved {} listings for seller ID: {} (page {} of {})", 
+                listings.getContent().size(), sellerId, page + 1, listings.getTotalPages());
+        
         return ResponseEntity.ok(listings);
     }
 
     @GetMapping("/{listingId}")
     public ResponseEntity<?> getListingById(@PathVariable Long listingId) {
+        log.info("Getting listing by ID: {}", listingId);
+        
         Listing listing = listingService.getListingById(listingId);
         listingService.incrementViewCount(listingId);
+        
+        log.info("Successfully retrieved listing ID: {} - title: '{}', seller: {}", 
+                listingId, listing.getTitle(), listing.getSellerId());
+        
         return ResponseEntity.ok(listing);
     }
 
@@ -93,9 +123,16 @@ public class ListingController {
     public ResponseEntity<?> createListing(@Valid @RequestBody CreateListingRequest request) {
         // TODO: retrieve seller id
         Long sellerId = 1L;
+        
+        log.info("Creating new listing - title: '{}', category: {}, condition: {}, price: {}, seller: {}", 
+                request.getTitle(), request.getCategory(), request.getCondition(), request.getPrice(), sellerId);
+        
         Listing createdListing = listingService.createListing(request.getTitle(), request.getDescription(), request.getPrice(),
             request.getCategory(), request.getCondition(), request.getLocation(), sellerId);
 
+        log.info("Successfully created listing ID: {} with title: '{}'", 
+                createdListing.getListingId(), createdListing.getTitle());
+        
         return ResponseEntity.ok(createdListing);
     }
 
@@ -104,13 +141,22 @@ public class ListingController {
             @RequestParam("images") List<MultipartFile> images, @RequestParam("displayOrders") int[] displayOrders) {
         // TODO: retrieve seller id
         Long sellerId = 1L;
+        
+        log.info("Uploading {} images for listing ID: {} by seller: {}", 
+                images.size(), listingId, sellerId);
+        
         if (!listingService.isListingOwner(listingId, sellerId)) {
+            log.warn("Unauthorized image upload attempt - listing ID: {}, seller: {}", listingId, sellerId);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not allowed to upload images for this listing");
         }
 
         Listing listing = listingService.getListingById(listingId);
         List<ListingImage> storedImages = fileStorageService.storeFiles(images, listing, displayOrders);
         Listing updatedListing = listingService.addImagesToListing(listingId, storedImages);
+        
+        log.info("Successfully uploaded {} images for listing ID: {}", 
+                storedImages.size(), listingId);
+        
         return ResponseEntity.ok(updatedListing);
     }
 
@@ -118,12 +164,21 @@ public class ListingController {
     public ResponseEntity<?> updateListing(@PathVariable Long listingId, @Valid @RequestBody UpdateListingRequest request) {
         // TODO: retrieve seller id
         Long sellerId = 1L;
+        
+        log.info("Updating listing ID: {} by seller: {} - title: '{}'", 
+                listingId, sellerId, request.getTitle());
+        
         if (!listingService.isListingOwner(listingId, sellerId)) {
+            log.warn("Unauthorized listing update attempt - listing ID: {}, seller: {}", listingId, sellerId);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not allowed to update this listing");
         }
 
         Listing updatedListing = listingService.updateListing(listingId, request.getTitle(), request.getDescription(), request.getPrice(),
             request.getCategory(), request.getCondition(), request.getLocation(), request.getImages());
+        
+        log.info("Successfully updated listing ID: {} with new title: '{}'", 
+                listingId, updatedListing.getTitle());
+        
         return ResponseEntity.ok(updatedListing);
     }
 
@@ -131,11 +186,18 @@ public class ListingController {
     public ResponseEntity<?> markAsSold(@PathVariable Long listingId) {
         // TODO: retrieve seller id
         Long sellerId = 1L;
+        
+        log.info("Marking listing ID: {} as sold by seller: {}", listingId, sellerId);
+        
         if (!listingService.isListingOwner(listingId, sellerId)) {
+            log.warn("Unauthorized mark as sold attempt - listing ID: {}, seller: {}", listingId, sellerId);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not allowed to mark this listing as sold");
         }
 
         Listing updatedListing = listingService.markAsSold(listingId);
+        
+        log.info("Successfully marked listing ID: {} as sold", listingId);
+        
         return ResponseEntity.ok(updatedListing);
     }
 
@@ -143,11 +205,18 @@ public class ListingController {
     public ResponseEntity<?> cancelListing(@PathVariable Long listingId) {
         // TODO: retrieve seller id
         Long sellerId = 1L;
+        
+        log.info("Cancelling listing ID: {} by seller: {}", listingId, sellerId);
+        
         if (!listingService.isListingOwner(listingId, sellerId)) {
+            log.warn("Unauthorized listing cancellation attempt - listing ID: {}, seller: {}", listingId, sellerId);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not allowed to cancel this listing");
         }
 
         Listing updatedListing = listingService.cancelListing(listingId);
+        
+        log.info("Successfully cancelled listing ID: {}", listingId);
+        
         return ResponseEntity.ok(updatedListing);
     }
 
@@ -155,11 +224,18 @@ public class ListingController {
     public ResponseEntity<String> deleteListing(@PathVariable Long listingId) {
         // TODO: retrieve seller id
         Long sellerId = 1L;
+        
+        log.info("Deleting listing ID: {} by seller: {}", listingId, sellerId);
+        
         if (!listingService.isListingOwner(listingId, sellerId)) {
+            log.warn("Unauthorized listing deletion attempt - listing ID: {}, seller: {}", listingId, sellerId);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not allowed to delete this listing");
         }
 
         listingService.deleteListing(listingId);
+        
+        log.info("Successfully deleted listing ID: {}", listingId);
+        
         return ResponseEntity.ok("Listing deleted successfully");
     }
 
