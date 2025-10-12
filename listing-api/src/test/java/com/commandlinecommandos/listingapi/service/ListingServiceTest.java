@@ -410,7 +410,7 @@ class ListingServiceTest {
         });
 
         // Assert
-        assertEquals("No listings found with filters", exception.getMessage());
+        assertEquals("No listings found matching the specified filters", exception.getMessage());
         verify(listingRepository).findWithFilters(
             ListingStatus.ACTIVE, "test", Category.ELECTRONICS, ItemCondition.GOOD,
             new BigDecimal("50.00"), new BigDecimal("150.00"), "Test Location", testPageable);
@@ -482,7 +482,7 @@ class ListingServiceTest {
         });
 
         // Assert
-        assertEquals("Listing not found with id: 999", exception.getMessage());
+        assertEquals("Error updating listing ID: 999 - error: Listing not found with id: 999", exception.getMessage());
         verify(listingRepository).findById(999L);
         verify(listingRepository, never()).save(any(Listing.class));
     }
@@ -519,7 +519,7 @@ class ListingServiceTest {
         });
 
         // Assert
-        assertEquals("Listing not found with id: 999", exception.getMessage());
+        assertEquals("Error adding images to listing ID: 999 - error: Listing not found with id: 999", exception.getMessage());
         verify(listingRepository).findById(999L);
         verify(listingRepository, never()).save(any(Listing.class));
     }
@@ -552,7 +552,7 @@ class ListingServiceTest {
         });
 
         // Assert
-        assertEquals("Listing not found with id: 999", exception.getMessage());
+        assertEquals("Error marking listing ID: 999 as sold - error: Listing not found with id: 999", exception.getMessage());
         verify(listingRepository).findById(999L);
         verify(listingRepository, never()).save(any(Listing.class));
     }
@@ -585,7 +585,7 @@ class ListingServiceTest {
         });
 
         // Assert
-        assertEquals("Listing not found with id: 999", exception.getMessage());
+        assertEquals("Error cancelling listing ID: 999 - error: Listing not found with id: 999", exception.getMessage());
         verify(listingRepository).findById(999L);
         verify(listingRepository, never()).save(any(Listing.class));
     }
@@ -616,7 +616,7 @@ class ListingServiceTest {
         });
 
         // Assert
-        assertEquals("Listing not found with id: 999", exception.getMessage());
+        assertEquals("Error deleting listing ID: 999 - error: Listing not found with id: 999", exception.getMessage());
         verify(listingRepository).findById(999L);
         verify(listingRepository, never()).delete(any(Listing.class));
     }
@@ -689,7 +689,7 @@ class ListingServiceTest {
         });
 
         // Assert
-        assertEquals("Listing not found with id: 999", exception.getMessage());
+        assertEquals("Error checking listing ownership - listing ID: 999, seller ID: 1 - error: Listing not found with id: 999", exception.getMessage());
         verify(listingRepository).findById(999L);
     }
 
@@ -870,7 +870,7 @@ class ListingServiceTest {
         });
 
         // Assert
-        assertEquals("Listing not found with id: 999", exception.getMessage());
+        assertEquals("Error incrementing view count for listing ID: 999 - error: Listing not found with id: 999", exception.getMessage());
         verify(listingRepository).findById(999L);
         verify(listingRepository, never()).save(any(Listing.class));
     }
