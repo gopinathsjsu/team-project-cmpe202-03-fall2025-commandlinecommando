@@ -194,6 +194,10 @@ public class FileStorageService {
                     if (deleted) {
                         deletedCount++;
                         logger.debug("Deleted file: '{}'", image.getImageUrl());
+                    } else {
+                        // File doesn't exist or couldn't be deleted
+                        logger.error("Could not delete file: '{}' - file may not exist or access denied", image.getImageUrl());
+                        throw new FileStorageException("Could not delete file " + image.getImageUrl() + ". Please try again!", new IOException("File does not exist or cannot be deleted"));
                     }
                 } catch (IOException e) {
                     logger.error("Failed to delete file: '{}' - error: {}", image.getImageUrl(), e.getMessage(), e);

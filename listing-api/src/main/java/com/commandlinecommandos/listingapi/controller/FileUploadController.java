@@ -37,6 +37,11 @@ public class FileUploadController {
             @RequestParam("file") MultipartFile file,
             @RequestParam("displayOrder") int displayOrder) {
 
+        if (file == null) {
+            logger.warn("Null file provided for upload to listing ID: {}", listingId);
+            return ResponseEntity.badRequest().body("File cannot be null");
+        }
+
         logger.info("Received file upload request - listing ID: {}, filename: '{}', size: {} bytes, displayOrder: {}", 
                    listingId, file.getOriginalFilename(), file.getSize(), displayOrder);
         
@@ -74,6 +79,11 @@ public class FileUploadController {
             @PathVariable Long listingId,
             @RequestParam("files") List<MultipartFile> files,
             @RequestParam("displayOrders") int[] displayOrders) {
+
+        if (files == null) {
+            logger.warn("Null files list provided for upload to listing ID: {}", listingId);
+            return ResponseEntity.badRequest().body("Files cannot be null");
+        }
 
         logger.info("Received multiple file upload request - listing ID: {}, fileCount: {}, totalSize: {} bytes", 
                    listingId, files.size(), files.stream().mapToLong(f -> f.getSize()).sum());
