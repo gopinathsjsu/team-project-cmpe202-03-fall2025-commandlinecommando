@@ -198,6 +198,30 @@ public class ReportService {
         }
     }
 
+    public Page<Report> searchReports(ReportStatus status, Long reporterId, Long listingId, ReportType reportType, Long reviewedBy, Pageable pageable) {
+        logger.debug("Searching reports - status: {}, reporterId: {}, listingId: {}, reportType: {}, reviewedBy: {}, page: {}, size: {}", 
+                   status, reporterId, listingId, reportType, reviewedBy, pageable.getPageNumber(), pageable.getPageSize());
+        
+        try {
+            Page<Report> reports = reportRepository.findWithFilters(status, reportType, reporterId, listingId, pageable)
+                .orElseThrow(() -> new ReportException("No reports found with the specified filters"));
+            
+            logger.info("Successfully searched reports - found {} reports (page {}/{} with {} total elements)", 
+                       reports.getNumberOfElements(), pageable.getPageNumber() + 1, 
+                       reports.getTotalPages(), reports.getTotalElements());
+            
+            return reports;
+        } catch (ReportException e) {
+            logger.warn("No reports found with the specified filters: status={}, reporterId={}, listingId={}, reportType={}, reviewedBy={}", 
+                        status, reporterId, listingId, reportType, reviewedBy);
+            throw e;
+        } catch (Exception e) {
+            logger.error("Error searching reports - filters: status={}, reporterId={}, listingId={}, reportType={}, reviewedBy={}, error: {}", 
+                        status, reporterId, listingId, reportType, reviewedBy, e.getMessage(), e);
+            throw new ReportException("Error searching reports - filters: status=" + status + ", reporterId=" + reporterId + ", listingId=" + listingId + ", reportType=" + reportType + ", reviewedBy=" + reviewedBy + ", error: " + e.getMessage(), e);
+        }
+    }
+
     public Page<Report> getPendingReports(Pageable pageable) {
         logger.debug("Retrieving pending reports - page: {}, size: {}", 
                    pageable.getPageNumber(), pageable.getPageSize());

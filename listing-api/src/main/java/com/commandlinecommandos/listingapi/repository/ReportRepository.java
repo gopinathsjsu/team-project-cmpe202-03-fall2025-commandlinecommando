@@ -33,6 +33,12 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
     @Query("SELECT r FROM Report r WHERE r.status = 'PENDING' ORDER BY r.createdAt ASC")
     Optional<Page<Report>> findPendingReportsOrderByCreatedAtAsc(Pageable pageable);
 
+    @Query("SELECT r FROM Report r WHERE r.status = :status AND " +
+           "(:reportType IS NULL OR r.reportType = :reportType) AND " +
+           "(:reporterId IS NULL OR r.reporterId = :reporterId) AND " +
+           "(:listingId IS NULL OR r.listingId = :listingId)")
+    Optional<Page<Report>> findWithFilters(ReportStatus status, ReportType reportType, Long reporterId, Long listingId, Pageable pageable);
+
     @Query("SELECT COUNT(r) FROM Report r WHERE r.status = :status")
     Long countByStatus(@Param("status") ReportStatus status);
 

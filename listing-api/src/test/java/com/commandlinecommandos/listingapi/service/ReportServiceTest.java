@@ -781,4 +781,363 @@ class ReportServiceTest {
         verify(reportRepository).findById(1L);
         verify(reportRepository).save(any(Report.class));
     }
+
+    // Test searchReports method
+    @Test
+    void testSearchReports_Success_WithAllFilters() {
+        // Arrange
+        List<Report> reports = Arrays.asList(testReport);
+        Page<Report> expectedPage = new PageImpl<>(reports);
+        when(reportRepository.findWithFilters(ReportStatus.PENDING, ReportType.INAPPROPRIATE_CONTENT, 100L, 200L, testPageable))
+            .thenReturn(Optional.of(expectedPage));
+
+        // Act
+        Page<Report> result = reportService.searchReports(
+            ReportStatus.PENDING,
+            100L,
+            200L,
+            ReportType.INAPPROPRIATE_CONTENT,
+            300L,
+            testPageable
+        );
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
+        assertEquals(testReport, result.getContent().get(0));
+        verify(reportRepository).findWithFilters(ReportStatus.PENDING, ReportType.INAPPROPRIATE_CONTENT, 100L, 200L, testPageable);
+    }
+
+    @Test
+    void testSearchReports_Success_WithOnlyStatus() {
+        // Arrange
+        List<Report> reports = Arrays.asList(testReport);
+        Page<Report> expectedPage = new PageImpl<>(reports);
+        when(reportRepository.findWithFilters(ReportStatus.PENDING, null, null, null, testPageable))
+            .thenReturn(Optional.of(expectedPage));
+
+        // Act
+        Page<Report> result = reportService.searchReports(
+            ReportStatus.PENDING,
+            null,
+            null,
+            null,
+            null,
+            testPageable
+        );
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
+        assertEquals(testReport, result.getContent().get(0));
+        verify(reportRepository).findWithFilters(ReportStatus.PENDING, null, null, null, testPageable);
+    }
+
+    @Test
+    void testSearchReports_Success_WithStatusAndReportType() {
+        // Arrange
+        List<Report> reports = Arrays.asList(testReport);
+        Page<Report> expectedPage = new PageImpl<>(reports);
+        when(reportRepository.findWithFilters(ReportStatus.UNDER_REVIEW, ReportType.SPAM, null, null, testPageable))
+            .thenReturn(Optional.of(expectedPage));
+
+        // Act
+        Page<Report> result = reportService.searchReports(
+            ReportStatus.UNDER_REVIEW,
+            null,
+            null,
+            ReportType.SPAM,
+            null,
+            testPageable
+        );
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
+        assertEquals(testReport, result.getContent().get(0));
+        verify(reportRepository).findWithFilters(ReportStatus.UNDER_REVIEW, ReportType.SPAM, null, null, testPageable);
+    }
+
+    @Test
+    void testSearchReports_Success_WithStatusAndReporterId() {
+        // Arrange
+        List<Report> reports = Arrays.asList(testReport);
+        Page<Report> expectedPage = new PageImpl<>(reports);
+        when(reportRepository.findWithFilters(ReportStatus.RESOLVED, null, 150L, null, testPageable))
+            .thenReturn(Optional.of(expectedPage));
+
+        // Act
+        Page<Report> result = reportService.searchReports(
+            ReportStatus.RESOLVED,
+            150L,
+            null,
+            null,
+            null,
+            testPageable
+        );
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
+        assertEquals(testReport, result.getContent().get(0));
+        verify(reportRepository).findWithFilters(ReportStatus.RESOLVED, null, 150L, null, testPageable);
+    }
+
+    @Test
+    void testSearchReports_Success_WithStatusAndListingId() {
+        // Arrange
+        List<Report> reports = Arrays.asList(testReport);
+        Page<Report> expectedPage = new PageImpl<>(reports);
+        when(reportRepository.findWithFilters(ReportStatus.DISMISSED, null, null, 250L, testPageable))
+            .thenReturn(Optional.of(expectedPage));
+
+        // Act
+        Page<Report> result = reportService.searchReports(
+            ReportStatus.DISMISSED,
+            null,
+            250L,
+            null,
+            null,
+            testPageable
+        );
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
+        assertEquals(testReport, result.getContent().get(0));
+        verify(reportRepository).findWithFilters(ReportStatus.DISMISSED, null, null, 250L, testPageable);
+    }
+
+    @Test
+    void testSearchReports_Success_WithMultipleFilters() {
+        // Arrange
+        List<Report> reports = Arrays.asList(testReport);
+        Page<Report> expectedPage = new PageImpl<>(reports);
+        when(reportRepository.findWithFilters(ReportStatus.PENDING, ReportType.FAKE_LISTING, 100L, null, testPageable))
+            .thenReturn(Optional.of(expectedPage));
+
+        // Act
+        Page<Report> result = reportService.searchReports(
+            ReportStatus.PENDING,
+            100L,
+            null,
+            ReportType.FAKE_LISTING,
+            null,
+            testPageable
+        );
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
+        assertEquals(testReport, result.getContent().get(0));
+        verify(reportRepository).findWithFilters(ReportStatus.PENDING, ReportType.FAKE_LISTING, 100L, null, testPageable);
+    }
+
+    @Test
+    void testSearchReports_NoResultsFound() {
+        // Arrange
+        when(reportRepository.findWithFilters(ReportStatus.RESOLVED, null, null, null, testPageable))
+            .thenReturn(Optional.empty());
+
+        // Act
+        ReportException exception = assertThrows(ReportException.class, () -> {
+            reportService.searchReports(
+                ReportStatus.RESOLVED,
+                null,
+                null,
+                null,
+                null,
+                testPageable
+            );
+        });
+
+        // Assert
+        assertEquals("No reports found with the specified filters", exception.getMessage());
+        verify(reportRepository).findWithFilters(ReportStatus.RESOLVED, null, null, null, testPageable);
+    }
+
+    @Test
+    void testSearchReports_RepositoryException() {
+        // Arrange
+        RuntimeException repositoryException = new RuntimeException("Database connection error");
+        when(reportRepository.findWithFilters(ReportStatus.PENDING, null, null, null, testPageable))
+            .thenThrow(repositoryException);
+
+        // Act
+        ReportException exception = assertThrows(ReportException.class, () -> {
+            reportService.searchReports(
+                ReportStatus.PENDING,
+                null,
+                null,
+                null,
+                null,
+                testPageable
+            );
+        });
+
+        // Assert
+        assertTrue(exception.getMessage().contains("Error searching reports"));
+        assertTrue(exception.getMessage().contains("Database connection error"));
+        assertTrue(exception.getMessage().contains("status=PENDING, reporterId=null, listingId=null, reportType=null, reviewedBy=null"));
+        verify(reportRepository).findWithFilters(ReportStatus.PENDING, null, null, null, testPageable);
+    }
+
+    @Test
+    void testSearchReports_WithAllReportTypes() {
+        // Test with all possible report types
+        ReportType[] types = {ReportType.SPAM, ReportType.INAPPROPRIATE_CONTENT, ReportType.FAKE_LISTING,
+                ReportType.HARASSMENT, ReportType.COPYRIGHT_VIOLATION, ReportType.PRICE_MANIPULATION, ReportType.OTHER};
+        
+        for (ReportType type : types) {
+            // Arrange
+            List<Report> reports = Arrays.asList(testReport);
+            Page<Report> expectedPage = new PageImpl<>(reports);
+            when(reportRepository.findWithFilters(ReportStatus.PENDING, type, null, null, testPageable))
+                .thenReturn(Optional.of(expectedPage));
+
+            // Act
+            Page<Report> result = reportService.searchReports(
+                ReportStatus.PENDING,
+                null,
+                null,
+                type,
+                null,
+                testPageable
+            );
+
+            // Assert
+            assertNotNull(result);
+            assertEquals(1, result.getTotalElements());
+            verify(reportRepository).findWithFilters(ReportStatus.PENDING, type, null, null, testPageable);
+        }
+    }
+
+    @Test
+    void testSearchReports_WithAllStatusTypes() {
+        // Test with all possible status types
+        ReportStatus[] statuses = {ReportStatus.PENDING, ReportStatus.UNDER_REVIEW, ReportStatus.RESOLVED, ReportStatus.DISMISSED};
+        
+        for (ReportStatus status : statuses) {
+            // Arrange
+            List<Report> reports = Arrays.asList(testReport);
+            Page<Report> expectedPage = new PageImpl<>(reports);
+            when(reportRepository.findWithFilters(status, null, null, null, testPageable))
+                .thenReturn(Optional.of(expectedPage));
+
+            // Act
+            Page<Report> result = reportService.searchReports(
+                status,
+                null,
+                null,
+                null,
+                null,
+                testPageable
+            );
+
+            // Assert
+            assertNotNull(result);
+            assertEquals(1, result.getTotalElements());
+            verify(reportRepository).findWithFilters(status, null, null, null, testPageable);
+        }
+    }
+
+    @Test
+    void testSearchReports_WithLargePageSize() {
+        // Arrange
+        Pageable largePageable = PageRequest.of(0, 100);
+        List<Report> reports = Arrays.asList(testReport);
+        Page<Report> expectedPage = new PageImpl<>(reports);
+        when(reportRepository.findWithFilters(ReportStatus.PENDING, null, null, null, largePageable))
+            .thenReturn(Optional.of(expectedPage));
+
+        // Act
+        Page<Report> result = reportService.searchReports(
+            ReportStatus.PENDING,
+            null,
+            null,
+            null,
+            null,
+            largePageable
+        );
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.getTotalElements());
+        verify(reportRepository).findWithFilters(ReportStatus.PENDING, null, null, null, largePageable);
+    }
+
+    @Test
+    void testSearchReports_WithSecondPage() {
+        // Arrange
+        Pageable secondPagePageable = PageRequest.of(1, 10);
+        List<Report> reports = Arrays.asList(testReport);
+        Page<Report> expectedPage = new PageImpl<>(reports, secondPagePageable, 25); // 25 total elements
+        when(reportRepository.findWithFilters(ReportStatus.PENDING, null, null, null, secondPagePageable))
+            .thenReturn(Optional.of(expectedPage));
+
+        // Act
+        Page<Report> result = reportService.searchReports(
+            ReportStatus.PENDING,
+            null,
+            null,
+            null,
+            null,
+            secondPagePageable
+        );
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(25, result.getTotalElements());
+        assertEquals(1, result.getNumber()); // Page 1 (0-indexed)
+        assertEquals(3, result.getTotalPages()); // 25 elements / 10 per page = 3 pages
+        verify(reportRepository).findWithFilters(ReportStatus.PENDING, null, null, null, secondPagePageable);
+    }
+
+    @Test
+    void testSearchReports_WithEmptyResults() {
+        // Arrange
+        List<Report> emptyReports = new ArrayList<>();
+        Page<Report> expectedPage = new PageImpl<>(emptyReports);
+        when(reportRepository.findWithFilters(ReportStatus.PENDING, ReportType.SPAM, 999L, null, testPageable))
+            .thenReturn(Optional.of(expectedPage));
+
+        // Act
+        Page<Report> result = reportService.searchReports(
+            ReportStatus.PENDING,
+            999L,
+            null,
+            ReportType.SPAM,
+            null,
+            testPageable
+        );
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(0, result.getTotalElements());
+        assertTrue(result.getContent().isEmpty());
+        verify(reportRepository).findWithFilters(ReportStatus.PENDING, ReportType.SPAM, 999L, null, testPageable);
+    }
+
+    @Test
+    void testSearchReports_WithZeroResultsAndEmptyOptional() {
+        // Arrange
+        when(reportRepository.findWithFilters(ReportStatus.RESOLVED, ReportType.FAKE_LISTING, 100L, 200L, testPageable))
+            .thenReturn(Optional.empty());
+
+        // Act
+        ReportException exception = assertThrows(ReportException.class, () -> {
+            reportService.searchReports(
+                ReportStatus.RESOLVED,
+                100L,
+                200L,
+                ReportType.FAKE_LISTING,
+                null,
+                testPageable
+            );
+        });
+
+        // Assert
+        assertEquals("No reports found with the specified filters", exception.getMessage());
+        verify(reportRepository).findWithFilters(ReportStatus.RESOLVED, ReportType.FAKE_LISTING, 100L, 200L, testPageable);
+    }
 }
