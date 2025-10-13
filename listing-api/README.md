@@ -13,6 +13,7 @@ The Listing API is part of the Campus Marketplace application, providing compreh
 - Seller-specific listing management
 - View count tracking
 - Report Management System - Complete reporting and moderation functionality
+- Report Management System - Complete reporting and moderation functionality
 
 ## Features
 
@@ -45,14 +46,6 @@ The Listing API is part of the Campus Marketplace application, providing compreh
 - **Advanced Search**: Filter reports by status, type, reporter, listing, and reviewer
 - **Dashboard Statistics**: Report counts and analytics for admin dashboards
 
-### Error Handling & Validation
-- **Global Exception Handler**: Comprehensive centralized error handling using `@ControllerAdvice`
-- **Consistent Error Responses**: Standardized `ErrorResponse` format across all endpoints
-- **Comprehensive Coverage**: Handles business exceptions, validation errors, HTTP errors, and file upload errors
-- **Detailed Validation**: Field-level validation error messages with Jakarta Validation
-- **Security**: Prevents sensitive information leakage in error responses
-- **Developer-Friendly**: Includes request path and timestamp for debugging
-
 ### Data Models
 
 #### Listing
@@ -82,10 +75,24 @@ The Listing API is part of the Campus Marketplace application, providing compreh
 - `reviewedBy`: ID of the admin who reviewed the report
 - `reviewedAt`: Timestamp when report was reviewed
 
+#### Report
+- `reportId`: Unique identifier
+- `reporterId`: ID of the user who submitted the report
+- `listingId`: ID of the reported listing
+- `reportType`: Type of report (enum)
+- `description`: Detailed description of the issue
+- `status`: Current report status (enum)
+- `createdAt`: Creation timestamp
+- `updatedAt`: Last update timestamp
+- `reviewedBy`: ID of the admin who reviewed the report
+- `reviewedAt`: Timestamp when report was reviewed
+
 #### Enums
 - **Category**: TEXTBOOKS, GADGETS, ELECTRONICS, STATIONARY, OTHER
 - **ItemCondition**: NEW, LIKE_NEW, GOOD, USED
 - **ListingStatus**: PENDING, ACTIVE, SOLD, CANCELLED
+- **ReportType**: INAPPROPRIATE_CONTENT, SPAM, FAKE_LISTING, HARASSMENT, COPYRIGHT_VIOLATION, OTHER
+- **ReportStatus**: PENDING, UNDER_REVIEW, RESOLVED, DISMISSED
 - **ReportType**: INAPPROPRIATE_CONTENT, SPAM, FAKE_LISTING, HARASSMENT, COPYRIGHT_VIOLATION, OTHER
 - **ReportStatus**: PENDING, UNDER_REVIEW, RESOLVED, DISMISSED
 
@@ -373,6 +380,94 @@ DELETE /api/reports/{reportId}
 GET /api/reports/count
 ```
 
+#### Report Management
+
+**Get All Reports**
+```
+GET /api/reports
+```
+Parameters: `page`, `size`, `sortBy`, `sortDirection`
+
+**Search Reports**
+```
+GET /api/reports/search
+```
+Parameters: `status`, `reporterId`, `listingId`, `reportType`, `reviewedBy`, pagination options
+
+**Get Pending Reports**
+```
+GET /api/reports/pending
+```
+
+**Get Reports by Reporter**
+```
+GET /api/reports/reporter/{reporterId}
+```
+
+**Get Reports by Listing**
+```
+GET /api/reports/listing/{listingId}
+```
+
+**Get Reports by Type**
+```
+GET /api/reports/type/{reportType}
+```
+
+**Get Reports by Status**
+```
+GET /api/reports/status/{status}
+```
+
+**Get Report by ID**
+```
+GET /api/reports/{reportId}
+```
+
+**Create Report**
+```
+POST /api/reports/
+```
+Request Body:
+```json
+{
+  "reporterId": 123,
+  "listingId": 456,
+  "reportType": "INAPPROPRIATE_CONTENT",
+  "description": "Description of the issue"
+}
+```
+
+**Update Report**
+```
+PUT /api/reports/{reportId}
+```
+
+**Mark Report as Reviewed**
+```
+PUT /api/reports/{reportId}/review
+```
+
+**Mark Report as Resolved**
+```
+PUT /api/reports/{reportId}/resolve
+```
+
+**Mark Report as Dismissed**
+```
+PUT /api/reports/{reportId}/dismiss
+```
+
+**Delete Report**
+```
+DELETE /api/reports/{reportId}
+```
+
+**Get Report Counts**
+```
+GET /api/reports/count
+```
+
 ## Development
 
 ### Project Structure
@@ -383,7 +478,15 @@ src/main/java/com/commandlinecommandos/listingapi/
 │   ├── FileUploadController.java
 │   ├── ReportController.java
 │   └── TestController.java
+│   ├── ListingController.java
+│   ├── FileUploadController.java
+│   ├── ReportController.java
+│   └── TestController.java
 ├── model/              # Entity models and enums
+│   ├── Listing.java
+│   ├── ListingImage.java
+│   ├── Report.java
+│   └── enums/
 │   ├── Listing.java
 │   ├── ListingImage.java
 │   ├── Report.java
@@ -391,7 +494,12 @@ src/main/java/com/commandlinecommandos/listingapi/
 ├── repository/         # Data access layer
 │   ├── ListingRepository.java
 │   └── ReportRepository.java
+│   ├── ListingRepository.java
+│   └── ReportRepository.java
 ├── service/            # Business logic layer
+│   ├── ListingService.java
+│   ├── FileStorageService.java
+│   └── ReportService.java
 │   ├── ListingService.java
 │   ├── FileStorageService.java
 │   └── ReportService.java
@@ -438,7 +546,9 @@ ENTRYPOINT ["java", "-jar", "/app.jar"]
 ### Database Integration
 The listing-api integrates with the main campus marketplace database schema:
 - Uses the `listings` table for listing management
+- Uses the `listings` table for listing management
 - References `listing_images` table for image storage
+- Uses the `reports` table for report management
 - Uses the `reports` table for report management
 - Compatible with existing database migrations
 
