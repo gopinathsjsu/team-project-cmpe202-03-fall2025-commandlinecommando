@@ -31,18 +31,27 @@ cd backend
 
 # Production mode (PostgreSQL)
 ./mvnw spring-boot:run -Dspring.profiles.active=prod
+
+# Listing API microservice
+cd listing-api
+./mvnw spring-boot:run
 ```
 
 ### Access Services
-- **Application**: http://localhost:8080/api
+- **Main Application**: http://localhost:8080/api
+- **Listing API**: http://localhost:8100/api
 - **pgAdmin**: http://localhost:8080 (database management)
 - **H2 Console**: http://localhost:8080/api/h2-console (development only)
 
 ## Project Structure
 
 ```
-├── backend/                 # Spring Boot application
+├── backend/                 # Main Spring Boot application
 │   ├── src/main/java/      # Application source code
+│   ├── src/main/resources/ # Configuration files
+│   └── pom.xml            # Maven dependencies
+├── listing-api/            # Listing Management microservice
+│   ├── src/main/java/      # Listing API source code
 │   ├── src/main/resources/ # Configuration files
 │   └── pom.xml            # Maven dependencies
 ├── frontend/               # React/Vite frontend
@@ -50,6 +59,7 @@ cd backend
 │   ├── scripts/           # Backup, monitoring, and utility scripts
 │   ├── docs/             # Database documentation
 │   └── migrations/       # Database schema changes
+├── documentation/         # Project documentation
 ├── docker-compose.yml    # PostgreSQL, pgAdmin, Redis services
 ├── setup-database.sh     # Database quick start script
 └── .env.template        # Environment variables template
@@ -71,11 +81,15 @@ cd backend
 - **Performance monitoring** and optimization
 
 ### 🚀 Application Features
-- JWT-based authentication and authorization
-- Role-based access control (Student, Admin)
-- File upload support for product images
-- RESTful API with comprehensive error handling
-- Session management with Redis support
+- **JWT-based authentication and authorization**
+- **Role-based access control** (Student, Admin)
+- **File upload support** for product images
+- **RESTful API** with comprehensive error handling
+- **Session management** with Redis support
+- **Advanced Listing Management** with search and filtering
+- **Report Management System** for content moderation
+- **Image Management** with multiple upload support
+- **Admin Dashboard** with report analytics
 
 ## Database Management
 
@@ -120,6 +134,9 @@ cd backend
 - **Authorization**: Role-based access control
 - **File Upload**: Multi-part file upload support
 - **Error Handling**: Comprehensive error responses
+- **Listing Management**: Full CRUD operations with advanced search
+- **Report Management**: Complete moderation system with admin tools
+- **Image Management**: Multiple image upload and organization
 
 ## Security Features
 
