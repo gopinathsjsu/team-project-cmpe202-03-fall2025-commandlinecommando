@@ -17,6 +17,7 @@ import com.commandlinecommandos.listingapi.model.Report;
 import com.commandlinecommandos.listingapi.model.ReportStatus;
 import com.commandlinecommandos.listingapi.model.ReportType;
 import com.commandlinecommandos.listingapi.service.ReportService;
+import com.commandlinecommandos.listingapi.service.ListingService;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -32,6 +33,9 @@ public class ReportController {
 
     @Autowired
     private ReportService reportService;
+    
+    @Autowired
+    private ListingService listingService;
 
     @GetMapping
     public ResponseEntity<Page<?>> getAllReports(
@@ -302,6 +306,18 @@ public class ReportController {
             Report updatedReport = reportService.markAsResolved(reportId);
             logger.info("Successfully marked report ID: {} as resolved - status changed to: {}", 
                        reportId, updatedReport.getStatus());
+            
+            // Mark the associated listing as cancelled when report is resolved
+            try {
+                listingService.cancelListing(updatedReport.getListingId());
+                logger.info("Successfully cancelled listing ID: {} due to resolved report ID: {}", 
+                           updatedReport.getListingId(), reportId);
+            } catch (Exception listingException) {
+                logger.warn("Failed to cancel listing ID: {} when resolving report ID: {} - error: {}", 
+                           updatedReport.getListingId(), reportId, listingException.getMessage());
+                // Don't fail the report resolution if listing cancellation fails
+                // The report is still resolved successfully
+            }
             
             return ResponseEntity.ok(updatedReport);
         } catch (Exception e) {
