@@ -45,6 +45,14 @@ The Listing API is part of the Campus Marketplace application, providing compreh
 - **Advanced Search**: Filter reports by status, type, reporter, listing, and reviewer
 - **Dashboard Statistics**: Report counts and analytics for admin dashboards
 
+### Error Handling & Validation
+- **Global Exception Handler**: Comprehensive centralized error handling using `@ControllerAdvice`
+- **Consistent Error Responses**: Standardized `ErrorResponse` format across all endpoints
+- **Comprehensive Coverage**: Handles business exceptions, validation errors, HTTP errors, and file upload errors
+- **Detailed Validation**: Field-level validation error messages with Jakarta Validation
+- **Security**: Prevents sensitive information leakage in error responses
+- **Developer-Friendly**: Includes request path and timestamp for debugging
+
 ### Data Models
 
 #### Listing
@@ -171,6 +179,9 @@ http://localhost:8100/api
 
 ### Authentication
 Currently, the API uses placeholder authentication. In production, integrate with the main authentication service to retrieve actual user IDs.
+
+### Error Handling
+All API endpoints return consistent error responses using the global exception handler. See the [API Documentation](API_DOCUMENTATION.md#error-responses) for detailed error response formats and examples.
 
 ### Endpoints
 

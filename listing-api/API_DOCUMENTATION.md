@@ -14,7 +14,7 @@ http://localhost:8100/api
 ## Response Format
 All API responses follow a consistent format:
 - **Success**: Returns data directly or wrapped in pagination object
-- **Error**: Returns error message with appropriate HTTP status code
+- **Error**: Returns structured error response with consistent format using the global exception handler
 
 ## Endpoints
 
@@ -848,41 +848,193 @@ curl -X GET "http://localhost:8100/api/reports/count"
 
 ## Error Responses
 
+The API uses a comprehensive global exception handler (`GlobalExceptionHandler`) that provides consistent error responses across all endpoints. All errors are returned in a standardized `ErrorResponse` format.
+
 ### Common Error Codes
 
 | Status Code | Description |
 |-------------|-------------|
-| 400 | Bad Request - Invalid input data |
+| 400 | Bad Request - Invalid input data, validation errors, malformed JSON |
 | 401 | Unauthorized - Authentication required |
-| 403 | Forbidden - Insufficient permissions |
-| 404 | Not Found - Resource not found |
-| 500 | Internal Server Error - Server error |
+| 403 | Forbidden - Insufficient permissions, unauthorized access |
+| 404 | Not Found - Resource not found, endpoint not found |
+| 405 | Method Not Allowed - HTTP method not supported for endpoint |
+| 413 | Payload Too Large - File upload size exceeded |
+| 500 | Internal Server Error - Server error, unexpected exceptions |
 
 ### Error Response Format
+All error responses follow this consistent structure:
 ```json
 {
-  "timestamp": "2024-01-15T12:00:00.000+00:00",
+  "error": "ERROR_CODE",
+  "message": "Human-readable error message",
   "status": 400,
-  "error": "Bad Request",
-  "message": "Validation failed for argument",
+  "timestamp": "2024-01-15T12:00:00",
+  "path": "/api/listings/",
+  "validationErrors": ["field: error message", "field2: error message"]
+}
+```
+
+### Field Descriptions
+- `error`: Machine-readable error code for programmatic handling
+- `message`: Human-readable error description
+- `status`: HTTP status code
+- `timestamp`: When the error occurred (auto-generated)
+- `path`: The API endpoint where the error occurred
+- `validationErrors`: Array of validation error details (only present for validation errors)
+
+### Custom Business Exception Examples
+
+#### Listing Not Found
+```json
+{
+  "error": "LISTING_NOT_FOUND",
+  "message": "Listing with ID 999 not found",
+  "status": 404,
+  "timestamp": "2024-01-15T12:00:00",
+  "path": "/api/listings/999"
+}
+```
+
+#### Unauthorized Access
+```json
+{
+  "error": "UNAUTHORIZED_ACCESS",
+  "message": "You do not have permission to access this listing",
+  "status": 403,
+  "timestamp": "2024-01-15T12:00:00",
+  "path": "/api/listings/1"
+}
+```
+
+#### File Upload Error
+```json
+{
+  "error": "FILE_UPLOAD_ERROR",
+  "message": "Failed to upload file: Invalid file type",
+  "status": 400,
+  "timestamp": "2024-01-15T12:00:00",
+  "path": "/api/files/upload/1"
+}
+```
+
+### Validation Error Examples
+
+#### Method Argument Validation
+```json
+{
+  "error": "VALIDATION_ERROR",
+  "message": "Request validation failed",
+  "status": 400,
+  "timestamp": "2024-01-15T12:00:00",
+  "path": "/api/listings/",
+  "validationErrors": [
+    "title: Title must be between 2 and 255 characters",
+    "price: Price must be positive"
+  ]
+}
+```
+
+#### Constraint Violation
+```json
+{
+  "error": "CONSTRAINT_VIOLATION",
+  "message": "Constraint validation failed",
+  "status": 400,
+  "timestamp": "2024-01-15T12:00:00",
+  "path": "/api/listings/",
+  "validationErrors": [
+    "Category must be one of: TEXTBOOKS, GADGETS, ELECTRONICS, STATIONARY, OTHER"
+  ]
+}
+```
+
+### HTTP-Related Error Examples
+
+#### Malformed JSON
+```json
+{
+  "error": "MALFORMED_JSON",
+  "message": "Request body is malformed or contains invalid JSON",
+  "status": 400,
+  "timestamp": "2024-01-15T12:00:00",
   "path": "/api/listings/"
 }
 ```
 
-### Validation Error Example
+#### Missing Parameter
 ```json
 {
-  "timestamp": "2024-01-15T12:00:00.000+00:00",
+  "error": "MISSING_PARAMETER",
+  "message": "Required parameter 'listingId' is missing",
   "status": 400,
-  "error": "Bad Request",
-  "message": "Validation failed for argument",
-  "path": "/api/listings/",
-  "details": {
-    "title": "Title must be between 2 and 255 characters",
-    "price": "Price must be positive"
-  }
+  "timestamp": "2024-01-15T12:00:00",
+  "path": "/api/listings/"
 }
 ```
+
+#### Method Not Allowed
+```json
+{
+  "error": "METHOD_NOT_ALLOWED",
+  "message": "HTTP method 'DELETE' is not supported for this endpoint",
+  "status": 405,
+  "timestamp": "2024-01-15T12:00:00",
+  "path": "/api/listings/"
+}
+```
+
+#### File Too Large
+```json
+{
+  "error": "FILE_TOO_LARGE",
+  "message": "File size exceeds the maximum allowed limit",
+  "status": 413,
+  "timestamp": "2024-01-15T12:00:00",
+  "path": "/api/files/upload/1"
+}
+```
+
+### Global Exception Handler Features
+
+The `GlobalExceptionHandler` provides:
+
+1. **Consistent Error Format**: All errors follow the same `ErrorResponse` structure
+2. **Comprehensive Coverage**: Handles custom business exceptions, validation errors, HTTP errors, and file upload errors
+3. **Detailed Logging**: All exceptions are logged with appropriate log levels
+4. **Proper HTTP Status Codes**: Returns appropriate status codes for different error types
+5. **Validation Error Details**: Provides specific field-level validation error messages
+6. **Security**: Prevents sensitive information leakage in error responses
+7. **Developer-Friendly**: Includes request path and timestamp for debugging
+
+### Error Categories Handled
+
+1. **Custom Business Exceptions**:
+   - `ListingNotFoundException`
+   - `ReportNotFoundException`
+   - `UnauthorizedAccessException`
+   - `FileUploadException`
+   - `FileStorageException`
+   - `ListingException`
+   - `ReportException`
+   - `ValidationException`
+
+2. **Spring Validation Exceptions**:
+   - `MethodArgumentNotValidException`
+   - `BindException`
+   - `ConstraintViolationException`
+
+3. **HTTP-Related Exceptions**:
+   - `HttpMessageNotReadableException`
+   - `MissingServletRequestParameterException`
+   - `MethodArgumentTypeMismatchException`
+   - `HttpRequestMethodNotSupportedException`
+   - `NoHandlerFoundException`
+
+4. **File Upload Exceptions**:
+   - `MaxUploadSizeExceededException`
+
+5. **Generic Exception Handler**: Catches any unexpected exceptions
 
 ## Rate Limiting
 Currently no rate limiting is implemented. Consider implementing rate limiting for production use.
