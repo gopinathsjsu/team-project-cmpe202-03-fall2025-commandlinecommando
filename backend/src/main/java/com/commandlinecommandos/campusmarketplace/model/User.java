@@ -21,7 +21,8 @@ import jakarta.validation.constraints.Email;
 
 /**
  * User entity for Campus Marketplace
- * Supports BUYER, SELLER, and ADMIN roles
+ * Supports STUDENT and ADMIN roles
+ * Students can both buy and sell items with a single role
  * Aligned with PostgreSQL schema using UUID primary keys
  */
 @Entity
@@ -212,12 +213,8 @@ public class User implements UserDetails {
         return this.verificationStatus == VerificationStatus.VERIFIED;
     }
     
-    public boolean isSeller() {
-        return this.role == UserRole.SELLER;
-    }
-    
-    public boolean isBuyer() {
-        return this.role == UserRole.BUYER;
+    public boolean isStudent() {
+        return this.role == UserRole.STUDENT;
     }
     
     public boolean isAdmin() {

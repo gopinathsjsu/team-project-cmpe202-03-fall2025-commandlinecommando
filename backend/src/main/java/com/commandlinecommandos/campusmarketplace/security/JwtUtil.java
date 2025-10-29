@@ -12,6 +12,7 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 @Component
@@ -42,8 +43,9 @@ public class JwtUtil {
         return UserRole.valueOf(extractClaim(token, claims -> claims.get("role", String.class)));
     }
     
-    public Long extractUserId(String token) {
-        return extractClaim(token, claims -> claims.get("userId", Long.class));
+    public UUID extractUserId(String token) {
+        String userIdStr = extractClaim(token, claims -> claims.get("userId", String.class));
+        return userIdStr != null ? UUID.fromString(userIdStr) : null;
     }
     
     public <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
@@ -66,14 +68,14 @@ public class JwtUtil {
     public String generateAccessToken(User user) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", user.getRole().name());
-        claims.put("userId", user.getUserId());
+        claims.put("userId", user.getUserId() != null ? user.getUserId().toString() : null);
         claims.put("email", user.getEmail());
         return createToken(claims, user.getUsername(), accessTokenExpiration);
     }
     
     public String generateRefreshToken(User user) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("userId", user.getUserId());
+        claims.put("userId", user.getUserId() != null ? user.getUserId().toString() : null);
         claims.put("tokenType", "refresh");
         return createToken(claims, user.getUsername(), refreshTokenExpiration);
     }

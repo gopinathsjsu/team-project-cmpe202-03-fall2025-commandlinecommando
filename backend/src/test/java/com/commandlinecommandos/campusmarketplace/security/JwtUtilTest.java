@@ -7,6 +7,8 @@ import org.springframework.test.context.TestPropertySource;
 import com.commandlinecommandos.campusmarketplace.model.User;
 import com.commandlinecommandos.campusmarketplace.model.UserRole;
 
+import java.util.UUID;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
@@ -41,7 +43,7 @@ class JwtUtilTest {
         }
         
         testUser = new User();
-        testUser.setId(1L);
+        testUser.setUserId(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         testUser.setUsername("testuser");
         testUser.setEmail("test@example.com");
         testUser.setRole(UserRole.STUDENT);
@@ -61,8 +63,8 @@ class JwtUtilTest {
         UserRole role = jwtUtil.extractRole(token);
         assertEquals(UserRole.STUDENT, role);
         
-        Long userId = jwtUtil.extractUserId(token);
-        assertEquals(1L, userId);
+        UUID userId = jwtUtil.extractUserId(token);
+        assertEquals(UUID.fromString("00000000-0000-0000-0000-000000000001"), userId);
     }
     
     @Test

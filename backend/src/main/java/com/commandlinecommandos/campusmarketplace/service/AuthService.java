@@ -16,9 +16,6 @@ import com.commandlinecommandos.campusmarketplace.dto.RefreshTokenRequest;
 import com.commandlinecommandos.campusmarketplace.dto.RegisterRequest;
 import com.commandlinecommandos.campusmarketplace.model.RefreshToken;
 import com.commandlinecommandos.campusmarketplace.model.User;
-import com.commandlinecommandos.campusmarketplace.model.Student;
-import com.commandlinecommandos.campusmarketplace.model.Admin;
-import com.commandlinecommandos.campusmarketplace.model.AdminLevel;
 import com.commandlinecommandos.campusmarketplace.model.UserRole;
 import com.commandlinecommandos.campusmarketplace.repository.RefreshTokenRepository;
 import com.commandlinecommandos.campusmarketplace.repository.UserRepository;
@@ -174,39 +171,25 @@ public class AuthService {
             throw new BadCredentialsException("Email already exists");
         }
         
-        // Create user based on role
-        User user;
-        if (registerRequest.getRole() == UserRole.STUDENT) {
-            Student student = new Student();
-            student.setUsername(registerRequest.getUsername());
-            student.setEmail(registerRequest.getEmail());
-            student.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-            student.setFirstName(registerRequest.getFirstName());
-            student.setLastName(registerRequest.getLastName());
-            student.setPhone(registerRequest.getPhone());
-            student.setStudentId(registerRequest.getStudentId());
-            student.setMajor(registerRequest.getMajor());
-            student.setGraduationYear(registerRequest.getGraduationYear());
-            student.setCampusLocation(registerRequest.getCampusLocation());
-            user = student;
-        } else if (registerRequest.getRole() == UserRole.ADMIN) {
-            Admin admin = new Admin();
-            admin.setUsername(registerRequest.getUsername());
-            admin.setEmail(registerRequest.getEmail());
-            admin.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
-            admin.setFirstName(registerRequest.getFirstName());
-            admin.setLastName(registerRequest.getLastName());
-            admin.setPhone(registerRequest.getPhone());
-            if (registerRequest.getAdminLevel() != null) {
-                try {
-                    admin.setAdminLevel(AdminLevel.valueOf(registerRequest.getAdminLevel()));
-                } catch (IllegalArgumentException e) {
-                    throw new BadCredentialsException("Invalid admin level: " + registerRequest.getAdminLevel());
-                }
-            }
-            user = admin;
-        } else {
-            throw new BadCredentialsException("Invalid role");
+        // Create user with the unified User model
+        User user = new User();
+        user.setUsername(registerRequest.getUsername());
+        user.setEmail(registerRequest.getEmail());
+        user.setPassword(passwordEncoder.encode(registerRequest.getPassword()));
+        user.setFirstName(registerRequest.getFirstName());
+        user.setLastName(registerRequest.getLastName());
+        user.setPhone(registerRequest.getPhone());
+        user.setRole(registerRequest.getRole());
+        
+        // Set student-specific fields if available
+        if (registerRequest.getStudentId() != null) {
+            user.setStudentId(registerRequest.getStudentId());
+        }
+        if (registerRequest.getMajor() != null) {
+            user.setMajor(registerRequest.getMajor());
+        }
+        if (registerRequest.getGraduationYear() != null) {
+            user.setGraduationYear(registerRequest.getGraduationYear());
         }
         
         // Save user to database
