@@ -19,6 +19,8 @@ import com.commandlinecommandos.campusmarketplace.model.UserRole;
 import com.commandlinecommandos.campusmarketplace.service.AuthService;
 import com.commandlinecommandos.campusmarketplace.config.WebSecurityConfig;
 
+import java.util.UUID;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -56,7 +58,7 @@ class AuthControllerTest {
         authResponse.setExpiresIn(3600L);
         authResponse.setRole(UserRole.STUDENT);
         authResponse.setUsername("testuser");
-        authResponse.setUserId(1L);
+        authResponse.setUserId(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         
         refreshTokenRequest = new RefreshTokenRequest();
         refreshTokenRequest.setRefreshToken("refresh-token");
@@ -79,7 +81,7 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.expiresIn").value(3600))
                 .andExpect(jsonPath("$.role").value("STUDENT"))
                 .andExpect(jsonPath("$.username").value("testuser"))
-                .andExpect(jsonPath("$.userId").value(1));
+                .andExpect(jsonPath("$.userId").value("00000000-0000-0000-0000-000000000001"));
         
         verify(authService).login(any(AuthRequest.class));
     }

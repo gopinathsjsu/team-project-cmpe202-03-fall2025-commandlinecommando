@@ -2,6 +2,7 @@ package com.commandlinecommandos.campusmarketplace.dto;
 
 // Removed Lombok dependencies - using manual getters/setters
 import com.commandlinecommandos.campusmarketplace.model.UserRole;
+import java.util.UUID;
 
 public class AuthResponse {
     
@@ -11,7 +12,7 @@ public class AuthResponse {
     private Long expiresIn; // in seconds
     private UserRole role;
     private String username;
-    private Long userId;
+    private UUID userId;
     private String email;
     private String firstName;
     private String lastName;
@@ -23,7 +24,7 @@ public class AuthResponse {
     }
     
     public AuthResponse(String accessToken, String refreshToken, String tokenType, Long expiresIn, 
-                       UserRole role, String username, Long userId) {
+                       UserRole role, String username, UUID userId) {
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
         this.tokenType = tokenType;
@@ -82,11 +83,11 @@ public class AuthResponse {
         this.username = username;
     }
     
-    public Long getUserId() {
+    public UUID getUserId() {
         return userId;
     }
     
-    public void setUserId(Long userId) {
+    public void setUserId(UUID userId) {
         this.userId = userId;
     }
     

@@ -15,7 +15,7 @@ import java.util.Map;
 public class StudentController {
     
     @GetMapping("/dashboard")
-    @RequireRole(UserRole.STUDENT)
+    @PreAuthorize("hasAnyRole('STUDENT', 'ADMIN')")
     public ResponseEntity<?> getStudentDashboard() {
         Map<String, Object> dashboard = new HashMap<>();
         dashboard.put("message", "Welcome to Student Dashboard");
@@ -35,7 +35,7 @@ public class StudentController {
     }
     
     @PostMapping("/listings")
-    @RequireRole(UserRole.STUDENT)
+    @PreAuthorize("hasAnyRole('STUDENT', 'ADMIN')")
     public ResponseEntity<?> createListing(@RequestBody Map<String, Object> listing) {
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Listing created successfully");

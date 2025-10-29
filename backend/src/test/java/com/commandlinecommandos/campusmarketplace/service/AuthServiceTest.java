@@ -24,6 +24,7 @@ import com.commandlinecommandos.campusmarketplace.security.JwtUtil;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -58,7 +59,7 @@ class AuthServiceTest {
     @BeforeEach
     void setUp() {
         testUser = new User();
-        testUser.setId(1L);
+        testUser.setUserId(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         testUser.setUsername("testuser");
         testUser.setEmail("test@example.com");
         testUser.setRole(UserRole.STUDENT);
@@ -95,7 +96,7 @@ class AuthServiceTest {
         assertEquals(3600L, response.getExpiresIn());
         assertEquals(UserRole.STUDENT, response.getRole());
         assertEquals("testuser", response.getUsername());
-        assertEquals(1L, response.getUserId());
+        assertEquals(UUID.fromString("00000000-0000-0000-0000-000000000001"), response.getUserId());
         
         verify(refreshTokenRepository).save(any(RefreshToken.class));
     }
