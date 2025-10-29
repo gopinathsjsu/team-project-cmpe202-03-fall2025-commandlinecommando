@@ -41,9 +41,8 @@ public class Product {
     @JoinColumn(name = "seller_id", nullable = false)
     private User seller;
     
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "university_id", nullable = false)
+    @JoinColumn(name = "university_id", nullable = true)
     private University university;
     
     // Product Information
@@ -86,8 +85,9 @@ public class Product {
     
     // Additional Attributes (flexible JSON for category-specific data)
     // e.g., {"isbn": "123", "edition": "5th", "author": "Smith"} for textbooks
+    @Lob
     @Type(JsonType.class)
-    @Column(name = "attributes", columnDefinition = "jsonb")
+    @Column(name = "attributes", columnDefinition = "TEXT")
     private Map<String, Object> attributes = new HashMap<>();
     
     // Visibility & Status
@@ -109,8 +109,9 @@ public class Product {
     private Integer favoriteCount = 0;
     
     // Delivery Options (stored as JSON array)
+    @Lob
     @Type(JsonType.class)
-    @Column(name = "delivery_methods", columnDefinition = "jsonb")
+    @Column(name = "delivery_methods", columnDefinition = "TEXT")
     private List<String> deliveryMethods = new ArrayList<>(List.of("CAMPUS_PICKUP"));
     
     @Column(name = "pickup_location")
