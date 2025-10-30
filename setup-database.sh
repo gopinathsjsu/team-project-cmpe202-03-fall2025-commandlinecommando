@@ -66,25 +66,25 @@ check_prerequisites() {
 setup_environment() {
     print_header "Setting Up Environment"
     
-    if [ ! -f ".env" ]; then
-        if [ -f ".env.template" ]; then
-            cp .env.template .env
-            print_success "Created .env from template"
-            print_warning "Please edit .env file and update passwords before continuing!"
+    if [ ! -f "backend/.env" ]; then
+        if [ -f "backend/.env.example" ]; then
+            cp backend/.env.example backend/.env
+            print_success "Created backend/.env from template"
+            print_warning "Please edit backend/.env file and update passwords before continuing!"
             print_info "Required variables: DB_ROOT_PASSWORD, DB_APP_PASSWORD, DB_READONLY_PASSWORD, PGADMIN_PASSWORD"
-            
+
             # Ask if user wants to continue
-            read -p "Have you updated the .env file with secure passwords? (y/n): " -n 1 -r
+            read -p "Have you updated the backend/.env file with secure passwords? (y/n): " -n 1 -r
             echo
             if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-                print_warning "Please update .env file and run this script again."
+                print_warning "Please update backend/.env file and run this script again."
                 exit 0
             fi
         else
-            print_error ".env.template not found. Please ensure you're in the project root directory."
+            print_error "backend/.env.example not found. Please ensure you're in the project root directory."
         fi
     else
-        print_success "Environment file (.env) exists"
+        print_success "Environment file (backend/.env) exists"
     fi
 }
 
@@ -143,8 +143,8 @@ show_access_info() {
     echo ""
     
     echo "🚀 Application Profiles:"
-    echo "   Development: ./mvnw spring-boot:run"
-    echo "   Production:  ./mvnw spring-boot:run -Dspring.profiles.active=prod"
+    echo "   Development: cd backend && ./mvnw spring-boot:run"
+    echo "   Production:  cd backend && ./run-with-postgres.sh"
     echo ""
     
     echo "📊 Monitoring Commands:"
@@ -171,7 +171,7 @@ show_next_steps() {
     
     echo "2. 🏃‍♂️ Start your Spring Boot application:"
     echo "   cd backend"
-    echo "   ./mvnw spring-boot:run -Dspring.profiles.active=prod"
+    echo "   ./run-with-postgres.sh"
     echo ""
     
     echo "3. 🔧 Access pgAdmin for database management:"
