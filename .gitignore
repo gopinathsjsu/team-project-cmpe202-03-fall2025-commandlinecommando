@@ -189,17 +189,15 @@ $RECYCLE.BIN/
 # DEVELOPMENT AND DEPLOYMENT
 # ===========================================
 
-# Docker
-.dockerignore
-Dockerfile
-docker-compose*.yml
+# Docker - Keep Docker files in git, only ignore runtime data
+# .dockerignore - KEEP IN GIT (not ignored)
+# Dockerfile - KEEP IN GIT (not ignored)
+# docker-compose*.yml - KEEP IN GIT (not ignored)
 .docker/
 
-# Kubernetes
-*.yaml
-*.yml
-!application.yml
-!application.yaml
+# Kubernetes - Keep deployment files but exclude local configs
+# *.yaml - KEEP IN GIT (not ignored)
+# *.yml - KEEP IN GIT (not ignored)
 
 # Terraform
 *.tfstate
