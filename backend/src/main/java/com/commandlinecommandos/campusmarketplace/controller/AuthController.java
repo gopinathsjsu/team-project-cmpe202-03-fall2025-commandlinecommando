@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 @Validated
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001", "https://campus-marketplace.sjsu.edu"}, maxAge = 3600)
 public class AuthController {
