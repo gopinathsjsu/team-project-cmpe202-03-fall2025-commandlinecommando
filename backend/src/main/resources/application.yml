@@ -7,7 +7,7 @@ spring:
   application:
     name: campusmarketplace
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:prod}  # Changed default to prod (PostgreSQL)
+    active: ${SPRING_PROFILES_ACTIVE:dev}  # Changed default to dev for testing with H2 Database (PostgreSQL)
   servlet:
     multipart:
       max-file-size: 10MB
