@@ -79,6 +79,43 @@ services:
     networks:
       - campus-marketplace-network
 
+  # Listing API Service
+  listing-api:
+    build:
+      context: ./listing-api
+      dockerfile: Dockerfile
+    container_name: campus-marketplace-listing-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Spring Profile
+      SPRING_PROFILES_ACTIVE: prod
+
+      # Database Configuration (shared with backend)
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: campus_marketplace
+      DB_APP_USER: ${DB_APP_USER:-cm_app_user}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:-changeme}
+
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+      # Server Configuration
+      PORT: 8100
+    ports:
+      - "${LISTING_API_PORT:-8100}:8100"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8100/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - campus-marketplace-network
+
 # Named volumes for data persistence
 volumes:
   postgres_data:

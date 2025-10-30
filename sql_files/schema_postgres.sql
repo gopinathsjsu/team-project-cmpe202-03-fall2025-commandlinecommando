@@ -322,6 +322,69 @@ CREATE TRIGGER update_order_items_updated_at
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- =====================================================
+-- LISTING API TABLES (Listings, Images, Reports)
+-- =====================================================
+
+-- Drop existing tables (Listing API) in dependency order
+DROP TABLE IF EXISTS listing_images CASCADE;
+DROP TABLE IF EXISTS reports CASCADE;
+DROP TABLE IF EXISTS listings CASCADE;
+
+-- LISTINGS TABLE
+CREATE TABLE listings (
+    listing_id BIGSERIAL PRIMARY KEY,
+    seller_id BIGINT NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    category VARCHAR(20) NOT NULL CHECK (category IN ('TEXTBOOKS', 'GADGETS', 'ELECTRONICS', 'STATIONARY', 'OTHER')),
+    price DECIMAL(10,2) NOT NULL CHECK (price >= 0),
+    condition VARCHAR(20) NOT NULL CHECK (condition IN ('NEW', 'LIKE_NEW', 'GOOD', 'USED')),
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' CHECK (status IN ('PENDING', 'ACTIVE', 'SOLD', 'CANCELLED')),
+    location VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    view_count INTEGER NOT NULL DEFAULT 0
+);
+
+-- LISTING IMAGES TABLE
+CREATE TABLE listing_images (
+    image_id BIGSERIAL PRIMARY KEY,
+    listing_id BIGINT NOT NULL REFERENCES listings(listing_id) ON DELETE CASCADE,
+    image_url VARCHAR(500) NOT NULL,
+    alt_text VARCHAR(255) NOT NULL,
+    display_order INTEGER NOT NULL DEFAULT 0
+);
+
+-- REPORTS TABLE (for listings)
+CREATE TABLE reports (
+    report_id BIGSERIAL PRIMARY KEY,
+    reporter_id BIGINT NOT NULL,
+    listing_id BIGINT NOT NULL REFERENCES listings(listing_id) ON DELETE CASCADE,
+    report_type VARCHAR(50) NOT NULL CHECK (report_type IN ('SPAM','INAPPROPRIATE_CONTENT','FAKE_LISTING','HARASSMENT','COPYRIGHT_VIOLATION','PRICE_MANIPULATION','OTHER')),
+    description TEXT,
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING','UNDER_REVIEW','RESOLVED','DISMISSED')),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    reviewed_at TIMESTAMP,
+    reviewed_by BIGINT
+);
+
+-- Indexes for Listing API tables
+CREATE INDEX idx_listings_category ON listings(category);
+CREATE INDEX idx_listings_status ON listings(status);
+CREATE INDEX idx_listings_price ON listings(price);
+CREATE INDEX idx_listings_seller ON listings(seller_id);
+CREATE INDEX idx_listing_images_listing ON listing_images(listing_id, display_order);
+CREATE INDEX idx_reports_listing ON reports(listing_id);
+CREATE INDEX idx_reports_reporter ON reports(reporter_id);
+CREATE INDEX idx_reports_status ON reports(status);
+CREATE INDEX idx_reports_created_at ON reports(created_at);
+
+-- Trigger to auto-update updated_at on listings
+CREATE TRIGGER update_listings_updated_at
+    BEFORE UPDATE ON listings
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- =====================================================
 -- COMMENTS FOR DOCUMENTATION
 -- =====================================================
 
