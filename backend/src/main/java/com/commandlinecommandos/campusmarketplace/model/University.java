@@ -48,8 +48,9 @@ public class University {
     @Column(name = "is_active")
     private boolean isActive = true;
     
+    @Lob
     @Type(JsonType.class)
-    @Column(name = "settings", columnDefinition = "jsonb")
+    @Column(name = "settings", columnDefinition = "TEXT")
     private Map<String, Object> settings = new HashMap<>();
     
     @CreationTimestamp

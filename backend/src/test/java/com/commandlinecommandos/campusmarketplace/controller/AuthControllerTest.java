@@ -70,7 +70,7 @@ class AuthControllerTest {
         when(authService.login(any(AuthRequest.class))).thenReturn(authResponse);
         
         // When & Then
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(authRequest))
                 .with(csrf()))
@@ -93,7 +93,7 @@ class AuthControllerTest {
             .thenThrow(new BadCredentialsException("Invalid credentials"));
         
         // When & Then
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(authRequest))
                 .with(csrf()))
@@ -110,7 +110,7 @@ class AuthControllerTest {
         invalidRequest.setPassword("password123");
         
         // When & Then
-        mockMvc.perform(post("/api/auth/login")
+        mockMvc.perform(post("/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(invalidRequest))
                 .with(csrf()))
@@ -125,7 +125,7 @@ class AuthControllerTest {
         when(authService.refreshToken(any(RefreshTokenRequest.class))).thenReturn(authResponse);
         
         // When & Then
-        mockMvc.perform(post("/api/auth/refresh")
+        mockMvc.perform(post("/auth/refresh")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(refreshTokenRequest))
                 .with(csrf()))
@@ -143,7 +143,7 @@ class AuthControllerTest {
             .thenThrow(new BadCredentialsException("Invalid refresh token"));
         
         // When & Then
-        mockMvc.perform(post("/api/auth/refresh")
+        mockMvc.perform(post("/auth/refresh")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(refreshTokenRequest))
                 .with(csrf()))
@@ -158,7 +158,7 @@ class AuthControllerTest {
         doNothing().when(authService).logout(anyString());
         
         // When & Then
-        mockMvc.perform(post("/api/auth/logout")
+        mockMvc.perform(post("/auth/logout")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(refreshTokenRequest))
                 .with(csrf()))
@@ -175,7 +175,7 @@ class AuthControllerTest {
         doNothing().when(authService).logoutAllDevices(anyString());
         
         // When & Then
-        mockMvc.perform(post("/api/auth/logout-all")
+        mockMvc.perform(post("/auth/logout-all")
                 .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Logged out from all devices successfully"));
@@ -186,7 +186,7 @@ class AuthControllerTest {
     @Test
     void testLogoutAllDevicesWithoutAuth() throws Exception {
         // When & Then
-        mockMvc.perform(post("/api/auth/logout-all")
+        mockMvc.perform(post("/auth/logout-all")
                 .with(csrf()))
                 .andExpect(status().isUnauthorized());
         
@@ -197,7 +197,7 @@ class AuthControllerTest {
     @WithMockUser(username = "testuser", roles = {"STUDENT"})
     void testGetCurrentUser() throws Exception {
         // When & Then
-        mockMvc.perform(get("/api/auth/me"))
+        mockMvc.perform(get("/auth/me"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value("testuser"));
     }
@@ -205,7 +205,7 @@ class AuthControllerTest {
     @Test
     void testGetCurrentUserWithoutAuth() throws Exception {
         // When & Then
-        mockMvc.perform(get("/api/auth/me"))
+        mockMvc.perform(get("/auth/me"))
                 .andExpect(status().isUnauthorized());
     }
     
@@ -213,7 +213,7 @@ class AuthControllerTest {
     @WithMockUser(username = "testuser", roles = {"STUDENT"})
     void testValidateToken() throws Exception {
         // When & Then
-        mockMvc.perform(get("/api/auth/validate"))
+        mockMvc.perform(get("/auth/validate"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.valid").value(true))
                 .andExpect(jsonPath("$.username").value("testuser"));
@@ -222,7 +222,7 @@ class AuthControllerTest {
     @Test
     void testValidateTokenWithoutAuth() throws Exception {
         // When & Then
-        mockMvc.perform(get("/api/auth/validate"))
+        mockMvc.perform(get("/auth/validate"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.valid").value(false));
     }

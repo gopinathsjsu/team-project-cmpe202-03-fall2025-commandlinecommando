@@ -66,19 +66,29 @@ public class WebSecurityConfig {
             .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authz -> authz
-                // Public endpoints
-                .requestMatchers("/api/auth/**").permitAll()
+                // Public auth endpoints (no authentication required)
+                .requestMatchers("/auth/login").permitAll()
+                .requestMatchers("/auth/register").permitAll()
+                .requestMatchers("/auth/refresh").permitAll()
+                .requestMatchers("/auth/logout").permitAll()
+                .requestMatchers("/auth/validate").permitAll()
+
+                // Protected auth endpoints (authentication required)
+                .requestMatchers("/auth/me").authenticated()
+                .requestMatchers("/auth/logout-all").authenticated()
+
+                // Other public endpoints
                 .requestMatchers("/h2-console/**").permitAll()
-                .requestMatchers("/api/public/**").permitAll()
+                .requestMatchers("/public/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
-                
+
                 // Admin only endpoints
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+
                 // Student and Admin endpoints
-                .requestMatchers("/api/listings/**").hasAnyRole("STUDENT", "ADMIN")
-                .requestMatchers("/api/user/**").hasAnyRole("STUDENT", "ADMIN")
-                
+                .requestMatchers("/listings/**").hasAnyRole("STUDENT", "ADMIN")
+                .requestMatchers("/user/**").hasAnyRole("STUDENT", "ADMIN")
+
                 // All other endpoints require authentication
                 .anyRequest().authenticated()
             );

@@ -25,7 +25,7 @@ class RoleBasedAccessTest {
     @Test
     @WithMockUser(username = "admin", roles = {"ADMIN"})
     void testAdminCanAccessAdminDashboard() throws Exception {
-        mockMvc.perform(get("/api/admin/dashboard"))
+        mockMvc.perform(get("/admin/dashboard"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Welcome to Admin Dashboard"));
     }
@@ -33,20 +33,20 @@ class RoleBasedAccessTest {
     @Test
     @WithMockUser(username = "student", roles = {"STUDENT"})
     void testStudentCannotAccessAdminDashboard() throws Exception {
-        mockMvc.perform(get("/api/admin/dashboard"))
+        mockMvc.perform(get("/admin/dashboard"))
                 .andExpect(status().isForbidden());
     }
     
     @Test
     void testUnauthenticatedUserCannotAccessAdminDashboard() throws Exception {
-        mockMvc.perform(get("/api/admin/dashboard"))
+        mockMvc.perform(get("/admin/dashboard"))
                 .andExpect(status().isUnauthorized());
     }
     
     @Test
     @WithMockUser(username = "admin", roles = {"ADMIN"})
     void testAdminCanAccessUsersList() throws Exception {
-        mockMvc.perform(get("/api/admin/users"))
+        mockMvc.perform(get("/admin/users"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Admin access: All users data"));
     }
@@ -54,14 +54,14 @@ class RoleBasedAccessTest {
     @Test
     @WithMockUser(username = "student", roles = {"STUDENT"})
     void testStudentCannotAccessUsersList() throws Exception {
-        mockMvc.perform(get("/api/admin/users"))
+        mockMvc.perform(get("/admin/users"))
                 .andExpect(status().isForbidden());
     }
     
     @Test
     @WithMockUser(username = "admin", roles = {"ADMIN"})
     void testAdminCanModerateListing() throws Exception {
-        mockMvc.perform(post("/api/admin/moderate/123")
+        mockMvc.perform(post("/admin/moderate/123")
                 .param("action", "approve"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Listing 123 has been approve"))
@@ -72,7 +72,7 @@ class RoleBasedAccessTest {
     @Test
     @WithMockUser(username = "student", roles = {"STUDENT"})
     void testStudentCannotModerateListing() throws Exception {
-        mockMvc.perform(post("/api/admin/moderate/123")
+        mockMvc.perform(post("/admin/moderate/123")
                 .param("action", "approve"))
                 .andExpect(status().isForbidden());
     }
@@ -80,7 +80,7 @@ class RoleBasedAccessTest {
     @Test
     @WithMockUser(username = "admin", roles = {"ADMIN"})
     void testAdminCanDeleteUser() throws Exception {
-        mockMvc.perform(delete("/api/admin/users/123"))
+        mockMvc.perform(delete("/admin/users/123"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("User 123 has been deleted"))
                 .andExpect(jsonPath("$.userId").value(123));
@@ -89,7 +89,7 @@ class RoleBasedAccessTest {
     @Test
     @WithMockUser(username = "student", roles = {"STUDENT"})
     void testStudentCannotDeleteUser() throws Exception {
-        mockMvc.perform(delete("/api/admin/users/123"))
+        mockMvc.perform(delete("/admin/users/123"))
                 .andExpect(status().isForbidden());
     }
     
@@ -98,7 +98,7 @@ class RoleBasedAccessTest {
     @Test
     @WithMockUser(username = "student", roles = {"STUDENT"})
     void testStudentCanAccessStudentDashboard() throws Exception {
-        mockMvc.perform(get("/api/student/dashboard"))
+        mockMvc.perform(get("/student/dashboard"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Welcome to Student Dashboard"));
     }
@@ -106,20 +106,20 @@ class RoleBasedAccessTest {
     @Test
     @WithMockUser(username = "admin", roles = {"ADMIN"})
     void testAdminCannotAccessStudentDashboard() throws Exception {
-        mockMvc.perform(get("/api/student/dashboard"))
+        mockMvc.perform(get("/student/dashboard"))
                 .andExpect(status().isForbidden());
     }
     
     @Test
     void testUnauthenticatedUserCannotAccessStudentDashboard() throws Exception {
-        mockMvc.perform(get("/api/student/dashboard"))
+        mockMvc.perform(get("/student/dashboard"))
                 .andExpect(status().isUnauthorized());
     }
     
     @Test
     @WithMockUser(username = "student", roles = {"STUDENT"})
     void testStudentCanAccessOwnListings() throws Exception {
-        mockMvc.perform(get("/api/student/listings"))
+        mockMvc.perform(get("/student/listings"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Student's listings"));
     }
@@ -128,7 +128,7 @@ class RoleBasedAccessTest {
     @WithMockUser(username = "admin", roles = {"ADMIN"})
     void testAdminCanAccessStudentListings() throws Exception {
         // Admin should be able to access student listings (has ADMIN role which includes STUDENT permissions)
-        mockMvc.perform(get("/api/student/listings"))
+        mockMvc.perform(get("/student/listings"))
                 .andExpect(status().isOk());
     }
     
@@ -137,7 +137,7 @@ class RoleBasedAccessTest {
     void testStudentCanCreateListing() throws Exception {
         String listingJson = "{\"title\":\"Test Listing\",\"description\":\"Test Description\",\"price\":100}";
         
-        mockMvc.perform(post("/api/student/listings")
+        mockMvc.perform(post("/student/listings")
                 .contentType("application/json")
                 .content(listingJson))
                 .andExpect(status().isOk())
@@ -151,7 +151,7 @@ class RoleBasedAccessTest {
     void testAdminCannotCreateStudentListing() throws Exception {
         String listingJson = "{\"title\":\"Test Listing\",\"description\":\"Test Description\",\"price\":100}";
         
-        mockMvc.perform(post("/api/student/listings")
+        mockMvc.perform(post("/student/listings")
                 .contentType("application/json")
                 .content(listingJson))
                 .andExpect(status().isForbidden());
@@ -161,7 +161,7 @@ class RoleBasedAccessTest {
     void testUnauthenticatedUserCannotCreateListing() throws Exception {
         String listingJson = "{\"title\":\"Test Listing\",\"description\":\"Test Description\",\"price\":100}";
         
-        mockMvc.perform(post("/api/student/listings")
+        mockMvc.perform(post("/student/listings")
                 .contentType("application/json")
                 .content(listingJson))
                 .andExpect(status().isUnauthorized());

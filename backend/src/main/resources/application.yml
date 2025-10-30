@@ -7,7 +7,7 @@ spring:
   application:
     name: campusmarketplace
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:prod}  # Changed default to prod (PostgreSQL)
+    active: ${SPRING_PROFILES_ACTIVE:dev}  # Changed default to dev for testing with H2 Database (PostgreSQL)
   servlet:
     multipart:
       max-file-size: 10MB
@@ -101,11 +101,12 @@ spring:
     activate:
       on-profile: prod
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/campusmarketplace_db?sslmode=${SSL_MODE:disable}&serverTimezone=UTC
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:campus_marketplace}?sslmode=${SSL_MODE:disable}&serverTimezone=UTC
     username: ${DB_APP_USER:cm_app_user}
     password: ${DB_APP_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
+      auto-commit: false
       minimum-idle: 5
       maximum-pool-size: 20
       idle-timeout: 300000

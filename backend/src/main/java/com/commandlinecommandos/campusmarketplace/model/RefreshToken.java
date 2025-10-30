@@ -21,7 +21,7 @@ public class RefreshToken {
     private java.util.UUID id;
     
     @NotNull
-    @Column(unique = true)
+    @Column(unique = true, length = 1000)
     private String token;
     
     @NotNull

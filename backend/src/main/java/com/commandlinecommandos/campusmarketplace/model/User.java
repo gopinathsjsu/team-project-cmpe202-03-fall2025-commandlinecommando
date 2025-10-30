@@ -40,9 +40,8 @@ public class User implements UserDetails {
     @Column(name = "user_id", updatable = false, nullable = false)
     private UUID userId;
     
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "university_id", nullable = false)
+    @JoinColumn(name = "university_id", nullable = true)
     private University university;
     
     // Authentication
@@ -99,8 +98,9 @@ public class User implements UserDetails {
     private String major;
     
     // Preferences (JSON storage for flexibility)
+    @Lob
     @Type(JsonType.class)
-    @Column(name = "preferences", columnDefinition = "jsonb")
+    @Column(name = "preferences", columnDefinition = "TEXT")
     private Map<String, Object> preferences = new HashMap<>();
     
     // Security & Tracking

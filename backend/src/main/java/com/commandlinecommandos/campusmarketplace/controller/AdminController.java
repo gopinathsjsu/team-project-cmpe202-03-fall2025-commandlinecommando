@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/admin")
+@RequestMapping("/admin")
 @CrossOrigin(origins = "*", maxAge = 3600)
 public class AdminController {
     
