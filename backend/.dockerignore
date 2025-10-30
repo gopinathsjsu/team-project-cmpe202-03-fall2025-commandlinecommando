@@ -1,0 +1,50 @@
+# Compiled output
+target/
+*.jar
+*.war
+*.ear
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+*.md
+
+# Test files
+src/test/
+
+# Maven wrapper (will be copied if needed)
+.mvn/
+mvnw
+mvnw.cmd
+
+# Temporary files
+*.tmp
+*.swp
+*~
