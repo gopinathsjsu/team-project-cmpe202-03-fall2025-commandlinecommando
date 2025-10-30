@@ -1,0 +1,93 @@
+# ==============================================
+# Campus Marketplace Docker Compose Configuration
+# ==============================================
+# This configuration runs the backend and PostgreSQL as separate containers
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database Service
+  postgres:
+    image: postgres:16-alpine
+    container_name: campus-marketplace-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: campus_marketplace
+      POSTGRES_USER: ${DB_APP_USER:-cm_app_user}
+      POSTGRES_PASSWORD: ${DB_APP_PASSWORD:-changeme}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      # Persistent data storage
+      - postgres_data:/var/lib/postgresql/data
+      # Optional: Mount initialization scripts
+      - ./sql_files/schema_postgres.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./sql_files/seed_data.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_APP_USER:-cm_app_user} -d campus_marketplace"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - campus-marketplace-network
+
+  # Spring Boot Backend Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: campus-marketplace-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Spring Profile
+      SPRING_PROFILES_ACTIVE: prod
+
+      # Database Configuration
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: campus_marketplace
+      DB_APP_USER: ${DB_APP_USER:-cm_app_user}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:-changeme}
+
+      # JWT Configuration
+      JWT_SECRET: ${JWT_SECRET:-myVerySecureSecretKeyForJWTTokensThatShouldBeAtLeast256BitsLongForHS256AlgorithmUpdated2024}
+      JWT_ACCESS_TOKEN_EXPIRATION: ${JWT_ACCESS_TOKEN_EXPIRATION:-3600000}
+      JWT_REFRESH_TOKEN_EXPIRATION: ${JWT_REFRESH_TOKEN_EXPIRATION:-604800000}
+
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      SQL_LOG_LEVEL: ${SQL_LOG_LEVEL:-WARN}
+
+      # Server Configuration
+      PORT: 8080
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    volumes:
+      # Mount logs directory for persistence
+      - backend_logs:/app/logs
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - campus-marketplace-network
+
+# Named volumes for data persistence
+volumes:
+  postgres_data:
+    name: campus-marketplace-postgres-data
+  backend_logs:
+    name: campus-marketplace-backend-logs
+
+# Custom network
+networks:
+  campus-marketplace-network:
+    name: campus-marketplace-network
+    driver: bridge
