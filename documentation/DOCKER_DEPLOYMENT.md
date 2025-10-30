@@ -40,7 +40,7 @@ docker-compose --version
 
 ```bash
 git clone <repository-url>
-cd PROJECT_202
+cd CLONED_GIT_REPOSITORY
 ```
 
 ### 2. Setup Environment Variables
