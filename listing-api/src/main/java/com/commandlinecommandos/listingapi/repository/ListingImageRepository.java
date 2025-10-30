@@ -12,14 +12,15 @@ import java.util.Optional;
 @Repository
 public interface ListingImageRepository extends JpaRepository<ListingImage, Long> {
 
-    Optional<List<ListingImage>> findByListing(Listing listing);
+    @Query("SELECT li FROM ListingImage li WHERE li.listingId = :listingId")
+    Optional<List<ListingImage>> findByListingId(@Param("listingId") Long listingId);
 
-    @Query("SELECT li FROM ListingImage li WHERE li.listing = :listing ORDER BY li.displayOrder ASC")
-    Optional<List<ListingImage>> findByListingOrderedByDisplayOrder(@Param("listing") Listing listing);
+    @Query("SELECT li FROM ListingImage li WHERE li.listingId = :listingId ORDER BY li.displayOrder ASC")
+    Optional<List<ListingImage>> findByListingIdOrdered(@Param("listingId") Long listingId);
 
-    @Query("SELECT li FROM ListingImage li WHERE li.listing = :listing AND li.displayOrder = 1")
-    Optional<ListingImage> findPrimaryImageByListing(@Param("listing") Listing listing);
+    @Query("SELECT li FROM ListingImage li WHERE li.listingId = :listingId AND li.displayOrder = 1")
+    Optional<ListingImage> findPrimaryImageByListingId(@Param("listingId") Long listingId);
 
-    void deleteByListing(Listing listing);
+    void deleteByListingId(Long listingId);
 
 }

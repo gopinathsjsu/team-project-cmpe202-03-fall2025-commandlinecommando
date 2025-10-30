@@ -59,7 +59,7 @@ class ListingServiceTest {
         testListing.setViewCount(0);
 
         // Create test image
-        testImage = new ListingImage(testListing, "/path/to/image.jpg", "test-image.jpg", 1);
+        testImage = new ListingImage(testListing.getListingId(), "/path/to/image.jpg", "test-image.jpg", 1);
         testImage.setImageId(1L);
 
         // Create test images list
@@ -493,7 +493,7 @@ class ListingServiceTest {
     void testAddImagesToListing_Success() {
         // Arrange
         List<ListingImage> newImages = Arrays.asList(
-            new ListingImage(testListing, "/path/to/new-image.jpg", "new-image.jpg", 2)
+            new ListingImage(testListing.getListingId(), "/path/to/new-image.jpg", "new-image.jpg", 2)
         );
         
         when(listingRepository.findById(1L)).thenReturn(Optional.of(testListing));

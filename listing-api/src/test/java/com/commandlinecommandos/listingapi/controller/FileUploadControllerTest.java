@@ -56,7 +56,7 @@ class FileUploadControllerTest {
 
         // Create test listing image
         testListingImage = new ListingImage(
-            testListing,
+            testListing.getListingId(),
             "/path/to/test-image.jpg",
             "test-image.jpg",
             1

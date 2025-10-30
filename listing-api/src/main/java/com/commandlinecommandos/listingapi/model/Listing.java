@@ -55,7 +55,7 @@ public class Listing {
     @Column(name = "view_count", nullable = false)
     private int viewCount;
 
-    @OneToMany(mappedBy = "listing", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @Transient
     private List<ListingImage> images;
 
     @PrePersist
@@ -208,7 +208,6 @@ public class Listing {
 
     public void addImage(ListingImage image) {
         this.images.add(image);
-        image.setListing(this);
     }
 
     public void addImages(List<ListingImage> images) {
@@ -219,7 +218,6 @@ public class Listing {
 
     public void removeImage(ListingImage image) {
         this.images.remove(image);
-        image.setListing(null);
     }
 
     public void removeImages(List<ListingImage> images) {

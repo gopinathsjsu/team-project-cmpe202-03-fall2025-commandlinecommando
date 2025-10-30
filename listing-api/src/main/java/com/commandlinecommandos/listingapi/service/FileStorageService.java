@@ -56,7 +56,7 @@ public class FileStorageService {
             logger.debug("File copied to: {}", filePath);
             
                 ListingImage listingImage = new ListingImage(
-                listing,
+                listing.getListingId(),
                 filePath.toString(),
                 fileName,
                 displayOrder
@@ -101,7 +101,7 @@ public class FileStorageService {
     public List<ListingImage> getImagesByListing(Listing listing) {
         logger.debug("Retrieving images for listing ID: {}", listing.getListingId());
         
-        List<ListingImage> images = listingImageRepository.findByListingOrderedByDisplayOrder(listing)
+        List<ListingImage> images = listingImageRepository.findByListingIdOrdered(listing.getListingId())
             .orElseThrow(() -> new FileStorageException("Could not find images for listing " + listing.getListingId() + ". Please try again!"));
         
         logger.debug("Successfully retrieved {} images for listing ID: {}", images.size(), listing.getListingId());
@@ -110,7 +110,7 @@ public class FileStorageService {
     }
 
     public ListingImage getPrimaryImageByListing(Listing listing) {
-        ListingImage image = listingImageRepository.findPrimaryImageByListing(listing)
+        ListingImage image = listingImageRepository.findPrimaryImageByListingId(listing.getListingId())
             .orElseThrow(() -> new FileStorageException("Could not find primary image for listing " + listing.getListingId() + ". Please try again!"));
         return image;
     }
@@ -135,7 +135,7 @@ public class FileStorageService {
             .orElseThrow(() -> new FileStorageException("Could not find file with id " + id + ". Please try again!"));
         
         logger.debug("Found image to delete - ID: {}, filename: '{}', listing ID: {}, file path: '{}'", 
-                    id, listingImage.getImageUrl(), listingImage.getListing().getListingId(), listingImage.getImageUrl());
+                    id, listingImage.getImageUrl(), listingImage.getListingId(), listingImage.getImageUrl());
         
         try {
             boolean deleted = Files.deleteIfExists(Paths.get(listingImage.getImageUrl()));
@@ -149,13 +149,13 @@ public class FileStorageService {
         listingImageRepository.delete(listingImage);
         
         logger.info("Successfully deleted image ID: {} ('{}') for listing ID: {}", 
-                   id, listingImage.getImageUrl(), listingImage.getListing().getListingId());
+                   id, listingImage.getImageUrl(), listingImage.getListingId());
     }
 
     public void deleteAllImagesByListing(Listing listing) {
         logger.debug("Deleting all images for listing ID: {}", listing.getListingId());
         
-        List<ListingImage> images = listingImageRepository.findByListing(listing)
+        List<ListingImage> images = listingImageRepository.findByListingId(listing.getListingId())
             .orElseThrow(() -> new FileStorageException("Could not find images for listing " + listing.getListingId() + ". Please try again!"));
 
         logger.debug("Found {} images to delete for listing ID: {}", images.size(), listing.getListingId());
@@ -178,7 +178,7 @@ public class FileStorageService {
             }
         }
 
-        listingImageRepository.deleteByListing(listing);
+        listingImageRepository.deleteByListingId(listing.getListingId());
         
         logger.info("Successfully deleted all {} images for listing ID: {} ({} files deleted from filesystem)", 
                    images.size(), listing.getListingId(), deletedCount);
