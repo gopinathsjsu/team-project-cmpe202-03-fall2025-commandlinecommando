@@ -5,6 +5,7 @@ import com.commandlinecommandos.campusmarketplace.model.UserRole;
 import com.commandlinecommandos.campusmarketplace.model.University;
 import com.commandlinecommandos.campusmarketplace.model.VerificationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -13,10 +14,10 @@ import java.util.UUID;
 
 /**
  * Repository for User entity
- * Updated to use UUID primary keys
+ * Updated to use UUID primary keys and support Specification queries
  */
 @Repository
-public interface UserRepository extends JpaRepository<User, UUID> {
+public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificationExecutor<User> {
     
     /**
      * Find user by username

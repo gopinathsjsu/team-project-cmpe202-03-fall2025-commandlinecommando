@@ -15,7 +15,7 @@ import java.util.Map;
 public class StudentController {
     
     @GetMapping("/dashboard")
-    @PreAuthorize("hasRole('STUDENT')")
+    @PreAuthorize("hasAnyRole('BUYER', 'SELLER')")
     public ResponseEntity<?> getStudentDashboard() {
         Map<String, Object> dashboard = new HashMap<>();
         dashboard.put("message", "Welcome to Student Dashboard");
@@ -26,7 +26,7 @@ public class StudentController {
     }
 
     @GetMapping("/listings")
-    @PreAuthorize("hasAnyRole('STUDENT', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('BUYER', 'SELLER', 'ADMIN')")
     public ResponseEntity<?> getMyListings() {
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Student's listings");
@@ -35,7 +35,7 @@ public class StudentController {
     }
 
     @PostMapping("/listings")
-    @PreAuthorize("hasRole('STUDENT')")
+    @PreAuthorize("hasAnyRole('BUYER', 'SELLER')")
     public ResponseEntity<?> createListing(@RequestBody Map<String, Object> listing) {
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Listing created successfully");

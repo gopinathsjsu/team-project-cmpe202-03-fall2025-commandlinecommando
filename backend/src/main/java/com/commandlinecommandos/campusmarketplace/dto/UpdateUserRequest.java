@@ -3,11 +3,15 @@ package com.commandlinecommandos.campusmarketplace.dto;
 import com.commandlinecommandos.campusmarketplace.model.UserRole;
 import com.commandlinecommandos.campusmarketplace.model.VerificationStatus;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * DTO for admin to update user accounts
  */
 @Data
+@Getter
+@Setter
 public class UpdateUserRequest {
     
     private String firstName;
