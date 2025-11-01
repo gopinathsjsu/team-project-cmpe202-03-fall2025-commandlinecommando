@@ -1,0 +1,93 @@
+package com.commandlinecommandos.listingapi.model;
+
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "listing_images")
+public class ListingImage {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long imageId;
+    
+    @ManyToOne
+    @JoinColumn(name = "listing_id", nullable = false)
+    private Listing listing;
+    
+    @Column(name = "image_url", nullable = false)
+    private String imageUrl;
+    
+    @Column(name = "alt_text", nullable = false)
+    private String altText;
+    
+    @Column(name = "display_order", nullable = false)
+    private Integer displayOrder;
+
+    public ListingImage() {
+    }
+
+    public ListingImage(Listing listing, String imageUrl, String altText, Integer displayOrder) {
+        this.listing = listing;
+        this.imageUrl = imageUrl;
+        this.altText = altText;
+        this.displayOrder = displayOrder;
+    }
+
+    public Long getImageId() {
+        return imageId;
+    }
+
+    public void setImageId(Long imageId) {
+        this.imageId = imageId;
+    }
+    
+    public Listing getListing() {
+        return listing;
+    }
+
+    public void setListing(Listing listing) {
+        this.listing = listing;
+    }
+    
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+    
+    public String getAltText() {
+        return altText;
+    }
+
+    public void setAltText(String altText) {
+        this.altText = altText;
+    }
+    
+    public Integer getDisplayOrder() {
+        return displayOrder;
+    }
+
+    public void setDisplayOrder(Integer displayOrder) {
+        this.displayOrder = displayOrder;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        ListingImage listingImage = (ListingImage) obj;
+        return imageId.equals(listingImage.imageId);
+    }
+
+    @Override
+    public int hashCode() {
+        return imageId.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "ListingImage [imageId=" + imageId + ", \nimageUrl=" + imageUrl + 
+        ", \naltText=" + altText + ", \ndisplayOrder=" + displayOrder + "]";
+    }
+}

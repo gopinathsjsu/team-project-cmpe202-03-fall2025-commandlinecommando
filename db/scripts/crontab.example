@@ -1,0 +1,22 @@
+# Campus Marketplace Database Cron Jobs
+# Add these to your system crontab: crontab -e
+
+# Daily backup at 2:00 AM
+0 2 * * * /Users/duylam1407/Workspace/SJSU/team-project-cmpe202-03-fall2025-commandlinecommando/db/scripts/backup.sh >> /var/log/campus-marketplace-backup.log 2>&1
+
+# Weekly cleanup at 3:00 AM on Sundays  
+0 3 * * 0 /Users/duylam1407/Workspace/SJSU/team-project-cmpe202-03-fall2025-commandlinecommando/db/scripts/backup.sh --cleanup-only >> /var/log/campus-marketplace-backup.log 2>&1
+
+# Daily health check at 8:00 AM (sends email if issues found)
+0 8 * * * /Users/duylam1407/Workspace/SJSU/team-project-cmpe202-03-fall2025-commandlinecommando/db/scripts/monitor.sh --health | grep -q "ISSUES DETECTED" && echo "Campus Marketplace DB issues detected. Check logs." | mail -s "DB Health Alert" admin@campusmarketplace.com
+
+# Hourly connection monitoring (production only)
+0 * * * * /Users/duylam1407/Workspace/SJSU/team-project-cmpe202-03-fall2025-commandlinecommando/db/scripts/monitor.sh --connections | grep -E "ERROR|WARNING" && echo "Campus Marketplace DB connection issues." | mail -s "DB Connection Alert" admin@campusmarketplace.com
+
+# Setup Instructions:
+# 1. Update paths to match your installation directory
+# 2. Replace admin@campusmarketplace.com with your admin email
+# 3. Ensure log directory exists: sudo mkdir -p /var/log && sudo chown $(whoami) /var/log
+# 4. Test cron jobs: ./db/scripts/backup.sh --test
+# 5. Add to crontab: crontab -e (then paste the lines above)
+# 6. Verify cron jobs: crontab -l

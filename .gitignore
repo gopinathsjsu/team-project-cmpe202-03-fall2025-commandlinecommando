@@ -1,15 +1,288 @@
+# Campus Marketplace - Git Ignore File
+
+# ===========================================
+# FRONTEND
+# ===========================================
+
 # Node
 node_modules/
-
-# Frontend
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
 frontend/package-lock.json
 
-# Java
+# ===========================================
+# JAVA / SPRING BOOT BACKEND
+# ===========================================
+
+# Compiled class files
 *.class
 
+# Log files
+*.log
+
+# BlueJ files
+*.ctxt
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Virtual machine crash logs
+hs_err_pid*
+replay_pid*
+
+# Maven
+target/
+
+# ===========================================
 # IDEs
+# ===========================================
 .vscode/
 .idea/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Spring Boot
+spring-boot-*.jar
+.springBeans
+.sts4-cache/
+
+# Application properties with sensitive data
+application-*.properties
+application-*.yml
+!application.properties
+!application.yml
+
+# H2 Database files
+*.db
+*.trace.db
+*.lock.db
+
+# ===========================================
+# NODE.JS / REACT FRONTEND
+# ===========================================
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+*.local
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
+# ===========================================
+# IDE AND EDITOR FILES
+# ===========================================
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# Eclipse
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+# NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+.\#*
+
+# ===========================================
+# OPERATING SYSTEM FILES
+# ===========================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.tmp
+*.temp
+Desktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# ===========================================
+# DEVELOPMENT AND DEPLOYMENT
+# ===========================================
+
+# Docker - Keep Docker files in git, only ignore runtime data
+# .dockerignore - KEEP IN GIT (not ignored)
+# Dockerfile - KEEP IN GIT (not ignored)
+# docker-compose*.yml - KEEP IN GIT (not ignored)
+.docker/
+
+# Kubernetes - Keep deployment files but exclude local configs
+# *.yaml - KEEP IN GIT (not ignored)
+# *.yml - KEEP IN GIT (not ignored)
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# AWS
+.aws/
+*.pem
+
+# SSH Keys
+*.key
+*.pem
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+
+# ===========================================
+# PROJECT SPECIFIC
+# ===========================================
+
+# Uploaded files directory (if created)
+uploads/
+files/
+images/
+
+# Logs directory
+logs/
+
+# Temporary files
+tmp/
+temp/
+
+# Coverage reports
+coverage/
+*.lcov
+.nyc_output/
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.cache
+
+# ===========================================
+# BACKUP AND TEMPORARY FILES
+# ===========================================
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+
+# Temporary files
+*.tmp
+*.temp
+*~
+
+# Archive files (unless specifically needed)
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+>>>>>>> origin/main
