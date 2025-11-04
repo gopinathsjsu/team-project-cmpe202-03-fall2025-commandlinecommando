@@ -96,7 +96,7 @@ class RoleBasedAccessTest {
     // Student Endpoint Tests
     
     @Test
-    @WithMockUser(username = "student", roles = {"BUYER"})
+    @WithMockUser(username = "student", roles = {"STUDENT"})
     void testStudentCanAccessStudentDashboard() throws Exception {
         mockMvc.perform(get("/student/dashboard"))
                 .andExpect(status().isOk())
@@ -117,7 +117,7 @@ class RoleBasedAccessTest {
     }
     
     @Test
-    @WithMockUser(username = "student", roles = {"SELLER"})
+    @WithMockUser(username = "student", roles = {"STUDENT"})
     void testStudentCanAccessOwnListings() throws Exception {
         mockMvc.perform(get("/student/listings"))
                 .andExpect(status().isOk())
@@ -133,7 +133,7 @@ class RoleBasedAccessTest {
     }
     
     @Test
-    @WithMockUser(username = "student", roles = {"SELLER"})
+    @WithMockUser(username = "student", roles = {"STUDENT"})
     void testStudentCanCreateListing() throws Exception {
         String listingJson = "{\"title\":\"Test Listing\",\"description\":\"Test Description\",\"price\":100}";
         

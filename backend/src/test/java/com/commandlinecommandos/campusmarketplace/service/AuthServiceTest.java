@@ -62,7 +62,7 @@ class AuthServiceTest {
         testUser.setUserId(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         testUser.setUsername("testuser");
         testUser.setEmail("test@example.com");
-        testUser.setRole(UserRole.BUYER);
+        testUser.setRole(UserRole.STUDENT);
         testUser.setActive(true);
         
         authRequest = new AuthRequest();
@@ -94,7 +94,7 @@ class AuthServiceTest {
         assertEquals("refresh-token", response.getRefreshToken());
         assertEquals("Bearer", response.getTokenType());
         assertEquals(3600L, response.getExpiresIn());
-        assertEquals(UserRole.BUYER, response.getRole());
+        assertEquals(UserRole.STUDENT, response.getRole());
         assertEquals("testuser", response.getUsername());
         assertEquals(UUID.fromString("00000000-0000-0000-0000-000000000001"), response.getUserId());
         
@@ -154,7 +154,7 @@ class AuthServiceTest {
         assertNotNull(response);
         assertEquals("new-access-token", response.getAccessToken());
         assertEquals("valid-refresh-token", response.getRefreshToken());
-        assertEquals(UserRole.BUYER, response.getRole());
+        assertEquals(UserRole.STUDENT, response.getRole());
     }
     
     @Test

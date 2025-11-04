@@ -46,7 +46,7 @@ class JwtUtilTest {
         testUser.setUserId(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         testUser.setUsername("testuser");
         testUser.setEmail("test@example.com");
-        testUser.setRole(UserRole.BUYER);
+        testUser.setRole(UserRole.STUDENT);
     }
     
     @Test
@@ -61,7 +61,7 @@ class JwtUtilTest {
         assertEquals("testuser", username);
         
         UserRole role = jwtUtil.extractRole(token);
-        assertEquals(UserRole.BUYER, role);
+        assertEquals(UserRole.STUDENT, role);
         
         UUID userId = jwtUtil.extractUserId(token);
         assertEquals(UUID.fromString("00000000-0000-0000-0000-000000000001"), userId);

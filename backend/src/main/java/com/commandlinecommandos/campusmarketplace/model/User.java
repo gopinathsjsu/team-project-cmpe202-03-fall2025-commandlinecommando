@@ -214,7 +214,7 @@ public class User implements UserDetails {
     }
     
     public boolean isStudent() {
-        return this.role == UserRole.BUYER || this.role == UserRole.SELLER;
+        return this.role == UserRole.STUDENT;
     }
     
     public boolean isAdmin() {

@@ -4,15 +4,11 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 
 /**
  * DTO for updating user profile information
  */
 @Data
-@Getter
-@Setter
 public class ProfileUpdateRequest {
     
     @Size(min = 2, max = 100, message = "First name must be between 2 and 100 characters")

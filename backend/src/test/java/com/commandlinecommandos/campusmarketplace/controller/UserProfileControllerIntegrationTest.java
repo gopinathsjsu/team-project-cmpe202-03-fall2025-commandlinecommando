@@ -74,7 +74,7 @@ class UserProfileControllerIntegrationTest {
     @Test
     @WithMockUser(username = "testuser", roles = {"BUYER"})
     void testGetCurrentUserProfile_Success() throws Exception {
-        mockMvc.perform(get("/api/users/profile"))
+        mockMvc.perform(get("/users/profile"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.username").value("testuser"))
             .andExpect(jsonPath("$.email").value("test@test.edu"));
@@ -82,7 +82,7 @@ class UserProfileControllerIntegrationTest {
     
     @Test
     void testGetCurrentUserProfile_Unauthorized() throws Exception {
-        mockMvc.perform(get("/api/users/profile"))
+        mockMvc.perform(get("/users/profile"))
             .andExpect(status().isUnauthorized());
     }
     
@@ -94,7 +94,7 @@ class UserProfileControllerIntegrationTest {
         request.setLastName("Name");
         request.setPhone("408-555-1234");
         
-        mockMvc.perform(put("/api/users/profile")
+        mockMvc.perform(put("/users/profile")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
@@ -110,7 +110,7 @@ class UserProfileControllerIntegrationTest {
         request.setNewPassword("NewPassword123!");
         request.setConfirmPassword("NewPassword123!");
         
-        mockMvc.perform(post("/api/users/change-password")
+        mockMvc.perform(post("/users/change-password")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
@@ -120,7 +120,7 @@ class UserProfileControllerIntegrationTest {
     @Test
     @WithMockUser(username = "testuser", roles = {"BUYER"})
     void testDeactivateAccount_Success() throws Exception {
-        mockMvc.perform(post("/api/users/deactivate"))
+        mockMvc.perform(post("/users/deactivate"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.message").value("Account deactivated successfully"));
     }

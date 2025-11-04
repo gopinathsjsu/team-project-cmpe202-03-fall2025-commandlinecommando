@@ -141,9 +141,8 @@ class UserManagementServiceTest {
         
         // Assert
         verify(userRepository, times(1)).findById(testUserId);
-        // Note: The implementation may use the currentPassword directly without matches() check in some flows
-        // verify(passwordEncoder, times(1)).matches("oldPassword", testUser.getPassword());
-        verify(passwordEncoder, atLeastOnce()).encode(anyString());
+        verify(passwordEncoder, times(1)).matches("oldPassword", testUser.getPassword());
+        verify(passwordEncoder, times(1)).encode("NewSecure123!");
         verify(userRepository, times(1)).save(any(User.class));
         verify(emailService, times(1)).sendPasswordChangedEmail(testUser.getEmail(), testUser.getUsername());
         verify(auditService, times(1)).logPasswordChange(testUser, false);
