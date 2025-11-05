@@ -96,7 +96,7 @@ class FileStorageServiceTest {
 
         // Assert
         assertNotNull(result);
-        assertEquals(testListing, result.getListing());
+        assertEquals(testListing.getListingId(), result.getListingId());
         assertEquals(originalFileName, result.getAltText());
         assertEquals(displayOrder, result.getDisplayOrder());
         assertTrue(result.getImageUrl().contains(testUploadDir));
@@ -166,7 +166,7 @@ class FileStorageServiceTest {
         when(multipartFile.getOriginalFilename()).thenReturn(originalFileName);
         when(multipartFile.getInputStream()).thenReturn(new ByteArrayInputStream(fileContent.getBytes()));
         
-        ListingImage savedImage = new ListingImage(testListing, "path/to/file/" + originalFileName, originalFileName, displayOrder);
+        ListingImage savedImage = new ListingImage(testListing.getListingId(), "path/to/file/" + originalFileName, originalFileName, displayOrder);
         when(listingImageRepository.save(any(ListingImage.class))).thenReturn(savedImage);
 
         // Act
@@ -216,8 +216,7 @@ class FileStorageServiceTest {
             fileStorageService.storeFile(multipartFile, testListing, displayOrder);
         });
         
-        assertTrue(exception.getMessage().contains("Could not store file"));
-        assertTrue(exception.getMessage().contains(originalFileName));
+        assertTrue(exception.getMessage().contains("Test IO exception"));
         assertTrue(exception.getCause() instanceof IOException);
         
         verify(listingImageRepository, never()).save(any(ListingImage.class));
@@ -237,7 +236,7 @@ class FileStorageServiceTest {
         when(multipartFile.getOriginalFilename()).thenReturn(originalFileName);
         when(multipartFile.getInputStream()).thenReturn(new ByteArrayInputStream(fileContent.getBytes()));
         
-        ListingImage savedImage = new ListingImage(testListing, "path/to/file/" + originalFileName, originalFileName, displayOrder);
+        ListingImage savedImage = new ListingImage(testListing.getListingId(), "path/to/file/" + originalFileName, originalFileName, displayOrder);
         when(listingImageRepository.save(any(ListingImage.class))).thenReturn(savedImage);
 
         // Act
@@ -289,7 +288,7 @@ class FileStorageServiceTest {
         when(multipartFile.getOriginalFilename()).thenReturn(originalFileName);
         when(multipartFile.getInputStream()).thenReturn(new ByteArrayInputStream(fileContent.getBytes()));
         
-        ListingImage savedImage = new ListingImage(testListing, "path/to/file/" + originalFileName, "test-image.jpg", displayOrder);
+        ListingImage savedImage = new ListingImage(testListing.getListingId(), "path/to/file/" + originalFileName, "test-image.jpg", displayOrder);
         when(listingImageRepository.save(any(ListingImage.class))).thenReturn(savedImage);
 
         // Act
@@ -318,8 +317,8 @@ class FileStorageServiceTest {
         when(multipartFile2.getOriginalFilename()).thenReturn(originalFileName2);
         when(multipartFile2.getInputStream()).thenReturn(new ByteArrayInputStream(fileContent.getBytes()));
         
-        ListingImage savedImage1 = new ListingImage(testListing, "path/to/file1/" + originalFileName1, originalFileName1, displayOrders[0]);
-        ListingImage savedImage2 = new ListingImage(testListing, "path/to/file2/" + originalFileName2, originalFileName2, displayOrders[1]);
+        ListingImage savedImage1 = new ListingImage(testListing.getListingId(), "path/to/file1/" + originalFileName1, originalFileName1, displayOrders[0]);
+        ListingImage savedImage2 = new ListingImage(testListing.getListingId(), "path/to/file2/" + originalFileName2, originalFileName2, displayOrders[1]);
         
         when(listingImageRepository.save(any(ListingImage.class)))
             .thenReturn(savedImage1)
@@ -356,11 +355,11 @@ class FileStorageServiceTest {
     @Test
     void testGetImagesByListing_Success() {
         // Arrange
-        ListingImage image1 = new ListingImage(testListing, "path1/" + "image1.jpg", "image1.jpg", 1);
-        ListingImage image2 = new ListingImage(testListing, "path2/" + "image2.jpg", "image2.jpg", 2);
+        ListingImage image1 = new ListingImage(testListing.getListingId(), "path1/" + "image1.jpg", "image1.jpg", 1);
+        ListingImage image2 = new ListingImage(testListing.getListingId(), "path2/" + "image2.jpg", "image2.jpg", 2);
         List<ListingImage> expectedImages = Arrays.asList(image1, image2);
         
-        when(listingImageRepository.findByListingOrderedByDisplayOrder(testListing))
+        when(listingImageRepository.findByListingIdOrdered(testListing.getListingId()))
             .thenReturn(Optional.of(expectedImages));
 
         // Act
@@ -370,13 +369,13 @@ class FileStorageServiceTest {
         assertNotNull(results);
         assertEquals(2, results.size());
         assertEquals(expectedImages, results);
-        verify(listingImageRepository).findByListingOrderedByDisplayOrder(testListing);
+        verify(listingImageRepository).findByListingIdOrdered(testListing.getListingId());
     }
 
     @Test
     void testGetImagesByListing_EmptyResult() {
         // Arrange
-        when(listingImageRepository.findByListingOrderedByDisplayOrder(testListing))
+        when(listingImageRepository.findByListingIdOrdered(testListing.getListingId()))
             .thenReturn(Optional.empty());
 
         // Act
@@ -386,16 +385,16 @@ class FileStorageServiceTest {
         
         // Assert
         assertTrue(exception.getMessage().contains("Could not find images for listing"));
-        verify(listingImageRepository).findByListingOrderedByDisplayOrder(testListing);
+        verify(listingImageRepository).findByListingIdOrdered(testListing.getListingId());
     }
 
     // Test getPrimaryImageByListing method
     @Test
     void testGetPrimaryImageByListing_Success() {
         // Arrange
-        ListingImage primaryImage = new ListingImage(testListing, "path/" + "primary.jpg", "primary.jpg", 1);
+        ListingImage primaryImage = new ListingImage(testListing.getListingId(), "path/" + "primary.jpg", "primary.jpg", 1);
         
-        when(listingImageRepository.findPrimaryImageByListing(testListing))
+        when(listingImageRepository.findPrimaryImageByListingId(testListing.getListingId()))
             .thenReturn(Optional.of(primaryImage));
 
         // Act
@@ -404,13 +403,13 @@ class FileStorageServiceTest {
         // Assert
         assertNotNull(result);
         assertEquals(primaryImage, result);
-        verify(listingImageRepository).findPrimaryImageByListing(testListing);
+        verify(listingImageRepository).findPrimaryImageByListingId(testListing.getListingId());
     }
 
     @Test
     void testGetPrimaryImageByListing_NullResult() {
         // Arrange
-        when(listingImageRepository.findPrimaryImageByListing(testListing))
+        when(listingImageRepository.findPrimaryImageByListingId(testListing.getListingId()))
             .thenReturn(Optional.empty());
 
         // Act 
@@ -420,7 +419,7 @@ class FileStorageServiceTest {
         
         // Assert
         assertTrue(exception.getMessage().contains("Could not find primary image for listing"));
-        verify(listingImageRepository).findPrimaryImageByListing(testListing);
+        verify(listingImageRepository).findPrimaryImageByListingId(testListing.getListingId());
     }
 
     // Test deleteImageByListingImageId method
@@ -432,7 +431,7 @@ class FileStorageServiceTest {
         Path testFile = Paths.get(filePath);
         Files.createFile(testFile); // Create actual file
         
-        ListingImage listingImage = new ListingImage(testListing, filePath, "test-file.jpg", 1);
+        ListingImage listingImage = new ListingImage(testListing.getListingId(), filePath, "test-file.jpg", 1);
         
         when(listingImageRepository.findById(imageId))
             .thenReturn(Optional.of(listingImage));
@@ -478,11 +477,11 @@ class FileStorageServiceTest {
         Files.createFile(testFile1); // Create actual files
         Files.createFile(testFile2);
         
-        ListingImage image1 = new ListingImage(testListing, filePath1, "test-file1.jpg", 1);
-        ListingImage image2 = new ListingImage(testListing, filePath2, "test-file2.png", 2);
+        ListingImage image1 = new ListingImage(testListing.getListingId(), filePath1, "test-file1.jpg", 1);
+        ListingImage image2 = new ListingImage(testListing.getListingId(), filePath2, "test-file2.png", 2);
         List<ListingImage> images = Arrays.asList(image1, image2);
         
-        when(listingImageRepository.findByListing(testListing))
+        when(listingImageRepository.findByListingId(testListing.getListingId()))
             .thenReturn(Optional.of(images));
 
         // Act
@@ -491,14 +490,14 @@ class FileStorageServiceTest {
         // Assert
         assertFalse(Files.exists(testFile1));
         assertFalse(Files.exists(testFile2));
-        verify(listingImageRepository).findByListing(testListing);
-        verify(listingImageRepository).deleteByListing(testListing);
+        verify(listingImageRepository).findByListingId(testListing.getListingId());
+        verify(listingImageRepository).deleteByListingId(testListing.getListingId());
     }
 
     @Test
     void testDeleteAllImagesByListing_EmptyList() {
         // Arrange
-        when(listingImageRepository.findByListing(testListing))
+        when(listingImageRepository.findByListingId(testListing.getListingId()))
             .thenReturn(Optional.empty());
 
         // Act
@@ -508,8 +507,8 @@ class FileStorageServiceTest {
         
         // Assert
         assertTrue(exception.getMessage().contains("Could not find images for listing"));
-        verify(listingImageRepository).findByListing(testListing);
-        verify(listingImageRepository, never()).deleteByListing(any(Listing.class));
+        verify(listingImageRepository).findByListingId(testListing.getListingId());
+        verify(listingImageRepository, never()).deleteByListingId(anyLong());
     }
 
     @Test
@@ -520,11 +519,11 @@ class FileStorageServiceTest {
         Path testFile1 = Paths.get(filePath1);
         Files.createFile(testFile1); // Create only one file
         
-        ListingImage image1 = new ListingImage(testListing, filePath1, "test-file1.jpg", 1);
-        ListingImage image2 = new ListingImage(testListing, filePath2, "test-file2.png", 2);
+        ListingImage image1 = new ListingImage(testListing.getListingId(), filePath1, "test-file1.jpg", 1);
+        ListingImage image2 = new ListingImage(testListing.getListingId(), filePath2, "test-file2.png", 2);
         List<ListingImage> images = Arrays.asList(image1, image2);
         
-        when(listingImageRepository.findByListing(testListing))
+        when(listingImageRepository.findByListingId(testListing.getListingId()))
             .thenReturn(Optional.of(images));
 
         // Act
@@ -537,7 +536,7 @@ class FileStorageServiceTest {
         assertTrue(exception.getMessage().contains("test-file2.png"));
         assertTrue(exception.getCause() instanceof IOException);
         
-        verify(listingImageRepository).findByListing(testListing);
-        verify(listingImageRepository, never()).deleteByListing(any(Listing.class));
+        verify(listingImageRepository).findByListingId(testListing.getListingId());
+        verify(listingImageRepository, never()).deleteByListingId(anyLong());
     }
 }

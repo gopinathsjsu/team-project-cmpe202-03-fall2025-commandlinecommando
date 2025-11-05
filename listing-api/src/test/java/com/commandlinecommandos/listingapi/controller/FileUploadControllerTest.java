@@ -56,7 +56,7 @@ class FileUploadControllerTest {
 
         // Create test listing image
         testListingImage = new ListingImage(
-            testListing,
+            testListing.getListingId(),
             "/path/to/test-image.jpg",
             "test-image.jpg",
             1
@@ -153,7 +153,6 @@ class FileUploadControllerTest {
         // Arrange
         List<MultipartFile> emptyFiles = new ArrayList<>();
         int[] displayOrders = {};
-        when(listingService.getListingById(1L)).thenReturn(testListing);
 
         // Act
         ResponseEntity<String> response = fileUploadController.uploadMultipleFiles(1L, emptyFiles, displayOrders);
@@ -161,7 +160,8 @@ class FileUploadControllerTest {
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals("No files provided", response.getBody());
-        verify(listingService).getListingById(1L);
+        // Note: listingService.getListingById() should NOT be called when files list is empty
+        verify(listingService, never()).getListingById(any());
         verify(fileStorageService, never()).storeFiles(any(), any(), any());
     }
 
@@ -311,17 +311,14 @@ class FileUploadControllerTest {
     // Additional edge case tests
     @Test
     void uploadFile_NullFile_HandlesGracefully() {
-        // Arrange
-        when(listingService.getListingById(1L)).thenReturn(testListing);
-        when(fileStorageService.storeFile(isNull(), any(Listing.class), anyInt()))
-            .thenThrow(new IllegalArgumentException("File cannot be null"));
-
         // Act
         ResponseEntity<String> response = fileUploadController.uploadFile(1L, null, 1);
 
         // Assert
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertEquals("Failed to upload file", response.getBody());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("File cannot be null", response.getBody());
+        verifyNoInteractions(listingService);
+        verifyNoInteractions(fileStorageService);
     }
 
     @Test
@@ -333,8 +330,10 @@ class FileUploadControllerTest {
         ResponseEntity<String> response = fileUploadController.uploadMultipleFiles(1L, null, displayOrders);
 
         // Assert
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        assertEquals("Failed to upload files", response.getBody());
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("Files cannot be null", response.getBody());
+        verifyNoInteractions(listingService);
+        verifyNoInteractions(fileStorageService);
     }
 
     @Test

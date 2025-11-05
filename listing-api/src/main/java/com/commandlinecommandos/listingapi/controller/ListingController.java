@@ -27,10 +27,14 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import java.util.List;
 import java.math.BigDecimal;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/listings")
 public class ListingController {
+
+    private static final Logger logger = LoggerFactory.getLogger(ListingController.class);
 
     @Autowired
     private ListingService listingService;
@@ -45,8 +49,15 @@ public class ListingController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDirection) {
 
+        logger.info("Received request to get all listings - page: {}, size: {}, sortBy: {}, sortDirection: {}", 
+                   page, size, sortBy, sortDirection);
+        
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
         Page<Listing> listings = listingService.getAllListings(pageable);
+        
+        logger.info("Successfully retrieved {} listings (page {}/{} with {} total elements)", 
+                   listings.getNumberOfElements(), page + 1, listings.getTotalPages(), listings.getTotalElements());
+        
         return ResponseEntity.ok(listings);
     }
 
@@ -64,8 +75,16 @@ public class ListingController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDirection) {
 
+        logger.info("Received search request - keyword: '{}', status: {}, category: {}, condition: {}, " +
+                   "priceRange: {} - {}, location: '{}', page: {}, size: {}", 
+                   keyword, status, category, condition, minPrice, maxPrice, location, page, size);
+        
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
         Page<Listing> listings = listingService.getListingsWithFilters(status, keyword, category, condition, minPrice, maxPrice, location, pageable);
+        
+        logger.info("Search completed - found {} listings (page {}/{} with {} total elements)", 
+                   listings.getNumberOfElements(), page + 1, listings.getTotalPages(), listings.getTotalElements());
+        
         return ResponseEntity.ok(listings);
     }
 
@@ -77,89 +96,156 @@ public class ListingController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDirection) {
 
+        logger.info("Received request to get listings for seller ID: {} - page: {}, size: {}, sortBy: {}", 
+                   sellerId, page, size, sortBy);
+        
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
         Page<Listing> listings = listingService.getListingsBySellerId(sellerId, pageable);
+        
+        logger.info("Successfully retrieved {} listings for seller ID: {} (page {}/{} with {} total elements)", 
+                   listings.getNumberOfElements(), sellerId, page + 1, listings.getTotalPages(), listings.getTotalElements());
+        
         return ResponseEntity.ok(listings);
     }
 
     @GetMapping("/{listingId}")
     public ResponseEntity<?> getListingById(@PathVariable Long listingId) {
+        logger.info("Received request to get listing by ID: {}", listingId);
+        
         Listing listing = listingService.getListingById(listingId);
-        listingService.incrementViewCount(listingId);
+        logger.info("Successfully retrieved listing ID: {} - title: '{}', seller: {}, status: {}", 
+                   listingId, listing.getTitle(), listing.getSellerId(), listing.getStatus());
+        
+        int newViewCount = listingService.incrementViewCount(listingId);
+        logger.debug("Incremented view count for listing ID: {} to {}", listingId, newViewCount);
+        
         return ResponseEntity.ok(listing);
     }
 
     @PostMapping("/")
     public ResponseEntity<?> createListing(@Valid @RequestBody CreateListingRequest request) {
+        logger.info("Received request to create listing - title: '{}', price: {}, category: {}, condition: {}, location: '{}'", 
+                   request.getTitle(), request.getPrice(), request.getCategory(), request.getCondition(), request.getLocation());
+        
         // TODO: retrieve seller id
         Long sellerId = 1L;
+        logger.debug("Using temporary seller ID: {} for listing creation", sellerId);
+        
         Listing createdListing = listingService.createListing(request.getTitle(), request.getDescription(), request.getPrice(),
             request.getCategory(), request.getCondition(), request.getLocation(), sellerId);
 
+        logger.info("Successfully created listing ID: {} with title: '{}' for seller ID: {}", 
+                   createdListing.getListingId(), createdListing.getTitle(), sellerId);
+        
         return ResponseEntity.ok(createdListing);
     }
 
     @PostMapping("/{listingId}/images")
     public ResponseEntity<?> uploadImages(@PathVariable Long listingId,
             @RequestParam("images") List<MultipartFile> images, @RequestParam("displayOrders") int[] displayOrders) {
+        logger.info("Received request to upload {} images for listing ID: {}", images.size(), listingId);
+        
         // TODO: retrieve seller id
         Long sellerId = 1L;
+        logger.debug("Using temporary seller ID: {} for image upload authorization", sellerId);
+        
         if (!listingService.isListingOwner(listingId, sellerId)) {
+            logger.warn("Unauthorized image upload attempt - listing ID: {}, seller ID: {}", listingId, sellerId);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not allowed to upload images for this listing");
         }
 
         Listing listing = listingService.getListingById(listingId);
+        logger.debug("Retrieved listing ID: {} for image upload", listingId);
+        
         List<ListingImage> storedImages = fileStorageService.storeFiles(images, listing, displayOrders);
+        logger.info("Successfully stored {} images for listing ID: {}", storedImages.size(), listingId);
+        
         Listing updatedListing = listingService.addImagesToListing(listingId, storedImages);
+        logger.info("Successfully added images to listing ID: {} - total images now: {}", 
+                   listingId, updatedListing.getImages().size());
+        
         return ResponseEntity.ok(updatedListing);
     }
 
     @PutMapping("/{listingId}")
     public ResponseEntity<?> updateListing(@PathVariable Long listingId, @Valid @RequestBody UpdateListingRequest request) {
+        logger.info("Received request to update listing ID: {} - title: '{}', price: {}", 
+                   listingId, request.getTitle(), request.getPrice());
+        
         // TODO: retrieve seller id
         Long sellerId = 1L;
+        logger.debug("Using temporary seller ID: {} for listing update authorization", sellerId);
+        
         if (!listingService.isListingOwner(listingId, sellerId)) {
+            logger.warn("Unauthorized listing update attempt - listing ID: {}, seller ID: {}", listingId, sellerId);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not allowed to update this listing");
         }
 
         Listing updatedListing = listingService.updateListing(listingId, request.getTitle(), request.getDescription(), request.getPrice(),
             request.getCategory(), request.getCondition(), request.getLocation(), request.getImages());
+        
+        logger.info("Successfully updated listing ID: {} - new title: '{}', price: {}, status: {}", 
+                   listingId, updatedListing.getTitle(), updatedListing.getPrice(), updatedListing.getStatus());
+        
         return ResponseEntity.ok(updatedListing);
     }
 
     @PutMapping("/{listingId}/sold")
     public ResponseEntity<?> markAsSold(@PathVariable Long listingId) {
+        logger.info("Received request to mark listing ID: {} as sold", listingId);
+        
         // TODO: retrieve seller id
         Long sellerId = 1L;
+        logger.debug("Using temporary seller ID: {} for mark as sold authorization", sellerId);
+        
         if (!listingService.isListingOwner(listingId, sellerId)) {
+            logger.warn("Unauthorized mark as sold attempt - listing ID: {}, seller ID: {}", listingId, sellerId);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not allowed to mark this listing as sold");
         }
 
         Listing updatedListing = listingService.markAsSold(listingId);
+        logger.info("Successfully marked listing ID: {} as sold - status changed to: {}", 
+                   listingId, updatedListing.getStatus());
+        
         return ResponseEntity.ok(updatedListing);
     }
 
     @PutMapping("/{listingId}/cancel")
     public ResponseEntity<?> cancelListing(@PathVariable Long listingId) {
+        logger.info("Received request to cancel listing ID: {}", listingId);
+        
         // TODO: retrieve seller id
         Long sellerId = 1L;
+        logger.debug("Using temporary seller ID: {} for listing cancellation authorization", sellerId);
+        
         if (!listingService.isListingOwner(listingId, sellerId)) {
+            logger.warn("Unauthorized listing cancellation attempt - listing ID: {}, seller ID: {}", listingId, sellerId);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not allowed to cancel this listing");
         }
 
         Listing updatedListing = listingService.cancelListing(listingId);
+        logger.info("Successfully cancelled listing ID: {} - status changed to: {}", 
+                   listingId, updatedListing.getStatus());
+        
         return ResponseEntity.ok(updatedListing);
     }
 
     @DeleteMapping("/{listingId}")
     public ResponseEntity<String> deleteListing(@PathVariable Long listingId) {
+        logger.info("Received request to delete listing ID: {}", listingId);
+        
         // TODO: retrieve seller id
         Long sellerId = 1L;
+        logger.debug("Using temporary seller ID: {} for listing deletion authorization", sellerId);
+        
         if (!listingService.isListingOwner(listingId, sellerId)) {
+            logger.warn("Unauthorized listing deletion attempt - listing ID: {}, seller ID: {}", listingId, sellerId);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You are not allowed to delete this listing");
         }
 
         listingService.deleteListing(listingId);
+        logger.info("Successfully deleted listing ID: {}", listingId);
+        
         return ResponseEntity.ok("Listing deleted successfully");
     }
 

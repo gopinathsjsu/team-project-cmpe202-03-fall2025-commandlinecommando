@@ -71,7 +71,7 @@ class ListingControllerTest {
 
         // Create test listing image
         testListingImage = new ListingImage(
-            testListing,
+            testListing.getListingId(),
             "/path/to/test-image.jpg",
             "test-image.jpg",
             1
@@ -739,7 +739,7 @@ class ListingControllerTest {
         request.setImages(null);
 
         Listing updatedListing = new Listing(
-            testListing.getTitle(),
+            "Updated Item",
             testListing.getDescription(),
             testListing.getPrice(),
             testListing.getCategory(),
@@ -750,18 +750,20 @@ class ListingControllerTest {
         updatedListing.setListingId(testListing.getListingId());
         updatedListing.setStatus(testListing.getStatus());
         updatedListing.setImages(testListing.getImages());
-        updatedListing.setTitle("Updated Item");
 
         when(listingService.isListingOwner(1L, 1L)).thenReturn(true);
-        lenient().when(listingService.updateListing(eq(1L), eq("Updated Item"), isNull(), any(BigDecimal.class),
-            any(Category.class), any(ItemCondition.class), isNull(), isNull())).thenReturn(updatedListing);
+        when(listingService.updateListing(eq(1L), eq("Updated Item"), any(), any(), any(), any(), any(), isNull()))
+            .thenReturn(updatedListing);
 
         // Act
         ResponseEntity<?> response = listingController.updateListing(1L, request);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(listingService).updateListing(eq(1L), eq("Updated Item"), isNull(), any(), any(), any(), isNull(), isNull());
+        assertNotNull(response.getBody());
+        assertEquals(updatedListing, response.getBody());
+        verify(listingService).isListingOwner(1L, 1L);
+        verify(listingService).updateListing(eq(1L), eq("Updated Item"), any(), any(), any(), any(), any(), isNull());
     }
 
     @Test

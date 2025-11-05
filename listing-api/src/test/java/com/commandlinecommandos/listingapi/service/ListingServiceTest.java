@@ -1,6 +1,7 @@
 package com.commandlinecommandos.listingapi.service;
 
 import com.commandlinecommandos.listingapi.exception.ListingException;
+import com.commandlinecommandos.listingapi.exception.ListingNotFoundException;
 import com.commandlinecommandos.listingapi.model.*;
 import com.commandlinecommandos.listingapi.repository.ListingRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -58,7 +59,7 @@ class ListingServiceTest {
         testListing.setViewCount(0);
 
         // Create test image
-        testImage = new ListingImage(testListing, "/path/to/image.jpg", "test-image.jpg", 1);
+        testImage = new ListingImage(testListing.getListingId(), "/path/to/image.jpg", "test-image.jpg", 1);
         testImage.setImageId(1L);
 
         // Create test images list
@@ -148,12 +149,12 @@ class ListingServiceTest {
         when(listingRepository.findById(999L)).thenReturn(Optional.empty());
 
         // Act
-        ListingException exception = assertThrows(ListingException.class, () -> {
+        ListingNotFoundException exception = assertThrows(ListingNotFoundException.class, () -> {
             listingService.getListingById(999L);
         });
 
         // Assert
-        assertEquals("Listing not found with id: 999", exception.getMessage());
+        assertEquals("Listing with ID 999 not found", exception.getMessage());
         verify(listingRepository).findById(999L);
     }
 
@@ -183,12 +184,12 @@ class ListingServiceTest {
             .thenReturn(Optional.empty());
 
         // Act 
-        ListingException exception = assertThrows(ListingException.class, () -> {
+        ListingNotFoundException exception = assertThrows(ListingNotFoundException.class, () -> {
             listingService.getAllListings(testPageable);
         });
 
         // Assert
-        assertEquals("No listings found", exception.getMessage());
+        assertEquals("No active listings found", exception.getMessage());
         verify(listingRepository).findByStatusOrderByCreatedAtDesc(ListingStatus.ACTIVE, testPageable);
     }
 
@@ -218,7 +219,7 @@ class ListingServiceTest {
             .thenReturn(Optional.empty());
 
         // Act
-        ListingException exception = assertThrows(ListingException.class, () -> {
+        ListingNotFoundException exception = assertThrows(ListingNotFoundException.class, () -> {
             listingService.getListingsBySellerId(999L, testPageable);
         });
 
@@ -253,7 +254,7 @@ class ListingServiceTest {
             .thenReturn(Optional.empty());
 
         // Act
-        ListingException exception = assertThrows(ListingException.class, () -> {
+        ListingNotFoundException exception = assertThrows(ListingNotFoundException.class, () -> {
             listingService.getListingsBySellerIdAndStatus(999L, ListingStatus.SOLD, testPageable);
         });
 
@@ -288,7 +289,7 @@ class ListingServiceTest {
             .thenReturn(Optional.empty());
 
         // Act
-        ListingException exception = assertThrows(ListingException.class, () -> {
+        ListingNotFoundException exception = assertThrows(ListingNotFoundException.class, () -> {
             listingService.getListingsByCategory(Category.TEXTBOOKS, testPageable);
         });
 
@@ -323,7 +324,7 @@ class ListingServiceTest {
             .thenReturn(Optional.empty());
 
         // Act
-        ListingException exception = assertThrows(ListingException.class, () -> {
+        ListingNotFoundException exception = assertThrows(ListingNotFoundException.class, () -> {
             listingService.getListingsByStatus(ListingStatus.CANCELLED, testPageable);
         });
 
@@ -360,7 +361,7 @@ class ListingServiceTest {
             .thenReturn(Optional.empty());
 
         // Act
-        ListingException exception = assertThrows(ListingException.class, () -> {
+        ListingNotFoundException exception = assertThrows(ListingNotFoundException.class, () -> {
             listingService.searchListings(keyword, testPageable);
         });
 
@@ -403,7 +404,7 @@ class ListingServiceTest {
             .thenReturn(Optional.empty());
 
         // Act
-        ListingException exception = assertThrows(ListingException.class, () -> {
+        ListingNotFoundException exception = assertThrows(ListingNotFoundException.class, () -> {
             listingService.getListingsWithFilters(
                 ListingStatus.ACTIVE, "test", Category.ELECTRONICS, ItemCondition.GOOD,
                 new BigDecimal("50.00"), new BigDecimal("150.00"), "Test Location", testPageable);
@@ -468,7 +469,7 @@ class ListingServiceTest {
         when(listingRepository.findById(999L)).thenReturn(Optional.empty());
 
         // Act
-        ListingException exception = assertThrows(ListingException.class, () -> {
+        ListingNotFoundException exception = assertThrows(ListingNotFoundException.class, () -> {
             listingService.updateListing(
                 999L,
                 "Updated Title",
@@ -482,7 +483,7 @@ class ListingServiceTest {
         });
 
         // Assert
-        assertEquals("Listing not found with id: 999", exception.getMessage());
+        assertEquals("Listing with ID 999 not found", exception.getMessage());
         verify(listingRepository).findById(999L);
         verify(listingRepository, never()).save(any(Listing.class));
     }
@@ -492,7 +493,7 @@ class ListingServiceTest {
     void testAddImagesToListing_Success() {
         // Arrange
         List<ListingImage> newImages = Arrays.asList(
-            new ListingImage(testListing, "/path/to/new-image.jpg", "new-image.jpg", 2)
+            new ListingImage(testListing.getListingId(), "/path/to/new-image.jpg", "new-image.jpg", 2)
         );
         
         when(listingRepository.findById(1L)).thenReturn(Optional.of(testListing));
@@ -514,12 +515,12 @@ class ListingServiceTest {
         when(listingRepository.findById(999L)).thenReturn(Optional.empty());
 
         // Act
-        ListingException exception = assertThrows(ListingException.class, () -> {
+        ListingNotFoundException exception = assertThrows(ListingNotFoundException.class, () -> {
             listingService.addImagesToListing(999L, newImages);
         });
 
         // Assert
-        assertEquals("Listing not found with id: 999", exception.getMessage());
+        assertEquals("Listing with ID 999 not found", exception.getMessage());
         verify(listingRepository).findById(999L);
         verify(listingRepository, never()).save(any(Listing.class));
     }
@@ -547,12 +548,12 @@ class ListingServiceTest {
         when(listingRepository.findById(999L)).thenReturn(Optional.empty());
 
         // Act
-        ListingException exception = assertThrows(ListingException.class, () -> {
+        ListingNotFoundException exception = assertThrows(ListingNotFoundException.class, () -> {
             listingService.markAsSold(999L);
         });
 
         // Assert
-        assertEquals("Listing not found with id: 999", exception.getMessage());
+        assertEquals("Listing with ID 999 not found", exception.getMessage());
         verify(listingRepository).findById(999L);
         verify(listingRepository, never()).save(any(Listing.class));
     }
@@ -580,12 +581,12 @@ class ListingServiceTest {
         when(listingRepository.findById(999L)).thenReturn(Optional.empty());
 
         // Act
-        ListingException exception = assertThrows(ListingException.class, () -> {
+        ListingNotFoundException exception = assertThrows(ListingNotFoundException.class, () -> {
             listingService.cancelListing(999L);
         });
 
         // Assert
-        assertEquals("Listing not found with id: 999", exception.getMessage());
+        assertEquals("Listing with ID 999 not found", exception.getMessage());
         verify(listingRepository).findById(999L);
         verify(listingRepository, never()).save(any(Listing.class));
     }
@@ -611,12 +612,12 @@ class ListingServiceTest {
         when(listingRepository.findById(999L)).thenReturn(Optional.empty());
 
         // Act
-        ListingException exception = assertThrows(ListingException.class, () -> {
+        ListingNotFoundException exception = assertThrows(ListingNotFoundException.class, () -> {
             listingService.deleteListing(999L);
         });
 
         // Assert
-        assertEquals("Listing not found with id: 999", exception.getMessage());
+        assertEquals("Listing with ID 999 not found", exception.getMessage());
         verify(listingRepository).findById(999L);
         verify(listingRepository, never()).delete(any(Listing.class));
     }
@@ -684,12 +685,12 @@ class ListingServiceTest {
         when(listingRepository.findById(999L)).thenReturn(Optional.empty());
 
         // Act
-        ListingException exception = assertThrows(ListingException.class, () -> {
+        ListingNotFoundException exception = assertThrows(ListingNotFoundException.class, () -> {
             listingService.isListingOwner(999L, 1L);
         });
 
         // Assert
-        assertEquals("Listing not found with id: 999", exception.getMessage());
+        assertEquals("Listing with ID 999 not found", exception.getMessage());
         verify(listingRepository).findById(999L);
     }
 
@@ -865,12 +866,12 @@ class ListingServiceTest {
         when(listingRepository.findById(999L)).thenReturn(Optional.empty());
 
         // Act
-        ListingException exception = assertThrows(ListingException.class, () -> {
+        ListingNotFoundException exception = assertThrows(ListingNotFoundException.class, () -> {
             listingService.incrementViewCount(999L);
         });
 
         // Assert
-        assertEquals("Listing not found with id: 999", exception.getMessage());
+        assertEquals("Listing with ID 999 not found", exception.getMessage());
         verify(listingRepository).findById(999L);
         verify(listingRepository, never()).save(any(Listing.class));
     }

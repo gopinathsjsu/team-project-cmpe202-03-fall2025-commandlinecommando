@@ -125,3 +125,33 @@ UNION ALL
 SELECT 'Order Items', COUNT(*) FROM order_items
 UNION ALL
 SELECT 'Refresh Tokens', COUNT(*) FROM refresh_tokens;
+
+-- =====================================================
+-- SEED DATA - LISTING API (Listings, Images, Reports)
+-- =====================================================
+
+-- Sample listings
+INSERT INTO listings (seller_id, title, description, category, price, condition, status, location, view_count, created_at, updated_at) VALUES
+  (101, 'Dell XPS 13 Laptop', 'Lightweight ultrabook perfect for note taking and coding. 16GB RAM, 512GB SSD.', 'ELECTRONICS', 650.00, 'GOOD', 'ACTIVE', 'SJSU Library', 12, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  (102, 'Discrete Math Textbook', 'Discrete Mathematics and Its Applications, 8th Ed. Minimal highlights.', 'TEXTBOOKS', 60.00, 'LIKE_NEW', 'ACTIVE', 'Engineering Building', 7, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+  (103, 'iPad Air 4 + Pencil', 'Great for digital notes. Includes Apple Pencil 2 and case.', 'ELECTRONICS', 420.00, 'GOOD', 'PENDING', 'Student Union', 3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Images for the listings (assumes generated listing_id values 1..3)
+INSERT INTO listing_images (listing_id, image_url, alt_text, display_order) VALUES
+  (1, 'https://cdn.example.com/listings/xps13/front.jpg', 'Dell XPS 13 Front', 1),
+  (1, 'https://cdn.example.com/listings/xps13/side.jpg', 'Dell XPS 13 Side', 2),
+  (2, 'https://cdn.example.com/listings/discrete-math/cover.jpg', 'Discrete Math Cover', 1),
+  (3, 'https://cdn.example.com/listings/ipad-air/hero.jpg', 'iPad Air with Pencil', 1);
+
+-- Reports against listings
+INSERT INTO reports (reporter_id, listing_id, report_type, description, status, created_at)
+VALUES
+  (201, 3, 'SPAM', 'Looks like a duplicate listing posted multiple times.', 'PENDING', CURRENT_TIMESTAMP),
+  (202, 1, 'INAPPROPRIATE_CONTENT', 'Listing description includes inappropriate language.', 'UNDER_REVIEW', CURRENT_TIMESTAMP);
+
+-- Quick counts for Listing API entities
+SELECT 'Listings', COUNT(*) FROM listings
+UNION ALL
+SELECT 'Listing Images', COUNT(*) FROM listing_images
+UNION ALL
+SELECT 'Reports', COUNT(*) FROM reports;

@@ -137,17 +137,28 @@ The Listing API follows microservice principles:
 - Immutable value objects where appropriate
 - Proper relationship mapping
 
-#### 5. Exceptions
+#### 5. Exceptions & Global Exception Handling
 **Location**: `com.commandlinecommandos.listingapi.exception`
 
 **Responsibilities**:
 - Custom exception handling
 - Error categorization
 - Consistent error responses
+- Global exception management
+
+**Key Components**:
+- `GlobalExceptionHandler`: Centralized exception handling with `@ControllerAdvice`
+- `ErrorResponse`: Standardized error response DTO
+- Custom business exceptions for domain-specific errors
 
 **Key Exceptions**:
 - `ListingException`: General listing errors
 - `FileStorageException`: File operation errors
+- `ListingNotFoundException`: Listing not found errors
+- `ReportNotFoundException`: Report not found errors
+- `UnauthorizedAccessException`: Authorization errors
+- `ValidationException`: Custom validation errors
+- `FileUploadException`: File upload specific errors
 
 ## Data Flow Architecture
 
@@ -241,6 +252,76 @@ CREATE INDEX idx_listings_title_desc ON listings USING gin(to_tsvector('english'
 CREATE INDEX idx_listing_images_listing_id ON listing_images(listing_id);
 ```
 
+## Exception Handling Architecture
+
+### 1. Global Exception Handler
+The application implements a comprehensive global exception handling strategy using Spring's `@ControllerAdvice` pattern.
+
+**Architecture**:
+```
+Exception → GlobalExceptionHandler → ErrorResponse → JSON Response
+```
+
+**Key Features**:
+- **Centralized Handling**: Single point for all exception processing
+- **Consistent Format**: All errors return standardized `ErrorResponse` structure
+- **Comprehensive Coverage**: Handles business, validation, HTTP, and file upload exceptions
+- **Detailed Logging**: Structured logging with appropriate log levels
+- **Security**: Prevents information leakage in error responses
+
+### 2. Error Response Structure
+```java
+public class ErrorResponse {
+    private String error;           // Machine-readable error code
+    private String message;         // Human-readable description
+    private int status;            // HTTP status code
+    private LocalDateTime timestamp; // Auto-generated timestamp
+    private String path;           // Request path where error occurred
+    private List<String> validationErrors; // Field-level validation errors
+}
+```
+
+### 3. Exception Categories
+
+#### Business Exceptions
+- **Domain-Specific**: Custom exceptions for business logic violations
+- **HTTP Status Mapping**: Appropriate status codes (400, 403, 404, 500)
+- **User-Friendly Messages**: Clear, actionable error messages
+
+#### Validation Exceptions
+- **Field-Level Details**: Specific validation error messages
+- **Multiple Errors**: Support for multiple validation failures
+- **Constraint Violations**: Jakarta Validation constraint handling
+
+#### HTTP Exceptions
+- **Request Processing**: Malformed requests, missing parameters
+- **Method Validation**: Unsupported HTTP methods
+- **Content Type**: Invalid JSON, file upload issues
+
+#### File Upload Exceptions
+- **Size Limits**: File size exceeded handling
+- **Type Validation**: Unsupported file types
+- **Storage Issues**: File system errors
+
+### 4. Error Handling Flow
+```
+Controller Method
+    ↓ (throws exception)
+GlobalExceptionHandler
+    ↓ (catches and processes)
+ErrorResponse Creation
+    ↓ (logs exception)
+JSON Response
+    ↓ (returns to client)
+Client receives structured error
+```
+
+### 5. Logging Strategy
+- **Error Level**: Business exceptions and validation errors
+- **Warn Level**: Client errors (400-level)
+- **Debug Level**: Detailed stack traces for debugging
+- **Structured Logging**: Consistent log format with context
+
 ## Security Architecture
 
 ### 1. Authentication & Authorization
@@ -252,7 +333,12 @@ CREATE INDEX idx_listing_images_listing_id ON listing_images(listing_id);
 Request → CORS → Authentication → Authorization → Controller → Service
 ```
 
-### 2. Input Validation
+### 2. Error Response Security
+- **Information Hiding**: Prevents sensitive data leakage in error responses
+- **Consistent Format**: Standardized responses prevent information disclosure
+- **Path Information**: Includes request path for debugging without exposing internals
+
+### 3. Input Validation
 - Jakarta Validation annotations
 - Request body validation
 - File upload validation

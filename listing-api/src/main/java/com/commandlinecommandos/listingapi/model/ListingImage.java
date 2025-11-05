@@ -9,9 +9,8 @@ public class ListingImage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long imageId;
     
-    @ManyToOne
-    @JoinColumn(name = "listing_id", nullable = false)
-    private Listing listing;
+    @Column(name = "listing_id", nullable = false)
+    private Long listingId;
     
     @Column(name = "image_url", nullable = false)
     private String imageUrl;
@@ -25,8 +24,8 @@ public class ListingImage {
     public ListingImage() {
     }
 
-    public ListingImage(Listing listing, String imageUrl, String altText, Integer displayOrder) {
-        this.listing = listing;
+    public ListingImage(Long listingId, String imageUrl, String altText, Integer displayOrder) {
+        this.listingId = listingId;
         this.imageUrl = imageUrl;
         this.altText = altText;
         this.displayOrder = displayOrder;
@@ -40,12 +39,12 @@ public class ListingImage {
         this.imageId = imageId;
     }
     
-    public Listing getListing() {
-        return listing;
+    public Long getListingId() {
+        return listingId;
     }
 
-    public void setListing(Listing listing) {
-        this.listing = listing;
+    public void setListingId(Long listingId) {
+        this.listingId = listingId;
     }
     
     public String getImageUrl() {

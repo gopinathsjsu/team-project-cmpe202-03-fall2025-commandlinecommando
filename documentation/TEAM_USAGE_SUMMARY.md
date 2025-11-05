@@ -12,6 +12,11 @@ Your team now has a **production-ready PostgreSQL database environment** with co
 - **Redis cache** for sessions and performance
 - **Automated initialization** with proper user permissions
 - **Comprehensive documentation** for easy team onboarding
+- **Listing Management API** with full CRUD operations
+- **Report Management System** for content moderation
+- **Image Upload System** with multiple file support
+- **Advanced Search & Filtering** capabilities
+- **Complete API Documentation** with examples
 
 ### 📚 Documentation Structure
 1. **[Onboarding Checklist](db/docs/ONBOARDING_CHECKLIST.md)** - For new team members
@@ -64,6 +69,8 @@ docker-compose stop                     # Save resources
 | pgAdmin | http://localhost:8080 | admin@campusmarketplace.com / pgadmin2024 |
 | Redis | localhost:6379 | No auth required |
 | H2 Console | http://localhost:8080/api/h2-console | sa / (blank) |
+| Main Backend API | http://localhost:8080/api | JWT authentication |
+| Listing API | http://localhost:8100/api | JWT authentication |
 
 ### Database Users
 - **postgres** (admin): Full database administration
