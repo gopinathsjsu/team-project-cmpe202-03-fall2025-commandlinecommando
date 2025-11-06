@@ -4,6 +4,12 @@ spring:
     name: listing-api
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
+  # Disable Spring Session JDBC (using JWT tokens instead)
+  session:
+    store-type: none
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.session.SessionAutoConfiguration
   datasource:
     url: jdbc:postgresql://localhost:5432/campus_marketplace
     username: ${DB_USERNAME:postgres}
@@ -27,6 +33,10 @@ spring:
 # File upload configuration
 file:
   upload-dir: ${FILE_UPLOAD_DIR:./uploads}
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:myVerySecureSecretKeyForJWTTokensThatShouldBeAtLeast256BitsLongForHS256AlgorithmUpdated2024}
 
 # Server configuration
 server:

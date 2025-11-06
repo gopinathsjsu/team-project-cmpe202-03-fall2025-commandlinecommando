@@ -18,9 +18,14 @@ import com.commandlinecommandos.listingapi.model.ReportStatus;
 import com.commandlinecommandos.listingapi.model.ReportType;
 import com.commandlinecommandos.listingapi.service.ReportService;
 import com.commandlinecommandos.listingapi.service.ListingService;
+import com.commandlinecommandos.listingapi.security.JwtHelper;
+import com.commandlinecommandos.listingapi.dto.CreateReportRequest;
+import com.commandlinecommandos.listingapi.dto.UpdateReportRequest;
+import com.commandlinecommandos.listingapi.dto.ReportCounts;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +33,7 @@ import org.slf4j.LoggerFactory;
 @RestController
 @RequestMapping("/api/reports")
 public class ReportController {
-    // TODO: Add authentication and authorization, only admin can access this endpoint
+    
     private static final Logger logger = LoggerFactory.getLogger(ReportController.class);
 
     @Autowired
@@ -37,15 +42,21 @@ public class ReportController {
     @Autowired
     private ListingService listingService;
 
+    @Autowired
+    private JwtHelper jwtHelper;
+
     @GetMapping
     public ResponseEntity<Page<?>> getAllReports(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDirection) {
+            @RequestParam(defaultValue = "desc") String sortDirection,
+            HttpServletRequest httpRequest) {
 
         logger.info("Received request to get all reports - page: {}, size: {}, sortBy: {}, sortDirection: {}", 
                    page, size, sortBy, sortDirection);
+        
+        verifyAdmin(httpRequest);
         
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
         Page<Report> reports = reportService.getAllReports(pageable);
@@ -66,10 +77,13 @@ public class ReportController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDirection) {
+            @RequestParam(defaultValue = "desc") String sortDirection,
+            HttpServletRequest httpRequest) {
 
         logger.info("Received search request - status: {}, reporterId: {}, listingId: {}, reportType: {}, reviewedBy: {}, page: {}, size: {}", 
                    status, reporterId, listingId, reportType, reviewedBy, page, size);
+        
+        verifyAdmin(httpRequest);
         
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
         Page<Report> reports = reportService.searchReports(status, reporterId, listingId, reportType, reviewedBy, pageable);
@@ -85,10 +99,13 @@ public class ReportController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDirection) {
+            @RequestParam(defaultValue = "asc") String sortDirection,
+            HttpServletRequest httpRequest) {
 
         logger.info("Received request to get pending reports - page: {}, size: {}, sortBy: {}", 
                    page, size, sortBy);
+        
+        verifyAdmin(httpRequest);
         
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
         Page<Report> reports = reportService.getPendingReports(pageable);
@@ -105,10 +122,13 @@ public class ReportController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDirection) {
+            @RequestParam(defaultValue = "desc") String sortDirection,
+            HttpServletRequest httpRequest) {
 
         logger.info("Received request to get reports for reporter ID: {} - page: {}, size: {}, sortBy: {}", 
                    reporterId, page, size, sortBy);
+        
+        verifyAdmin(httpRequest);
         
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
         Page<Report> reports = reportService.getReportsByReporterId(reporterId, pageable);
@@ -125,10 +145,13 @@ public class ReportController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDirection) {
+            @RequestParam(defaultValue = "desc") String sortDirection,
+            HttpServletRequest httpRequest) {
 
         logger.info("Received request to get reports for listing ID: {} - page: {}, size: {}, sortBy: {}", 
                    listingId, page, size, sortBy);
+        
+        verifyAdmin(httpRequest);
         
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
         Page<Report> reports = reportService.getReportsByListingId(listingId, pageable);
@@ -145,10 +168,13 @@ public class ReportController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDirection) {
+            @RequestParam(defaultValue = "desc") String sortDirection,
+            HttpServletRequest httpRequest) {
 
         logger.info("Received request to get reports for type: {} - page: {}, size: {}, sortBy: {}", 
                    reportType, page, size, sortBy);
+        
+        verifyAdmin(httpRequest);
         
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
         Page<Report> reports = reportService.getReportsByReportType(reportType, pageable);
@@ -165,10 +191,13 @@ public class ReportController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "createdAt") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDirection) {
+            @RequestParam(defaultValue = "desc") String sortDirection,
+            HttpServletRequest httpRequest) {
 
         logger.info("Received request to get reports for status: {} - page: {}, size: {}, sortBy: {}", 
                    status, page, size, sortBy);
+        
+        verifyAdmin(httpRequest);
         
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.fromString(sortDirection), sortBy));
         Page<Report> reports = reportService.getReportsByStatus(status, pageable);
@@ -180,8 +209,10 @@ public class ReportController {
     }
 
     @GetMapping("/{reportId}")
-    public ResponseEntity<?> getReportById(@PathVariable Long reportId) {
+    public ResponseEntity<?> getReportById(@PathVariable Long reportId, HttpServletRequest httpRequest) {
         logger.info("Received request to get report by ID: {}", reportId);
+        
+        verifyAdmin(httpRequest);
         
         Report report = reportService.getReportById(reportId);
         logger.info("Successfully retrieved report ID: {} - type: {}, status: {}, reporter: {}", 
@@ -190,12 +221,19 @@ public class ReportController {
         return ResponseEntity.ok(report);
     }
 
+    // Any user can create a report, no need to verify admin
     @PostMapping("/")
-    public ResponseEntity<?> createReport(@Valid @RequestBody CreateReportRequest request) {
-        logger.info("Received request to create report - type: {}, listingId: {}, reporterId: {}", 
-                   request.getReportType(), request.getListingId(), request.getReporterId());
+    public ResponseEntity<?> createReport(@Valid @RequestBody CreateReportRequest request, HttpServletRequest httpRequest) {
+        logger.info("Received request to create report - type: {}, listingId: {}", 
+                   request.getReportType(), request.getListingId());
         
-        Report createdReport = reportService.createReport(request.getReporterId(), request.getListingId(), 
+        Long reporterId = jwtHelper.extractUserIdFromRequest(httpRequest);
+        if (reporterId == null) {
+            logger.warn("Unauthorized report creation attempt - no valid JWT token");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication required");
+        }
+        
+        Report createdReport = reportService.createReport(reporterId, request.getListingId(), 
             request.getReportType(), request.getDescription());
 
         logger.info("Successfully created report ID: {} with type: '{}' for listing ID: {} by reporter ID: {}", 
@@ -205,9 +243,12 @@ public class ReportController {
     }
 
     @PutMapping("/{reportId}")
-    public ResponseEntity<?> updateReport(@PathVariable Long reportId, @Valid @RequestBody UpdateReportRequest request) {
+    public ResponseEntity<?> updateReport(@PathVariable Long reportId, @Valid @RequestBody UpdateReportRequest request,
+            HttpServletRequest httpRequest) {
         logger.info("Received request to update report ID: {} - type: '{}'", 
                    reportId, request.getReportType());
+        
+        verifyAdmin(httpRequest);
         
         Report updatedReport = reportService.updateReport(reportId, request.getReportType(), request.getDescription());
         
@@ -218,12 +259,16 @@ public class ReportController {
     }
 
     @PutMapping("/{reportId}/review")
-    public ResponseEntity<?> markAsReviewed(@PathVariable Long reportId) {
+    public ResponseEntity<?> markAsReviewed(@PathVariable Long reportId, HttpServletRequest httpRequest) {
         logger.info("Received request to mark report ID: {} as reviewed", reportId);
         
-        // TODO: retrieve reviewer id from authentication
-        Long reviewerId = 1L;
-        logger.debug("Using temporary reviewer ID: {} for report review", reviewerId);
+        verifyAdmin(httpRequest);
+
+        Long reviewerId = jwtHelper.extractUserIdFromRequest(httpRequest);
+        if (reviewerId == null) {
+            logger.warn("Unauthorized report review attempt - no valid JWT token");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication required");
+        }
         
         Report updatedReport = reportService.markAsReviewed(reportId, reviewerId);
         logger.info("Successfully marked report ID: {} as reviewed by ID: {} - status changed to: {}", 
@@ -233,15 +278,15 @@ public class ReportController {
     }
 
     @PutMapping("/{reportId}/resolve")
-    public ResponseEntity<?> markAsResolved(@PathVariable Long reportId) {
+    public ResponseEntity<?> markAsResolved(@PathVariable Long reportId, HttpServletRequest httpRequest) {
         logger.info("Received request to mark report ID: {} as resolved", reportId);
+        
+        verifyAdmin(httpRequest);
         
         Report updatedReport = reportService.markAsResolved(reportId);
         logger.info("Successfully marked report ID: {} as resolved - status changed to: {}", 
                    reportId, updatedReport.getStatus());
         
-        // Mark the associated listing as cancelled when report is resolved
-        // Keep this exception handling as it's business logic - we don't want listing cancellation failure to fail the report resolution
         try {
             listingService.cancelListing(updatedReport.getListingId());
             logger.info("Successfully cancelled listing ID: {} due to resolved report ID: {}", 
@@ -249,16 +294,16 @@ public class ReportController {
         } catch (Exception listingException) {
             logger.warn("Failed to cancel listing ID: {} when resolving report ID: {} - error: {}", 
                        updatedReport.getListingId(), reportId, listingException.getMessage());
-            // Don't fail the report resolution if listing cancellation fails
-            // The report is still resolved successfully
         }
         
         return ResponseEntity.ok(updatedReport);
     }
 
     @PutMapping("/{reportId}/dismiss")
-    public ResponseEntity<?> markAsDismissed(@PathVariable Long reportId) {
+    public ResponseEntity<?> markAsDismissed(@PathVariable Long reportId, HttpServletRequest httpRequest) {
         logger.info("Received request to mark report ID: {} as dismissed", reportId);
+        
+        verifyAdmin(httpRequest);
         
         Report updatedReport = reportService.markAsDismissed(reportId);
         logger.info("Successfully marked report ID: {} as dismissed - status changed to: {}", 
@@ -268,8 +313,10 @@ public class ReportController {
     }
 
     @DeleteMapping("/{reportId}")
-    public ResponseEntity<String> deleteReport(@PathVariable Long reportId) {
+    public ResponseEntity<String> deleteReport(@PathVariable Long reportId, HttpServletRequest httpRequest) {
         logger.info("Received request to delete report ID: {}", reportId);
+        
+        verifyAdmin(httpRequest);
         
         reportService.deleteReport(reportId);
         logger.info("Successfully deleted report ID: {}", reportId);
@@ -278,8 +325,10 @@ public class ReportController {
     }
 
     @GetMapping("/count")
-    public ResponseEntity<?> getReportCounts() {
+    public ResponseEntity<?> getReportCounts(HttpServletRequest httpRequest) {
         logger.info("Received request to get report counts");
+        
+        verifyAdmin(httpRequest);
         
         Long pendingCount = reportService.countReportsByStatus(ReportStatus.PENDING);
         Long underReviewCount = reportService.countReportsByStatus(ReportStatus.UNDER_REVIEW);
@@ -294,109 +343,13 @@ public class ReportController {
         return ResponseEntity.ok(counts);
     }
 
-    public static class CreateReportRequest {
-        private Long reporterId;
-        private Long listingId;
-        private ReportType reportType;
-        private String description;
-
-        public Long getReporterId() {
-            return reporterId;
+    private boolean verifyAdmin(HttpServletRequest httpRequest) {
+        String role = jwtHelper.extractRoleFromRequest(httpRequest);
+        if (role == null || !role.equals("ADMIN")) {
+            logger.warn("Unauthorized admin access attempt - no valid JWT token or role is not ADMIN");
+            return false;
         }
-
-        public void setReporterId(Long reporterId) {
-            this.reporterId = reporterId;
-        }
-
-        public Long getListingId() {
-            return listingId;
-        }
-
-        public void setListingId(Long listingId) {
-            this.listingId = listingId;
-        }
-
-        public ReportType getReportType() {
-            return reportType;
-        }
-
-        public void setReportType(ReportType reportType) {
-            this.reportType = reportType;
-        }
-
-        public String getDescription() {
-            return description;
-        }
-
-        public void setDescription(String description) {
-            this.description = description;
-        }
-    }
-
-    public static class UpdateReportRequest {
-        private ReportType reportType;
-        private String description;
-
-        public ReportType getReportType() {
-            return reportType;
-        }
-
-        public void setReportType(ReportType reportType) {
-            this.reportType = reportType;
-        }
-
-        public String getDescription() {
-            return description;
-        }
-
-        public void setDescription(String description) {
-            this.description = description;
-        }
-    }
-
-    public static class ReportCounts {
-        private Long pending;
-        private Long underReview;
-        private Long resolved;
-        private Long dismissed;
-
-        public ReportCounts(Long pending, Long underReview, Long resolved, Long dismissed) {
-            this.pending = pending;
-            this.underReview = underReview;
-            this.resolved = resolved;
-            this.dismissed = dismissed;
-        }
-
-        public Long getPending() {
-            return pending;
-        }
-
-        public void setPending(Long pending) {
-            this.pending = pending;
-        }
-
-        public Long getUnderReview() {
-            return underReview;
-        }
-
-        public void setUnderReview(Long underReview) {
-            this.underReview = underReview;
-        }
-
-        public Long getResolved() {
-            return resolved;
-        }
-
-        public void setResolved(Long resolved) {
-            this.resolved = resolved;
-        }
-
-        public Long getDismissed() {
-            return dismissed;
-        }
-
-        public void setDismissed(Long dismissed) {
-            this.dismissed = dismissed;
-        }
+        logger.debug("Using role: {} from JWT for admin access", role);
+        return true;
     }
 }
