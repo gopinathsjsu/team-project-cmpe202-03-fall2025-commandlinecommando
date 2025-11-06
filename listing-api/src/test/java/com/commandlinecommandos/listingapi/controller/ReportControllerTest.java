@@ -3,6 +3,10 @@ package com.commandlinecommandos.listingapi.controller;
 import com.commandlinecommandos.listingapi.model.*;
 import com.commandlinecommandos.listingapi.service.ReportService;
 import com.commandlinecommandos.listingapi.exception.ReportException;
+import com.commandlinecommandos.listingapi.security.JwtHelper;
+import com.commandlinecommandos.listingapi.dto.CreateReportRequest;
+import com.commandlinecommandos.listingapi.dto.UpdateReportRequest;
+import com.commandlinecommandos.listingapi.dto.ReportCounts;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,7 +20,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,15 +38,44 @@ class ReportControllerTest {
     @Mock
     private ReportService reportService;
 
+    @Mock
+    private JwtHelper jwtHelper;
+
     @InjectMocks
     private ReportController reportController;
 
     private Report testReport;
     private Pageable testPageable;
     private Page<Report> testPage;
+    private HttpServletRequest mockRequest;
+    private HttpServletRequest mockRequestNoAuth;
+    private HttpServletRequest mockRequestAdmin;
+    private HttpServletRequest mockRequestNonAdmin;
 
     @BeforeEach
     void setUp() {
+        // Create mock HTTP requests
+        mockRequest = new MockHttpServletRequest();
+        ((MockHttpServletRequest) mockRequest).addHeader("Authorization", "Bearer test-jwt-token");
+        
+        mockRequestNoAuth = new MockHttpServletRequest();
+        
+        mockRequestAdmin = new MockHttpServletRequest();
+        ((MockHttpServletRequest) mockRequestAdmin).addHeader("Authorization", "Bearer admin-jwt-token");
+        
+        mockRequestNonAdmin = new MockHttpServletRequest();
+        ((MockHttpServletRequest) mockRequestNonAdmin).addHeader("Authorization", "Bearer user-jwt-token");
+        
+        // Mock JWT helper - use lenient() since not all tests use all mocks
+        lenient().when(jwtHelper.extractUserIdFromRequest(mockRequest)).thenReturn(1L);
+        lenient().when(jwtHelper.extractUserIdFromRequest(mockRequestNoAuth)).thenReturn(null);
+        lenient().when(jwtHelper.extractUserIdFromRequest(mockRequestAdmin)).thenReturn(1L);
+        lenient().when(jwtHelper.extractUserIdFromRequest(mockRequestNonAdmin)).thenReturn(2L);
+        
+        lenient().when(jwtHelper.extractRoleFromRequest(mockRequestAdmin)).thenReturn("ADMIN");
+        lenient().when(jwtHelper.extractRoleFromRequest(mockRequestNonAdmin)).thenReturn("STUDENT");
+        lenient().when(jwtHelper.extractRoleFromRequest(mockRequestNoAuth)).thenReturn(null);
+        lenient().when(jwtHelper.extractRoleFromRequest(mockRequest)).thenReturn("STUDENT");
         // Create test report
         testReport = new Report(
             1L,  // reporterId
@@ -64,7 +99,7 @@ class ReportControllerTest {
         when(reportService.getAllReports(any(Pageable.class))).thenReturn(testPage);
 
         // Act
-        ResponseEntity<Page<?>> response = reportController.getAllReports(0, 20, "createdAt", "desc");
+        ResponseEntity<Page<?>> response = reportController.getAllReports(0, 20, "createdAt", "desc", mockRequestAdmin);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -79,7 +114,7 @@ class ReportControllerTest {
         when(reportService.getAllReports(any(Pageable.class))).thenReturn(testPage);
 
         // Act
-        ResponseEntity<Page<?>> response = reportController.getAllReports(1, 10, "reportId", "asc");
+        ResponseEntity<Page<?>> response = reportController.getAllReports(1, 10, "reportId", "asc", mockRequestAdmin);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -95,7 +130,7 @@ class ReportControllerTest {
 
         // Act & Assert
         assertThrows(ReportException.class, () -> {
-            reportController.getAllReports(0, 20, "createdAt", "desc");
+            reportController.getAllReports(0, 20, "createdAt", "desc", mockRequestAdmin);
         });
         verify(reportService).getAllReports(any(Pageable.class));
     }
@@ -112,7 +147,7 @@ class ReportControllerTest {
         // Act
         ResponseEntity<Page<?>> response = reportController.searchReports(
             ReportStatus.PENDING, 1L, 2L, ReportType.SPAM, 3L,
-            0, 20, "createdAt", "desc"
+            0, 20, "createdAt", "desc", mockRequestAdmin
         );
 
         // Assert
@@ -133,7 +168,7 @@ class ReportControllerTest {
         // Act
         ResponseEntity<Page<?>> response = reportController.searchReports(
             null, null, null, null, null,
-            0, 20, "createdAt", "desc"
+            0, 20, "createdAt", "desc", mockRequestAdmin
         );
 
         // Assert
@@ -153,7 +188,7 @@ class ReportControllerTest {
         assertThrows(ReportException.class, () -> {
             reportController.searchReports(
                 ReportStatus.PENDING, 1L, 2L, ReportType.SPAM, 3L,
-                0, 20, "createdAt", "desc"
+                0, 20, "createdAt", "desc", mockRequestAdmin
             );
         });
     }
@@ -165,7 +200,7 @@ class ReportControllerTest {
         when(reportService.getPendingReports(any(Pageable.class))).thenReturn(testPage);
 
         // Act
-        ResponseEntity<Page<?>> response = reportController.getPendingReports(0, 20, "createdAt", "asc");
+        ResponseEntity<Page<?>> response = reportController.getPendingReports(0, 20, "createdAt", "asc", mockRequestAdmin);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -182,7 +217,7 @@ class ReportControllerTest {
 
         // Act & Assert
         assertThrows(ReportException.class, () -> {
-            reportController.getPendingReports(0, 20, "createdAt", "asc");
+            reportController.getPendingReports(0, 20, "createdAt", "asc", mockRequestAdmin);
         });
     }
 
@@ -193,7 +228,7 @@ class ReportControllerTest {
         when(reportService.getReportsByReporterId(eq(1L), any(Pageable.class))).thenReturn(testPage);
 
         // Act
-        ResponseEntity<Page<?>> response = reportController.getReportsByReporterId(1L, 0, 20, "createdAt", "desc");
+        ResponseEntity<Page<?>> response = reportController.getReportsByReporterId(1L, 0, 20, "createdAt", "desc", mockRequestAdmin);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -210,7 +245,7 @@ class ReportControllerTest {
 
         // Act & Assert
         assertThrows(ReportException.class, () -> {
-            reportController.getReportsByReporterId(999L, 0, 20, "createdAt", "desc");
+            reportController.getReportsByReporterId(999L, 0, 20, "createdAt", "desc", mockRequestAdmin);
         });
     }
 
@@ -221,7 +256,7 @@ class ReportControllerTest {
         when(reportService.getReportsByListingId(eq(2L), any(Pageable.class))).thenReturn(testPage);
 
         // Act
-        ResponseEntity<Page<?>> response = reportController.getReportsByListingId(2L, 0, 20, "createdAt", "desc");
+        ResponseEntity<Page<?>> response = reportController.getReportsByListingId(2L, 0, 20, "createdAt", "desc", mockRequestAdmin);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -238,7 +273,7 @@ class ReportControllerTest {
 
         // Act & Assert
         assertThrows(ReportException.class, () -> {
-            reportController.getReportsByListingId(999L, 0, 20, "createdAt", "desc");
+            reportController.getReportsByListingId(999L, 0, 20, "createdAt", "desc", mockRequestAdmin);
         });
     }
 
@@ -249,7 +284,7 @@ class ReportControllerTest {
         when(reportService.getReportsByReportType(eq(ReportType.SPAM), any(Pageable.class))).thenReturn(testPage);
 
         // Act
-        ResponseEntity<Page<?>> response = reportController.getReportsByType(ReportType.SPAM, 0, 20, "createdAt", "desc");
+        ResponseEntity<Page<?>> response = reportController.getReportsByType(ReportType.SPAM, 0, 20, "createdAt", "desc", mockRequestAdmin);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -266,7 +301,7 @@ class ReportControllerTest {
 
         // Act & Assert
         assertThrows(ReportException.class, () -> {
-            reportController.getReportsByType(ReportType.FAKE_LISTING, 0, 20, "createdAt", "desc");
+            reportController.getReportsByType(ReportType.FAKE_LISTING, 0, 20, "createdAt", "desc", mockRequestAdmin);
         });
     }
 
@@ -277,7 +312,7 @@ class ReportControllerTest {
         when(reportService.getReportsByStatus(eq(ReportStatus.PENDING), any(Pageable.class))).thenReturn(testPage);
 
         // Act
-        ResponseEntity<Page<?>> response = reportController.getReportsByStatus(ReportStatus.PENDING, 0, 20, "createdAt", "desc");
+        ResponseEntity<Page<?>> response = reportController.getReportsByStatus(ReportStatus.PENDING, 0, 20, "createdAt", "desc", mockRequestAdmin);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -294,7 +329,7 @@ class ReportControllerTest {
 
         // Act & Assert
         assertThrows(ReportException.class, () -> {
-            reportController.getReportsByStatus(ReportStatus.RESOLVED, 0, 20, "createdAt", "desc");
+            reportController.getReportsByStatus(ReportStatus.RESOLVED, 0, 20, "createdAt", "desc", mockRequestAdmin);
         });
     }
 
@@ -305,7 +340,7 @@ class ReportControllerTest {
         when(reportService.getReportById(1L)).thenReturn(testReport);
 
         // Act
-        ResponseEntity<?> response = reportController.getReportById(1L);
+        ResponseEntity<?> response = reportController.getReportById(1L, mockRequestAdmin);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -322,7 +357,7 @@ class ReportControllerTest {
 
         // Act & Assert
         assertThrows(ReportException.class, () -> {
-            reportController.getReportById(999L);
+            reportController.getReportById(999L, mockRequestAdmin);
         });
         verify(reportService).getReportById(999L);
     }
@@ -331,8 +366,7 @@ class ReportControllerTest {
     @Test
     void createReport_Success_ReturnsOkResponse() {
         // Arrange
-        ReportController.CreateReportRequest request = new ReportController.CreateReportRequest();
-        request.setReporterId(1L);
+        CreateReportRequest request = new CreateReportRequest();
         request.setListingId(2L);
         request.setReportType(ReportType.SPAM);
         request.setDescription("Test spam report");
@@ -344,7 +378,7 @@ class ReportControllerTest {
             .thenReturn(createdReport);
 
         // Act
-        ResponseEntity<?> response = reportController.createReport(request);
+        ResponseEntity<?> response = reportController.createReport(request, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -357,8 +391,7 @@ class ReportControllerTest {
     @Test
     void createReport_ServiceThrowsException_PropagatesException() {
         // Arrange
-        ReportController.CreateReportRequest request = new ReportController.CreateReportRequest();
-        request.setReporterId(1L);
+        CreateReportRequest request = new CreateReportRequest();
         request.setListingId(2L);
         request.setReportType(ReportType.SPAM);
         request.setDescription("Test spam report");
@@ -368,7 +401,7 @@ class ReportControllerTest {
 
         // Act & Assert
         assertThrows(RuntimeException.class, () -> {
-            reportController.createReport(request);
+            reportController.createReport(request, mockRequest);
         });
     }
 
@@ -376,7 +409,7 @@ class ReportControllerTest {
     @Test
     void updateReport_Success_ReturnsOkResponse() {
         // Arrange
-        ReportController.UpdateReportRequest request = new ReportController.UpdateReportRequest();
+        UpdateReportRequest request = new UpdateReportRequest();
         request.setReportType(ReportType.INAPPROPRIATE_CONTENT);
         request.setDescription("Updated inappropriate content report");
 
@@ -388,7 +421,7 @@ class ReportControllerTest {
             .thenReturn(updatedReport);
 
         // Act
-        ResponseEntity<?> response = reportController.updateReport(1L, request);
+        ResponseEntity<?> response = reportController.updateReport(1L, request, mockRequestAdmin);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -401,7 +434,7 @@ class ReportControllerTest {
     @Test
     void updateReport_ServiceThrowsException_PropagatesException() {
         // Arrange
-        ReportController.UpdateReportRequest request = new ReportController.UpdateReportRequest();
+        UpdateReportRequest request = new UpdateReportRequest();
         request.setReportType(ReportType.INAPPROPRIATE_CONTENT);
         request.setDescription("Updated report");
 
@@ -410,7 +443,7 @@ class ReportControllerTest {
 
         // Act & Assert
         assertThrows(RuntimeException.class, () -> {
-            reportController.updateReport(1L, request);
+            reportController.updateReport(1L, request, mockRequestAdmin);
         });
     }
 
@@ -426,7 +459,7 @@ class ReportControllerTest {
         when(reportService.markAsReviewed(eq(1L), anyLong())).thenReturn(reviewedReport);
 
         // Act
-        ResponseEntity<?> response = reportController.markAsReviewed(1L);
+        ResponseEntity<?> response = reportController.markAsReviewed(1L, mockRequestAdmin);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -444,7 +477,7 @@ class ReportControllerTest {
 
         // Act & Assert
         assertThrows(RuntimeException.class, () -> {
-            reportController.markAsReviewed(1L);
+            reportController.markAsReviewed(1L, mockRequestAdmin);
         });
     }
 
@@ -460,7 +493,7 @@ class ReportControllerTest {
         when(reportService.markAsResolved(1L)).thenReturn(resolvedReport);
 
         // Act
-        ResponseEntity<?> response = reportController.markAsResolved(1L);
+        ResponseEntity<?> response = reportController.markAsResolved(1L, mockRequestAdmin);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -478,7 +511,7 @@ class ReportControllerTest {
 
         // Act & Assert
         assertThrows(RuntimeException.class, () -> {
-            reportController.markAsResolved(1L);
+            reportController.markAsResolved(1L, mockRequestAdmin);
         });
     }
 
@@ -494,7 +527,7 @@ class ReportControllerTest {
         when(reportService.markAsDismissed(1L)).thenReturn(dismissedReport);
 
         // Act
-        ResponseEntity<?> response = reportController.markAsDismissed(1L);
+        ResponseEntity<?> response = reportController.markAsDismissed(1L, mockRequestAdmin);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -512,7 +545,7 @@ class ReportControllerTest {
 
         // Act & Assert
         assertThrows(RuntimeException.class, () -> {
-            reportController.markAsDismissed(1L);
+            reportController.markAsDismissed(1L, mockRequestAdmin);
         });
     }
 
@@ -523,7 +556,7 @@ class ReportControllerTest {
         doNothing().when(reportService).deleteReport(1L);
 
         // Act
-        ResponseEntity<String> response = reportController.deleteReport(1L);
+        ResponseEntity<String> response = reportController.deleteReport(1L, mockRequestAdmin);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -538,7 +571,7 @@ class ReportControllerTest {
 
         // Act & Assert
         assertThrows(RuntimeException.class, () -> {
-            reportController.deleteReport(1L);
+            reportController.deleteReport(1L, mockRequestAdmin);
         });
     }
 
@@ -552,13 +585,13 @@ class ReportControllerTest {
         when(reportService.countReportsByStatus(ReportStatus.DISMISSED)).thenReturn(2L);
 
         // Act
-        ResponseEntity<?> response = reportController.getReportCounts();
+        ResponseEntity<?> response = reportController.getReportCounts(mockRequestAdmin);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         
-        ReportController.ReportCounts counts = (ReportController.ReportCounts) response.getBody();
+        ReportCounts counts = (ReportCounts) response.getBody();
         assertEquals(5L, counts.getPending());
         assertEquals(3L, counts.getUnderReview());
         assertEquals(10L, counts.getResolved());
@@ -578,20 +611,17 @@ class ReportControllerTest {
 
         // Act & Assert
         assertThrows(RuntimeException.class, () -> {
-            reportController.getReportCounts();
+            reportController.getReportCounts(mockRequestAdmin);
         });
     }
 
-    // Tests for CreateReportRequest inner class
+    // Tests for CreateReportRequest DTO
     @Test
     void createReportRequest_GettersAndSetters_WorkCorrectly() {
         // Arrange
-        ReportController.CreateReportRequest request = new ReportController.CreateReportRequest();
+        CreateReportRequest request = new CreateReportRequest();
 
         // Act & Assert
-        request.setReporterId(1L);
-        assertEquals(1L, request.getReporterId());
-
         request.setListingId(2L);
         assertEquals(2L, request.getListingId());
 
@@ -602,11 +632,11 @@ class ReportControllerTest {
         assertEquals("Test description", request.getDescription());
     }
 
-    // Tests for UpdateReportRequest inner class
+    // Tests for UpdateReportRequest DTO
     @Test
     void updateReportRequest_GettersAndSetters_WorkCorrectly() {
         // Arrange
-        ReportController.UpdateReportRequest request = new ReportController.UpdateReportRequest();
+        UpdateReportRequest request = new UpdateReportRequest();
 
         // Act & Assert
         request.setReportType(ReportType.INAPPROPRIATE_CONTENT);
@@ -616,11 +646,11 @@ class ReportControllerTest {
         assertEquals("Updated description", request.getDescription());
     }
 
-    // Tests for ReportCounts inner class
+    // Tests for ReportCounts DTO
     @Test
     void reportCounts_GettersAndSetters_WorkCorrectly() {
         // Arrange
-        ReportController.ReportCounts counts = new ReportController.ReportCounts(1L, 2L, 3L, 4L);
+        ReportCounts counts = new ReportCounts(1L, 2L, 3L, 4L);
 
         // Act & Assert
         assertEquals(1L, counts.getPending());
@@ -652,7 +682,7 @@ class ReportControllerTest {
         // Act
         ResponseEntity<Page<?>> response = reportController.searchReports(
             ReportStatus.PENDING, null, null, null, null,
-            0, 20, "createdAt", "desc"
+            0, 20, "createdAt", "desc", mockRequestAdmin
         );
 
         // Assert
@@ -671,7 +701,7 @@ class ReportControllerTest {
         // Act
         ResponseEntity<Page<?>> response = reportController.searchReports(
             null, 1L, null, null, null,
-            0, 20, "createdAt", "desc"
+            0, 20, "createdAt", "desc", mockRequestAdmin
         );
 
         // Assert
@@ -683,8 +713,7 @@ class ReportControllerTest {
     @Test
     void createReport_WithNullDescription_HandlesGracefully() {
         // Arrange
-        ReportController.CreateReportRequest request = new ReportController.CreateReportRequest();
-        request.setReporterId(1L);
+        CreateReportRequest request = new CreateReportRequest();
         request.setListingId(2L);
         request.setReportType(ReportType.SPAM);
         request.setDescription(null);
@@ -696,7 +725,7 @@ class ReportControllerTest {
             .thenReturn(createdReport);
 
         // Act
-        ResponseEntity<?> response = reportController.createReport(request);
+        ResponseEntity<?> response = reportController.createReport(request, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -707,7 +736,7 @@ class ReportControllerTest {
     @Test
     void updateReport_WithNullDescription_HandlesGracefully() {
         // Arrange
-        ReportController.UpdateReportRequest request = new ReportController.UpdateReportRequest();
+        UpdateReportRequest request = new UpdateReportRequest();
         request.setReportType(ReportType.INAPPROPRIATE_CONTENT);
         request.setDescription(null);
 
@@ -719,7 +748,7 @@ class ReportControllerTest {
             .thenReturn(updatedReport);
 
         // Act
-        ResponseEntity<?> response = reportController.updateReport(1L, request);
+        ResponseEntity<?> response = reportController.updateReport(1L, request, mockRequestAdmin);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -734,7 +763,7 @@ class ReportControllerTest {
         when(reportService.getAllReports(any(Pageable.class))).thenReturn(emptyPage);
 
         // Act
-        ResponseEntity<Page<?>> response = reportController.getAllReports(0, 20, "createdAt", "desc");
+        ResponseEntity<Page<?>> response = reportController.getAllReports(0, 20, "createdAt", "desc", mockRequestAdmin);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());

@@ -4,6 +4,9 @@ import com.commandlinecommandos.listingapi.model.*;
 import com.commandlinecommandos.listingapi.service.FileStorageService;
 import com.commandlinecommandos.listingapi.service.ListingService;
 import com.commandlinecommandos.listingapi.exception.ListingException;
+import com.commandlinecommandos.listingapi.security.JwtHelper;
+import com.commandlinecommandos.listingapi.dto.CreateListingRequest;
+import com.commandlinecommandos.listingapi.dto.UpdateListingRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,9 +20,11 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -41,6 +46,9 @@ class ListingControllerTest {
     @Mock
     private FileStorageService fileStorageService;
 
+    @Mock
+    private JwtHelper jwtHelper;
+
     @InjectMocks
     private ListingController listingController;
 
@@ -50,9 +58,20 @@ class ListingControllerTest {
     private List<MultipartFile> testFiles;
     private Pageable testPageable;
     private Page<Listing> testPage;
+    private HttpServletRequest mockRequest;
+    private HttpServletRequest mockRequestNoAuth;
 
     @BeforeEach
     void setUp() {
+        // Create mock HTTP requests
+        mockRequest = new MockHttpServletRequest();
+        ((MockHttpServletRequest) mockRequest).addHeader("Authorization", "Bearer test-jwt-token");
+        
+        mockRequestNoAuth = new MockHttpServletRequest();
+        
+        // Mock JWT helper - use lenient() since not all tests use all mocks
+        lenient().when(jwtHelper.extractUserIdFromRequest(mockRequest)).thenReturn(1L);
+        lenient().when(jwtHelper.extractUserIdFromRequest(mockRequestNoAuth)).thenReturn(null);
         // Create test listing
         testListing = new Listing(
             "Test Item",
@@ -263,7 +282,7 @@ class ListingControllerTest {
     @Test
     void createListing_Success_ReturnsOkResponse() {
         // Arrange
-        ListingController.CreateListingRequest request = new ListingController.CreateListingRequest();
+        CreateListingRequest request = new CreateListingRequest();
         request.setTitle("New Item");
         request.setDescription("New Description");
         request.setPrice(new BigDecimal("149.99"));
@@ -281,7 +300,7 @@ class ListingControllerTest {
             any(ItemCondition.class), anyString(), anyLong())).thenReturn(createdListing);
 
         // Act
-        ResponseEntity<?> response = listingController.createListing(request);
+        ResponseEntity<?> response = listingController.createListing(request, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -295,7 +314,7 @@ class ListingControllerTest {
     @Test
     void createListing_ServiceThrowsException_PropagatesException() {
         // Arrange
-        ListingController.CreateListingRequest request = new ListingController.CreateListingRequest();
+        CreateListingRequest request = new CreateListingRequest();
         request.setTitle("New Item");
         request.setDescription("New Description");
         request.setPrice(new BigDecimal("149.99"));
@@ -309,7 +328,7 @@ class ListingControllerTest {
 
         // Act & Assert
         assertThrows(RuntimeException.class, () -> {
-            listingController.createListing(request);
+            listingController.createListing(request, mockRequest);
         });
     }
 
@@ -339,7 +358,7 @@ class ListingControllerTest {
         when(listingService.addImagesToListing(eq(1L), eq(storedImages))).thenReturn(updatedListing);
 
         // Act
-        ResponseEntity<?> response = listingController.uploadImages(1L, testFiles, displayOrders);
+        ResponseEntity<?> response = listingController.uploadImages(1L, testFiles, displayOrders, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -358,7 +377,7 @@ class ListingControllerTest {
         when(listingService.isListingOwner(1L, 1L)).thenReturn(false);
 
         // Act
-        ResponseEntity<?> response = listingController.uploadImages(1L, testFiles, displayOrders);
+        ResponseEntity<?> response = listingController.uploadImages(1L, testFiles, displayOrders, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
@@ -380,7 +399,7 @@ class ListingControllerTest {
 
         // Act & Assert
         assertThrows(RuntimeException.class, () -> {
-            listingController.uploadImages(1L, testFiles, displayOrders);
+            listingController.uploadImages(1L, testFiles, displayOrders, mockRequest);
         });
     }
 
@@ -388,7 +407,7 @@ class ListingControllerTest {
     @Test
     void updateListing_Success_ReturnsOkResponse() {
         // Arrange
-        ListingController.UpdateListingRequest request = new ListingController.UpdateListingRequest();
+        UpdateListingRequest request = new UpdateListingRequest();
         request.setTitle("Updated Item");
         request.setDescription("Updated Description");
         request.setPrice(new BigDecimal("199.99"));
@@ -408,7 +427,7 @@ class ListingControllerTest {
             any(Category.class), any(ItemCondition.class), anyString(), anyList())).thenReturn(updatedListing);
 
         // Act
-        ResponseEntity<?> response = listingController.updateListing(1L, request);
+        ResponseEntity<?> response = listingController.updateListing(1L, request, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -423,12 +442,12 @@ class ListingControllerTest {
     @Test
     void updateListing_NotListingOwner_ReturnsForbidden() {
         // Arrange
-        ListingController.UpdateListingRequest request = new ListingController.UpdateListingRequest();
+        UpdateListingRequest request = new UpdateListingRequest();
         request.setTitle("Updated Item");
         when(listingService.isListingOwner(1L, 1L)).thenReturn(false);
 
         // Act
-        ResponseEntity<?> response = listingController.updateListing(1L, request);
+        ResponseEntity<?> response = listingController.updateListing(1L, request, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
@@ -440,7 +459,7 @@ class ListingControllerTest {
     @Test
     void updateListing_ServiceThrowsException_PropagatesException() {
         // Arrange
-        ListingController.UpdateListingRequest request = new ListingController.UpdateListingRequest();
+        UpdateListingRequest request = new UpdateListingRequest();
         request.setTitle("Updated Item");
         when(listingService.isListingOwner(1L, 1L)).thenReturn(true);
         when(listingService.updateListing(eq(1L), anyString(), anyString(), any(BigDecimal.class),
@@ -449,7 +468,7 @@ class ListingControllerTest {
 
         // Act & Assert
         assertThrows(RuntimeException.class, () -> {
-            listingController.updateListing(1L, request);
+            listingController.updateListing(1L, request, mockRequest);
         });
     }
 
@@ -475,7 +494,7 @@ class ListingControllerTest {
         when(listingService.markAsSold(1L)).thenReturn(soldListing);
 
         // Act
-        ResponseEntity<?> response = listingController.markAsSold(1L);
+        ResponseEntity<?> response = listingController.markAsSold(1L, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -492,7 +511,7 @@ class ListingControllerTest {
         when(listingService.isListingOwner(1L, 1L)).thenReturn(false);
 
         // Act
-        ResponseEntity<?> response = listingController.markAsSold(1L);
+        ResponseEntity<?> response = listingController.markAsSold(1L, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
@@ -509,7 +528,7 @@ class ListingControllerTest {
 
         // Act & Assert
         assertThrows(RuntimeException.class, () -> {
-            listingController.markAsSold(1L);
+            listingController.markAsSold(1L, mockRequest);
         });
     }
 
@@ -535,7 +554,7 @@ class ListingControllerTest {
         when(listingService.cancelListing(1L)).thenReturn(cancelledListing);
 
         // Act
-        ResponseEntity<?> response = listingController.cancelListing(1L);
+        ResponseEntity<?> response = listingController.cancelListing(1L, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -552,7 +571,7 @@ class ListingControllerTest {
         when(listingService.isListingOwner(1L, 1L)).thenReturn(false);
 
         // Act
-        ResponseEntity<?> response = listingController.cancelListing(1L);
+        ResponseEntity<?> response = listingController.cancelListing(1L, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
@@ -569,7 +588,7 @@ class ListingControllerTest {
 
         // Act & Assert
         assertThrows(RuntimeException.class, () -> {
-            listingController.cancelListing(1L);
+            listingController.cancelListing(1L, mockRequest);
         });
     }
 
@@ -581,7 +600,7 @@ class ListingControllerTest {
         doNothing().when(listingService).deleteListing(1L);
 
         // Act
-        ResponseEntity<String> response = listingController.deleteListing(1L);
+        ResponseEntity<String> response = listingController.deleteListing(1L, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -596,7 +615,7 @@ class ListingControllerTest {
         when(listingService.isListingOwner(1L, 1L)).thenReturn(false);
 
         // Act
-        ResponseEntity<String> response = listingController.deleteListing(1L);
+        ResponseEntity<String> response = listingController.deleteListing(1L, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
@@ -613,15 +632,15 @@ class ListingControllerTest {
 
         // Act & Assert
         assertThrows(RuntimeException.class, () -> {
-            listingController.deleteListing(1L);
+            listingController.deleteListing(1L, mockRequest);
         });
     }
 
-    // Tests for CreateListingRequest inner class
+    // Tests for CreateListingRequest DTO
     @Test
     void createListingRequest_GettersAndSetters_WorkCorrectly() {
         // Arrange
-        ListingController.CreateListingRequest request = new ListingController.CreateListingRequest();
+        CreateListingRequest request = new CreateListingRequest();
 
         // Act & Assert
         request.setTitle("Test Title");
@@ -643,11 +662,11 @@ class ListingControllerTest {
         assertEquals("Test Location", request.getLocation());
     }
 
-    // Tests for UpdateListingRequest inner class
+    // Tests for UpdateListingRequest DTO
     @Test
     void updateListingRequest_GettersAndSetters_WorkCorrectly() {
         // Arrange
-        ListingController.UpdateListingRequest request = new ListingController.UpdateListingRequest();
+        UpdateListingRequest request = new UpdateListingRequest();
 
         // Act & Assert
         request.setTitle("Updated Title");
@@ -723,7 +742,7 @@ class ListingControllerTest {
         when(listingService.addImagesToListing(eq(1L), any())).thenReturn(testListing);
 
         // Act
-        ResponseEntity<?> response = listingController.uploadImages(1L, emptyFiles, displayOrders);
+        ResponseEntity<?> response = listingController.uploadImages(1L, emptyFiles, displayOrders, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -734,7 +753,7 @@ class ListingControllerTest {
     @Test
     void updateListing_WithNullImages_HandlesGracefully() {
         // Arrange
-        ListingController.UpdateListingRequest request = new ListingController.UpdateListingRequest();
+        UpdateListingRequest request = new UpdateListingRequest();
         request.setTitle("Updated Item");
         request.setImages(null);
 
@@ -756,7 +775,7 @@ class ListingControllerTest {
             .thenReturn(updatedListing);
 
         // Act
-        ResponseEntity<?> response = listingController.updateListing(1L, request);
+        ResponseEntity<?> response = listingController.updateListing(1L, request, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -769,7 +788,7 @@ class ListingControllerTest {
     @Test
     void createListing_WithNullPrice_HandlesGracefully() {
         // Arrange
-        ListingController.CreateListingRequest request = new ListingController.CreateListingRequest();
+        CreateListingRequest request = new CreateListingRequest();
         request.setTitle("New Item");
         request.setDescription("New Description");
         request.setPrice(null);
@@ -783,7 +802,90 @@ class ListingControllerTest {
 
         // Act & Assert
         assertThrows(IllegalArgumentException.class, () -> {
-            listingController.createListing(request);
+            listingController.createListing(request, mockRequest);
         });
+    }
+
+    // Tests for unauthorized access scenarios
+    @Test
+    void createListing_NoJwtToken_ReturnsUnauthorized() {
+        // Arrange
+        CreateListingRequest request = new CreateListingRequest();
+        request.setTitle("New Item");
+        request.setDescription("New Description");
+        request.setPrice(new BigDecimal("149.99"));
+        request.setCategory(Category.TEXTBOOKS);
+        request.setCondition(ItemCondition.NEW);
+        request.setLocation("New Location");
+
+        // Act
+        ResponseEntity<?> response = listingController.createListing(request, mockRequestNoAuth);
+
+        // Assert
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertEquals("Authentication required", response.getBody());
+        verify(listingService, never()).createListing(any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void uploadImages_NoJwtToken_ReturnsUnauthorized() {
+        // Arrange
+        int[] displayOrders = {1, 2};
+
+        // Act
+        ResponseEntity<?> response = listingController.uploadImages(1L, testFiles, displayOrders, mockRequestNoAuth);
+
+        // Assert
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertEquals("Authentication required", response.getBody());
+        verify(listingService, never()).isListingOwner(any(), any());
+    }
+
+    @Test
+    void updateListing_NoJwtToken_ReturnsUnauthorized() {
+        // Arrange
+        UpdateListingRequest request = new UpdateListingRequest();
+        request.setTitle("Updated Item");
+
+        // Act
+        ResponseEntity<?> response = listingController.updateListing(1L, request, mockRequestNoAuth);
+
+        // Assert
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertEquals("Authentication required", response.getBody());
+        verify(listingService, never()).isListingOwner(any(), any());
+    }
+
+    @Test
+    void markAsSold_NoJwtToken_ReturnsUnauthorized() {
+        // Act
+        ResponseEntity<?> response = listingController.markAsSold(1L, mockRequestNoAuth);
+
+        // Assert
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertEquals("Authentication required", response.getBody());
+        verify(listingService, never()).isListingOwner(any(), any());
+    }
+
+    @Test
+    void cancelListing_NoJwtToken_ReturnsUnauthorized() {
+        // Act
+        ResponseEntity<?> response = listingController.cancelListing(1L, mockRequestNoAuth);
+
+        // Assert
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertEquals("Authentication required", response.getBody());
+        verify(listingService, never()).isListingOwner(any(), any());
+    }
+
+    @Test
+    void deleteListing_NoJwtToken_ReturnsUnauthorized() {
+        // Act
+        ResponseEntity<String> response = listingController.deleteListing(1L, mockRequestNoAuth);
+
+        // Assert
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertEquals("Authentication required", response.getBody());
+        verify(listingService, never()).isListingOwner(any(), any());
     }
 }

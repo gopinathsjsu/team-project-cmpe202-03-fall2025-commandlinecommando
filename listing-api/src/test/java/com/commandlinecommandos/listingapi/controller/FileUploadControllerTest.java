@@ -3,6 +3,7 @@ package com.commandlinecommandos.listingapi.controller;
 import com.commandlinecommandos.listingapi.model.*;
 import com.commandlinecommandos.listingapi.service.FileStorageService;
 import com.commandlinecommandos.listingapi.service.ListingService;
+import com.commandlinecommandos.listingapi.security.JwtHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,9 +12,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,6 +35,9 @@ class FileUploadControllerTest {
     @Mock
     private ListingService listingService;
 
+    @Mock
+    private JwtHelper jwtHelper;
+
     @InjectMocks
     private FileUploadController fileUploadController;
 
@@ -39,9 +45,20 @@ class FileUploadControllerTest {
     private ListingImage testListingImage;
     private MockMultipartFile testFile;
     private List<MultipartFile> testFiles;
+    private HttpServletRequest mockRequest;
+    private HttpServletRequest mockRequestNoAuth;
 
     @BeforeEach
     void setUp() {
+        // Create mock HTTP requests
+        mockRequest = new MockHttpServletRequest();
+        ((MockHttpServletRequest) mockRequest).addHeader("Authorization", "Bearer test-jwt-token");
+        
+        mockRequestNoAuth = new MockHttpServletRequest();
+        
+        // Mock JWT helper - use lenient() since not all tests use all mocks
+        lenient().when(jwtHelper.extractUserIdFromRequest(mockRequest)).thenReturn(1L);
+        lenient().when(jwtHelper.extractUserIdFromRequest(mockRequestNoAuth)).thenReturn(null);
         // Create test listing
         testListing = new Listing(
             "Test Item",
@@ -87,7 +104,7 @@ class FileUploadControllerTest {
             .thenReturn(testListingImage);
 
         // Act
-        ResponseEntity<String> response = fileUploadController.uploadFile(1L, testFile, 1);
+        ResponseEntity<String> response = fileUploadController.uploadFile(1L, testFile, 1, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -102,7 +119,7 @@ class FileUploadControllerTest {
         when(listingService.getListingById(1L)).thenReturn(null);
 
         // Act
-        ResponseEntity<String> response = fileUploadController.uploadFile(1L, testFile, 1);
+        ResponseEntity<String> response = fileUploadController.uploadFile(1L, testFile, 1, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
@@ -118,7 +135,7 @@ class FileUploadControllerTest {
             .thenThrow(new RuntimeException("Storage error"));
 
         // Act
-        ResponseEntity<String> response = fileUploadController.uploadFile(1L, testFile, 1);
+        ResponseEntity<String> response = fileUploadController.uploadFile(1L, testFile, 1, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
@@ -139,7 +156,7 @@ class FileUploadControllerTest {
             .thenReturn(expectedImages);
 
         // Act
-        ResponseEntity<String> response = fileUploadController.uploadMultipleFiles(1L, testFiles, displayOrders);
+        ResponseEntity<String> response = fileUploadController.uploadMultipleFiles(1L, testFiles, displayOrders, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -155,7 +172,7 @@ class FileUploadControllerTest {
         int[] displayOrders = {};
 
         // Act
-        ResponseEntity<String> response = fileUploadController.uploadMultipleFiles(1L, emptyFiles, displayOrders);
+        ResponseEntity<String> response = fileUploadController.uploadMultipleFiles(1L, emptyFiles, displayOrders, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -172,7 +189,7 @@ class FileUploadControllerTest {
         when(listingService.getListingById(1L)).thenReturn(null);
 
         // Act
-        ResponseEntity<String> response = fileUploadController.uploadMultipleFiles(1L, testFiles, displayOrders);
+        ResponseEntity<String> response = fileUploadController.uploadMultipleFiles(1L, testFiles, displayOrders, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
@@ -189,7 +206,7 @@ class FileUploadControllerTest {
             .thenThrow(new RuntimeException("Storage error"));
 
         // Act
-        ResponseEntity<String> response = fileUploadController.uploadMultipleFiles(1L, testFiles, displayOrders);
+        ResponseEntity<String> response = fileUploadController.uploadMultipleFiles(1L, testFiles, displayOrders, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
@@ -255,7 +272,7 @@ class FileUploadControllerTest {
         doNothing().when(fileStorageService).deleteImageByListingImageId(1L);
 
         // Act
-        ResponseEntity<String> response = fileUploadController.deleteListingImage(1L, 1L);
+        ResponseEntity<String> response = fileUploadController.deleteListingImage(1L, 1L, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
@@ -270,7 +287,7 @@ class FileUploadControllerTest {
         when(listingService.getListingById(1L)).thenReturn(null);
 
         // Act
-        ResponseEntity<String> response = fileUploadController.deleteListingImage(1L, 1L);
+        ResponseEntity<String> response = fileUploadController.deleteListingImage(1L, 1L, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
@@ -285,7 +302,7 @@ class FileUploadControllerTest {
         doThrow(new RuntimeException("Delete error")).when(fileStorageService).deleteImageByListingImageId(1L);
 
         // Act
-        ResponseEntity<String> response = fileUploadController.deleteListingImage(1L, 1L);
+        ResponseEntity<String> response = fileUploadController.deleteListingImage(1L, 1L, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
@@ -296,7 +313,7 @@ class FileUploadControllerTest {
 
     // Tests for verifyUser method (using reflection to test private method)
     @Test
-    void verifyUser_AlwaysReturnsTrue_CurrentImplementation() throws Exception {
+    void verifyUser_OwnerMatches_ReturnsTrue() throws Exception {
         // Arrange
         java.lang.reflect.Method verifyUserMethod = FileUploadController.class.getDeclaredMethod("verifyUser", Listing.class, Long.class);
         verifyUserMethod.setAccessible(true);
@@ -305,14 +322,27 @@ class FileUploadControllerTest {
         boolean result = (boolean) verifyUserMethod.invoke(fileUploadController, testListing, 1L);
 
         // Assert
-        assertTrue(result); // Current implementation always returns true
+        assertTrue(result); // User ID matches seller ID
+    }
+
+    @Test
+    void verifyUser_OwnerDoesNotMatch_ReturnsFalse() throws Exception {
+        // Arrange
+        java.lang.reflect.Method verifyUserMethod = FileUploadController.class.getDeclaredMethod("verifyUser", Listing.class, Long.class);
+        verifyUserMethod.setAccessible(true);
+
+        // Act
+        boolean result = (boolean) verifyUserMethod.invoke(fileUploadController, testListing, 999L);
+
+        // Assert
+        assertFalse(result); // User ID does not match seller ID
     }
 
     // Additional edge case tests
     @Test
     void uploadFile_NullFile_HandlesGracefully() {
         // Act
-        ResponseEntity<String> response = fileUploadController.uploadFile(1L, null, 1);
+        ResponseEntity<String> response = fileUploadController.uploadFile(1L, null, 1, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -327,7 +357,7 @@ class FileUploadControllerTest {
         int[] displayOrders = {1};
 
         // Act
-        ResponseEntity<String> response = fileUploadController.uploadMultipleFiles(1L, null, displayOrders);
+        ResponseEntity<String> response = fileUploadController.uploadMultipleFiles(1L, null, displayOrders, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
@@ -345,7 +375,7 @@ class FileUploadControllerTest {
             .thenThrow(new RuntimeException("Display orders mismatch"));
 
         // Act
-        ResponseEntity<String> response = fileUploadController.uploadMultipleFiles(1L, testFiles, displayOrders);
+        ResponseEntity<String> response = fileUploadController.uploadMultipleFiles(1L, testFiles, displayOrders, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
@@ -375,10 +405,54 @@ class FileUploadControllerTest {
         doThrow(new RuntimeException("Image not found")).when(fileStorageService).deleteImageByListingImageId(999L);
 
         // Act
-        ResponseEntity<String> response = fileUploadController.deleteListingImage(1L, 999L);
+        ResponseEntity<String> response = fileUploadController.deleteListingImage(1L, 999L, mockRequest);
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertTrue(response.getBody().contains("Failed to delete listing image"));
+    }
+
+    // Tests for unauthorized access scenarios
+    @Test
+    void uploadFile_NoJwtToken_ReturnsUnauthorized() {
+        // Arrange - mock listing service to return a listing so code reaches JWT check
+        when(listingService.getListingById(1L)).thenReturn(testListing);
+        
+        // Act
+        ResponseEntity<String> response = fileUploadController.uploadFile(1L, testFile, 1, mockRequestNoAuth);
+
+        // Assert
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertEquals("Authentication required", response.getBody());
+        verify(listingService).getListingById(1L);
+    }
+
+    @Test
+    void uploadMultipleFiles_NoJwtToken_ReturnsUnauthorized() {
+        // Arrange
+        int[] displayOrders = {1, 2};
+        when(listingService.getListingById(1L)).thenReturn(testListing);
+
+        // Act
+        ResponseEntity<String> response = fileUploadController.uploadMultipleFiles(1L, testFiles, displayOrders, mockRequestNoAuth);
+
+        // Assert
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertEquals("Authentication required", response.getBody());
+        verify(listingService).getListingById(1L);
+    }
+
+    @Test
+    void deleteListingImage_NoJwtToken_ReturnsUnauthorized() {
+        // Arrange - mock listing service to return a listing so code reaches JWT check
+        when(listingService.getListingById(1L)).thenReturn(testListing);
+        
+        // Act
+        ResponseEntity<String> response = fileUploadController.deleteListingImage(1L, 1L, mockRequestNoAuth);
+
+        // Assert
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertEquals("Authentication required", response.getBody());
+        verify(listingService).getListingById(1L);
     }
 }
