@@ -84,12 +84,12 @@ public class WebSecurityConfig {
                 .requestMatchers("/public/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
 
-                // Admin only endpoints
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                // Admin only endpoints (context path /api is already applied)
+                .requestMatchers("/admin/**").hasRole("ADMIN")
 
-                // Student and Admin endpoints
-                .requestMatchers("/api/listings/**").hasAnyRole("BUYER", "SELLER", "ADMIN")
-                .requestMatchers("/api/user/**").hasAnyRole("BUYER", "SELLER", "ADMIN")
+                // Student and Admin endpoints (context path /api is already applied)
+                .requestMatchers("/listings/**").hasAnyRole("STUDENT", "ADMIN")
+                .requestMatchers("/user/**").hasAnyRole("STUDENT", "ADMIN")
 
                 .requestMatchers("/actuator/prometheus").permitAll()
                 .requestMatchers("/actuator/metrics").permitAll()
@@ -100,11 +100,11 @@ public class WebSecurityConfig {
                 .requestMatchers("/swagger-resources/**").permitAll()
                 
                 
-                // User profile endpoints (authenticated users)
-                .requestMatchers("/api/users/profile").authenticated()
-                .requestMatchers("/api/users/change-password").authenticated()
-                .requestMatchers("/api/users/deactivate").authenticated()
-                .requestMatchers("/api/users/{userId}").authenticated()
+                // User profile endpoints (authenticated users - context path /api is already applied)
+                .requestMatchers("/users/profile").authenticated()
+                .requestMatchers("/users/change-password").authenticated()
+                .requestMatchers("/users/deactivate").authenticated()
+                .requestMatchers("/users/{userId}").authenticated()
                 
                 // All other endpoints require authentication
                 .anyRequest().authenticated()
