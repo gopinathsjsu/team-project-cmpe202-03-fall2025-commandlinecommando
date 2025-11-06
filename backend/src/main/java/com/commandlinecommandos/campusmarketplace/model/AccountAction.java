@@ -7,13 +7,14 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Entity for tracking administrative actions on user accounts
+ * Entity for tracking account actions (suspension, reactivation, deletion)
+ * Used for admin accountability and account recovery
  */
 @Entity
 @Table(name = "account_actions", indexes = {
-    @Index(name = "idx_account_target_user", columnList = "target_user_id"),
-    @Index(name = "idx_account_performed_by", columnList = "performed_by_id"),
-    @Index(name = "idx_account_action_type", columnList = "action_type"),
+    @Index(name = "idx_account_user", columnList = "user_id"),
+    @Index(name = "idx_account_admin", columnList = "performed_by"),
+    @Index(name = "idx_account_type", columnList = "action_type"),
     @Index(name = "idx_account_created", columnList = "created_at")
 })
 public class AccountAction {
@@ -24,43 +25,52 @@ public class AccountAction {
     private UUID actionId;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "target_user_id", nullable = false)
-    private User targetUser;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "performed_by_id", nullable = false)
+    @JoinColumn(name = "performed_by", nullable = false)
     private User performedBy;
     
     @Enumerated(EnumType.STRING)
     @Column(name = "action_type", nullable = false)
     private ActionType actionType;
     
-    @Column(length = 500)
+    @Column(name = "reason", length = 500)
     private String reason;
     
-    @Column(length = 1000)
+    @Column(name = "notes", length = 1000)
     private String notes;
     
+    @Column(name = "scheduled_revert_at")
+    private LocalDateTime scheduledRevertAt;  // For temporary suspensions
+    
+    @Column(name = "reverted_at")
+    private LocalDateTime revertedAt;
+    
+    @Column(name = "is_reverted")
+    private boolean isReverted = false;
+    
     @CreationTimestamp
-    @Column(name = "created_at", updatable = false, nullable = false)
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
     
     public enum ActionType {
         SUSPEND,
-        UNSUSPEND,
-        VERIFY,
-        REJECT,
-        ROLE_CHANGE,
+        REACTIVATE,
         DELETE,
-        REACTIVATE
+        ROLE_CHANGE,
+        PASSWORD_RESET,
+        EMAIL_CHANGE,
+        VERIFICATION_STATUS_CHANGE
     }
     
     // Constructors
     public AccountAction() {
     }
     
-    public AccountAction(User targetUser, User performedBy, ActionType actionType, String reason) {
-        this.targetUser = targetUser;
+    public AccountAction(User user, User performedBy, ActionType actionType, String reason) {
+        this.user = user;
         this.performedBy = performedBy;
         this.actionType = actionType;
         this.reason = reason;
@@ -75,12 +85,12 @@ public class AccountAction {
         this.actionId = actionId;
     }
 
-    public User getTargetUser() {
-        return targetUser;
+    public User getUser() {
+        return user;
     }
 
-    public void setTargetUser(User targetUser) {
-        this.targetUser = targetUser;
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public User getPerformedBy() {
@@ -113,6 +123,30 @@ public class AccountAction {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public LocalDateTime getScheduledRevertAt() {
+        return scheduledRevertAt;
+    }
+
+    public void setScheduledRevertAt(LocalDateTime scheduledRevertAt) {
+        this.scheduledRevertAt = scheduledRevertAt;
+    }
+
+    public LocalDateTime getRevertedAt() {
+        return revertedAt;
+    }
+
+    public void setRevertedAt(LocalDateTime revertedAt) {
+        this.revertedAt = revertedAt;
+    }
+
+    public boolean isReverted() {
+        return isReverted;
+    }
+
+    public void setReverted(boolean reverted) {
+        isReverted = reverted;
     }
 
     public LocalDateTime getCreatedAt() {
