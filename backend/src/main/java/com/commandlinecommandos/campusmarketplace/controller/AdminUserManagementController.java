@@ -35,7 +35,41 @@ public class AdminUserManagementController {
     private UserManagementService userManagementService;
     
     /**
-     * Search and filter users with pagination
+     * Search and filter users with pagination (GET version with query params)
+     */
+    @GetMapping("/search")
+    @RequireRole(UserRole.ADMIN)
+    public ResponseEntity<?> searchUsersGet(
+            @RequestParam(required = false) String searchTerm,
+            @RequestParam(required = false) UserRole role,
+            @RequestParam(required = false) Boolean isActive,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "DESC") String sortDirection) {
+        try {
+            // Build UserSearchRequest from query parameters
+            UserSearchRequest request = new UserSearchRequest();
+            request.setSearchTerm(searchTerm);
+            request.setRole(role);
+            request.setIsActive(isActive);
+            request.setPage(page);
+            request.setSize(size);
+            request.setSortBy(sortBy);
+            request.setSortDirection(sortDirection);
+            
+            logger.info("Admin searching users with criteria: {}", request);
+            PagedResponse<UserResponse> users = userManagementService.searchUsers(request);
+            return ResponseEntity.ok(users);
+        } catch (Exception e) {
+            logger.error("Error searching users", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Search failed", "message", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Search and filter users with pagination (POST version with request body)
      */
     @PostMapping("/search")
     @RequireRole(UserRole.ADMIN)
