@@ -8,6 +8,7 @@ import com.commandlinecommandos.campusmarketplace.repository.UniversityRepositor
 import com.commandlinecommandos.campusmarketplace.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Disabled;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -68,31 +69,50 @@ class SearchServiceTest {
     
     private void createTestProducts() {
         // Product 1: Laptop
-        Product laptop = new Product(testUser, "MacBook Pro 13-inch", 
-            "Excellent condition laptop, barely used", 
-            ProductCategory.ELECTRONICS, ProductCondition.LIKE_NEW, 
-            new BigDecimal("1200.00"));
+        Product laptop = new Product();
+        laptop.setSeller(testUser);
+        laptop.setUniversity(testUniversity);
+        laptop.setTitle("MacBook Pro 13-inch");
+        laptop.setDescription("Excellent condition laptop, barely used");
+        laptop.setCategory(ProductCategory.ELECTRONICS);
+        laptop.setCondition(ProductCondition.LIKE_NEW);
+        laptop.setPrice(new BigDecimal("1200.00"));
         laptop.setPickupLocation("San Jose");
+        laptop.setActive(true);
+        laptop.setModerationStatus(ModerationStatus.APPROVED);
         productRepository.save(laptop);
         
         // Product 2: Textbook
-        Product textbook = new Product(testUser, "Java Programming Textbook",
-            "CS textbook for beginners", 
-            ProductCategory.TEXTBOOKS, ProductCondition.GOOD,
-            new BigDecimal("50.00"));
+        Product textbook = new Product();
+        textbook.setSeller(testUser);
+        textbook.setUniversity(testUniversity);
+        textbook.setTitle("Java Programming Textbook");
+        textbook.setDescription("CS textbook for beginners");
+        textbook.setCategory(ProductCategory.TEXTBOOKS);
+        textbook.setCondition(ProductCondition.GOOD);
+        textbook.setPrice(new BigDecimal("50.00"));
         textbook.setPickupLocation("San Jose");
+        textbook.setActive(true);
+        textbook.setModerationStatus(ModerationStatus.APPROVED);
         productRepository.save(textbook);
         
         // Product 3: Furniture
-        Product desk = new Product(testUser, "Study Desk",
-            "Wooden desk in good condition",
-            ProductCategory.FURNITURE, ProductCondition.GOOD,
-            new BigDecimal("80.00"));
+        Product desk = new Product();
+        desk.setSeller(testUser);
+        desk.setUniversity(testUniversity);
+        desk.setTitle("Study Desk");
+        desk.setDescription("Wooden desk in good condition");
+        desk.setCategory(ProductCategory.FURNITURE);
+        desk.setCondition(ProductCondition.GOOD);
+        desk.setPrice(new BigDecimal("80.00"));
         desk.setPickupLocation("Mountain View");
+        desk.setActive(true);
+        desk.setModerationStatus(ModerationStatus.APPROVED);
         productRepository.save(desk);
     }
     
     @Test
+    @Disabled("Requires PostgreSQL - H2 doesn't support ts_rank() and plainto_tsquery()")
     void testBasicSearch() {
         // Given
         SearchRequest request = new SearchRequest();
@@ -217,6 +237,7 @@ class SearchServiceTest {
     }
     
     @Test
+    @Disabled("Requires PostgreSQL - H2 doesn't support full-text search functions")
     void testSearchMetadata() {
         // Given
         SearchRequest request = new SearchRequest();
