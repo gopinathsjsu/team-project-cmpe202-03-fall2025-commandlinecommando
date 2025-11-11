@@ -4,7 +4,7 @@ import com.commandlinecommandos.campusmarketplace.model.*;
 import com.commandlinecommandos.campusmarketplace.repository.ProductRepository;
 import com.commandlinecommandos.campusmarketplace.repository.UniversityRepository;
 import com.commandlinecommandos.campusmarketplace.repository.UserRepository;
-import com.commandlinecommandos.campusmarketplace.security.JwtTokenProvider;
+import com.commandlinecommandos.campusmarketplace.security.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,7 +61,7 @@ public class SearchControllerIntegrationTest {
     private ProductRepository productRepository;
 
     @Autowired
-    private JwtTokenProvider jwtTokenProvider;
+    private JwtUtil jwtUtil;
 
     private String authToken;
     private User testUser;
@@ -73,29 +73,28 @@ public class SearchControllerIntegrationTest {
     void setUp() {
         // Create test university
         testUniversity = new University();
-        testUniversity.setUniversityId(UUID.randomUUID());
-        testUniversity.setUniversityName("Test University");
+        testUniversity.setName("Test University");
         testUniversity.setDomain("test.edu");
         testUniversity.setActive(true);
         testUniversity = universityRepository.save(testUniversity);
 
         // Create test user
         testUser = new User();
-        testUser.setUserId(UUID.randomUUID());
         testUser.setUsername("testuser");
         testUser.setEmail("test@test.edu");
         testUser.setPassword("hashedpassword123");
+        testUser.setFirstName("Test");
+        testUser.setLastName("User");
         testUser.setUniversity(testUniversity);
         testUser.setRole(UserRole.STUDENT);
-        testUser.setIsActive(true);
+        testUser.setActive(true);
         testUser = userRepository.save(testUser);
 
         // Generate JWT token
-        authToken = jwtTokenProvider.generateToken(testUser.getUsername());
+        authToken = jwtUtil.generateAccessToken(testUser);
 
         // Create test products
         testProduct1 = new Product();
-        testProduct1.setProductId(UUID.randomUUID());
         testProduct1.setTitle("MacBook Pro 2023");
         testProduct1.setDescription("Excellent laptop for students");
         testProduct1.setPrice(new BigDecimal("1200.00"));
@@ -103,8 +102,8 @@ public class SearchControllerIntegrationTest {
         testProduct1.setCondition(ProductCondition.LIKE_NEW);
         testProduct1.setSeller(testUser);
         testProduct1.setUniversity(testUniversity);
-        testProduct1.setIsActive(true);
-        testProduct1.setLocation("San Jose");
+        testProduct1.setActive(true);
+        testProduct1.setPickupLocation("San Jose");
         testProduct1.setNegotiable(true);
         testProduct1.setQuantity(1);
         testProduct1.setModerationStatus(ModerationStatus.APPROVED);
@@ -112,7 +111,6 @@ public class SearchControllerIntegrationTest {
         testProduct1 = productRepository.save(testProduct1);
 
         testProduct2 = new Product();
-        testProduct2.setProductId(UUID.randomUUID());
         testProduct2.setTitle("Java Programming Textbook");
         testProduct2.setDescription("Used textbook for CS students");
         testProduct2.setPrice(new BigDecimal("50.00"));
@@ -120,8 +118,8 @@ public class SearchControllerIntegrationTest {
         testProduct2.setCondition(ProductCondition.GOOD);
         testProduct2.setSeller(testUser);
         testProduct2.setUniversity(testUniversity);
-        testProduct2.setIsActive(true);
-        testProduct2.setLocation("San Jose");
+        testProduct2.setActive(true);
+        testProduct2.setPickupLocation("San Jose");
         testProduct2.setNegotiable(true);
         testProduct2.setQuantity(1);
         testProduct2.setModerationStatus(ModerationStatus.APPROVED);

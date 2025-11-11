@@ -110,7 +110,13 @@ public class CacheConfig {
     @ConditionalOnProperty(name = "spring.cache.type", havingValue = "none")
     public CacheManager simpleCacheManager() {
         log.warn("⚠️  Caching DISABLED - All requests will hit the database");
-        return new ConcurrentMapCacheManager();
+        // Provide cache names even though caching is disabled to avoid "cache not found" errors
+        return new ConcurrentMapCacheManager(
+            "searchResults",
+            "trendingProducts",
+            "recommendations",
+            "autocomplete"
+        );
     }
 }
 
