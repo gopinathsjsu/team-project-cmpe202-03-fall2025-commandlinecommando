@@ -21,11 +21,14 @@ spring:
     host: ${REDIS_HOST:localhost}
     port: ${REDIS_PORT:6379}
     timeout: 2000ms
+    connect-timeout: 2000ms
   cache:
-    type: redis
+    type: ${CACHE_TYPE:redis}  # Can be 'redis', 'caffeine', or 'none'
     redis:
       time-to-live: 600000  # 10 minutes
       cache-null-values: false
+    caffeine:
+      spec: maximumSize=1000,expireAfterWrite=600s  # Fallback if Redis unavailable
 
 server:
   port: ${PORT:8080}
