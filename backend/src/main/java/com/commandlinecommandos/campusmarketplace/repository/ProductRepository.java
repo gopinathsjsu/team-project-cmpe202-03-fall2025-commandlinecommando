@@ -101,8 +101,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
      */
     @Query("SELECT p FROM Product p WHERE p.university = :university " +
            "AND p.isActive = true " +
-           "AND p.moderationStatus = 'APPROVED' " +
-           "ORDER BY p.viewCount DESC")
+           "ORDER BY COALESCE(p.viewCount, 0) DESC, p.createdAt DESC")
     List<Product> findTopByViews(@Param("university") University university, Pageable pageable);
     
     // ========================================================================

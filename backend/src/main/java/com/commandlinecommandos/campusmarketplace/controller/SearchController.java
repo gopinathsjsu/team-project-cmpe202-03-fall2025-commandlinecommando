@@ -173,19 +173,28 @@ public class SearchController {
      * @throws UnauthorizedException if token is invalid or user not found
      */
     private User getCurrentUser(String authHeader) throws UnauthorizedException {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new UnauthorizedException("Invalid authorization header");
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                throw new UnauthorizedException("Invalid authorization header");
+            }
+            
+            String token = authHeader.substring(7);  // Remove "Bearer " prefix
+            String username = jwtUtil.extractUsername(token);
+            
+            if (username == null) {
+                throw new UnauthorizedException("Invalid token");
+            }
+            
+            return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UnauthorizedException("User not found"));
+        } catch (UnauthorizedException e) {
+            // Re-throw UnauthorizedException as is
+            throw e;
+        } catch (Exception e) {
+            // Wrap any other exception (JWT parsing errors, etc.) in UnauthorizedException
+            log.error("Token validation failed: {}", e.getMessage());
+            throw new UnauthorizedException("Token validation failed");
         }
-        
-        String token = authHeader.substring(7);  // Remove "Bearer " prefix
-        String username = jwtUtil.extractUsername(token);
-        
-        if (username == null) {
-            throw new UnauthorizedException("Invalid token");
-        }
-        
-        return userRepository.findByUsername(username)
-            .orElseThrow(() -> new UnauthorizedException("User not found"));
     }
 }
 

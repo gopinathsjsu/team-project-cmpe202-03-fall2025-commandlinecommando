@@ -6,6 +6,7 @@ import com.commandlinecommandos.campusmarketplace.dto.RecommendedResponse;
 import com.commandlinecommandos.campusmarketplace.dto.SimilarResponse;
 import com.commandlinecommandos.campusmarketplace.dto.RecentlyViewedResponse;
 import com.commandlinecommandos.campusmarketplace.dto.ErrorResponse;
+import com.commandlinecommandos.campusmarketplace.exception.NotFoundException;
 import com.commandlinecommandos.campusmarketplace.exception.UnauthorizedException;
 import com.commandlinecommandos.campusmarketplace.model.User;
 import com.commandlinecommandos.campusmarketplace.repository.UserRepository;
@@ -60,17 +61,18 @@ public class DiscoveryController {
             @RequestHeader(value = "Authorization", required = false) String token) {
         
         try {
-            // Check authentication FIRST
-            User user = getCurrentUser(token);
-            
-            // Then validate limit
+            // Validate limit
             if (limit < 1 || limit > 50) {
                 return ResponseEntity.badRequest().body(new ErrorResponse("limit must be between 1 and 50"));
             }
+            
+            // Get user and their university (will throw UnauthorizedException if token is missing/invalid)
+            User user = getCurrentUser(token);
             List<ProductSummary> trending = discoveryService.getTrendingItems(
                 user.getUniversity().getUniversityId(), limit);
             
-            log.debug("Trending items: user={}, count={}", user.getUsername(), trending.size());
+            log.debug("Trending items: user={}, universityId={}, count={}", 
+                user.getUsername(), user.getUniversity().getUniversityId(), trending.size());
             return ResponseEntity.ok(new TrendingResponse(trending));
         } catch (UnauthorizedException e) {
             log.warn("Unauthorized trending request: {}", e.getMessage());
@@ -92,10 +94,10 @@ public class DiscoveryController {
     @GetMapping("/recommended")
     @Operation(summary = "Get recommended products",
                description = "Get personalized product recommendations based on browsing history")
-    public ResponseEntity<RecommendedResponse> getRecommended(
+    public ResponseEntity<?> getRecommended(
             @Parameter(description = "Maximum number of products") 
             @RequestParam(defaultValue = "10") int limit,
-            @RequestHeader("Authorization") String token) {
+            @RequestHeader(value = "Authorization", required = false) String token) {
         
         try {
             User user = getCurrentUser(token);
@@ -144,6 +146,9 @@ public class DiscoveryController {
         } catch (UnauthorizedException e) {
             log.warn("Invalid token for similar request: {}", e.getMessage());
             return ResponseEntity.status(401).build();
+        } catch (NotFoundException e) {
+            log.warn("Product not found for similar request: {}", e.getMessage());
+            return ResponseEntity.status(404).body(new SimilarResponse(List.of()));
         } catch (Exception e) {
             log.error("Similar items error: productId={}, error={}", productId, e.getMessage(), e);
             return ResponseEntity.ok(new SimilarResponse(List.of()));
@@ -188,19 +193,28 @@ public class DiscoveryController {
      * @throws UnauthorizedException if token is invalid or user not found
      */
     private User getCurrentUser(String authHeader) throws UnauthorizedException {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new UnauthorizedException("Invalid authorization header");
+        try {
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                throw new UnauthorizedException("Invalid authorization header");
+            }
+            
+            String token = authHeader.substring(7);  // Remove "Bearer " prefix
+            String username = jwtUtil.extractUsername(token);
+            
+            if (username == null) {
+                throw new UnauthorizedException("Invalid token");
+            }
+            
+            return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UnauthorizedException("User not found"));
+        } catch (UnauthorizedException e) {
+            // Re-throw UnauthorizedException as is
+            throw e;
+        } catch (Exception e) {
+            // Wrap any other exception (JWT parsing errors, etc.) in UnauthorizedException
+            log.error("Token validation failed: {}", e.getMessage());
+            throw new UnauthorizedException("Token validation failed");
         }
-        
-        String token = authHeader.substring(7);  // Remove "Bearer " prefix
-        String username = jwtUtil.extractUsername(token);
-        
-        if (username == null) {
-            throw new UnauthorizedException("Invalid token");
-        }
-        
-        return userRepository.findByUsername(username)
-            .orElseThrow(() -> new UnauthorizedException("User not found"));
     }
 }
 

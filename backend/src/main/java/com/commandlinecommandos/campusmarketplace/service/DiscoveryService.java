@@ -1,6 +1,7 @@
 package com.commandlinecommandos.campusmarketplace.service;
 
 import com.commandlinecommandos.campusmarketplace.dto.ProductSummary;
+import com.commandlinecommandos.campusmarketplace.exception.NotFoundException;
 import com.commandlinecommandos.campusmarketplace.model.ModerationStatus;
 import com.commandlinecommandos.campusmarketplace.model.Product;
 import com.commandlinecommandos.campusmarketplace.model.ProductCategory;
@@ -42,13 +43,11 @@ public class DiscoveryService {
     /**
      * Get trending products for a university
      * Based on view count and favorite count
-     * Cached for 15 minutes
      * 
      * @param universityId University UUID
      * @param limit Maximum number of products to return
      * @return List of trending products
      */
-    @Cacheable(value = "trendingItems", key = "#universityId + '_' + #limit")
     public List<ProductSummary> getTrendingItems(UUID universityId, int limit) {
         try {
             // Get University entity
@@ -137,11 +136,8 @@ public class DiscoveryService {
      */
     public List<ProductSummary> getSimilarItems(UUID productId, int limit) {
         try {
-            Product product = productRepository.findById(productId).orElse(null);
-            if (product == null) {
-                log.warn("Product not found for similar items: {}", productId);
-                return List.of();
-            }
+            Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new NotFoundException("Product not found with id: " + productId));
             
             // Find products in the same category
             List<Product> similar = productRepository
@@ -162,6 +158,9 @@ public class DiscoveryService {
             
             log.debug("Similar items: productId={}, count={}", productId, result.size());
             return result;
+        } catch (NotFoundException e) {
+            // Re-throw NotFoundException so controller can return 404
+            throw e;
         } catch (Exception e) {
             log.error("Error fetching similar items for product {}: {}", 
                      productId, e.getMessage(), e);
