@@ -14,7 +14,7 @@
     },
     {
       "key": "listing_api_url",
-      "value": "http://localhost:8081",
+      "value": "http://localhost:8100",
       "type": "string"
     }
   ],

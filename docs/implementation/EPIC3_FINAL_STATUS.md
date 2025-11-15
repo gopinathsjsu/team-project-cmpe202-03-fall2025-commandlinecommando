@@ -112,7 +112,7 @@ GET    /discovery/similar/{productId}       # Similar products
 GET    /discovery/recently-viewed?limit=    # Recently viewed
 ```
 
-### Listing-API Proxy (`http://localhost:8081`)
+### Listing-API Proxy (`http://localhost:8100`)
 
 #### Legacy Support (Backward Compatible)
 ```http
@@ -222,7 +222,7 @@ docker-compose up --build
 
 # Services will be available at:
 # - Backend: http://localhost:8080
-# - Listing-API: http://localhost:8081
+# - Listing-API: http://localhost:8100
 # - PostgreSQL: localhost:5432
 # - Redis: localhost:6379
 ```
