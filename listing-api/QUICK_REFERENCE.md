@@ -9,10 +9,21 @@ git clone <repository-url>
 cd listing-api
 mvn clean install
 
-# Run locally
+# Run locally (development mode - H2 database)
 mvn spring-boot:run
 # or
 make run
+
+# Run in production mode (PostgreSQL)
+export SPRING_PROFILES_ACTIVE=prod
+export DB_HOST=localhost
+export DB_PORT=5432
+export DB_NAME=campus_marketplace
+export DB_APP_USER=cm_app_user
+export DB_APP_PASSWORD=your_password
+mvn spring-boot:run
+# or
+make run-prod
 
 # Access application
 curl http://localhost:8100/actuator/health
@@ -30,12 +41,24 @@ mvn test -Dtest=ListingControllerTest
 curl -X GET "http://localhost:8100/api/listings"
 ```
 
+## Authentication
+
+All protected endpoints require a JWT token in the Authorization header:
+```
+Authorization: Bearer <your-jwt-token>
+```
+
+The JWT token should contain:
+- `userId`: User's unique identifier
+- `role`: User's role (e.g., "ADMIN", "STUDENT")
+
 ## Common API Calls
 
-### Create Listing
+### Create Listing (Requires JWT Token)
 ```bash
 curl -X POST "http://localhost:8100/api/listings/" \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <your-jwt-token>" \
   -d '{
     "title": "MacBook Pro 13-inch",
     "description": "Excellent condition MacBook Pro",
@@ -51,9 +74,10 @@ curl -X POST "http://localhost:8100/api/listings/" \
 curl -X GET "http://localhost:8100/api/listings/search?category=ELECTRONICS&keyword=MacBook"
 ```
 
-### Upload Image
+### Upload Image (Requires JWT Token)
 ```bash
 curl -X POST "http://localhost:8100/api/files/upload/1" \
+  -H "Authorization: Bearer <your-jwt-token>" \
   -F "file=@image.jpg" \
   -F "displayOrder=1"
 ```

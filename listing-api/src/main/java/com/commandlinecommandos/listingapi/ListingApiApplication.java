@@ -2,10 +2,11 @@ package com.commandlinecommandos.listingapi;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.session.SessionAutoConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SpringBootApplication
+@SpringBootApplication(exclude = {SessionAutoConfiguration.class})
 public class ListingApiApplication {
 
 	private static final Logger logger = LoggerFactory.getLogger(ListingApiApplication.class);

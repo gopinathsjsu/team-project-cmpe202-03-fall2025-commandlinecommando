@@ -9,7 +9,63 @@ http://localhost:8100/api
 ```
 
 ## Authentication
-**Note**: Currently uses placeholder authentication. In production, integrate with the main authentication service.
+
+The API uses JWT (JSON Web Token) authentication for authorization. All protected endpoints require a valid JWT token.
+
+### JWT Token Format
+Include the JWT token in the `Authorization` header:
+```
+Authorization: Bearer <your-jwt-token>
+```
+
+### How Authentication Works
+1. **Token Extraction**: The JWT token is extracted from the `Authorization` header
+2. **User Identification**: User ID (`userId`) and role are extracted from the JWT claims
+3. **Authorization**: 
+   - For listings: Only the owner (matching `sellerId`) can update/delete their listings
+   - For reports: Only the reporter (matching `reporterId`) can update/delete their reports
+   - Admin endpoints: Require `ADMIN` role in the JWT token
+
+### JWT Token Claims
+The JWT token should contain the following claims:
+- `userId`: User's unique identifier (UUID converted to Long)
+- `role`: User's role (e.g., "ADMIN", "STUDENT")
+- `sub`: Username (optional)
+
+### Protected Endpoints
+The following endpoints require JWT authentication:
+- `POST /api/listings/` - Create listing
+- `PUT /api/listings/{listingId}` - Update listing
+- `PUT /api/listings/{listingId}/sold` - Mark as sold
+- `PUT /api/listings/{listingId}/cancel` - Cancel listing
+- `DELETE /api/listings/{listingId}` - Delete listing
+- `POST /api/files/upload/{listingId}` - Upload image
+- `POST /api/files/upload-multiple/{listingId}` - Upload multiple images
+- `DELETE /api/files/listing/{listingId}/{imageId}` - Delete image
+- `POST /api/reports/` - Create report
+- `PUT /api/reports/{reportId}` - Update report
+- `DELETE /api/reports/{reportId}` - Delete report
+- All admin endpoints (GET /api/reports/*, PUT /api/reports/{reportId}/review, etc.)
+
+### Unprotected Endpoints
+The following endpoints do not require authentication:
+- `GET /api/listings` - Get all listings
+- `GET /api/listings/search` - Search listings
+- `GET /api/listings/{listingId}` - Get listing by ID
+- `GET /api/listings/seller/{sellerId}` - Get listings by seller
+- `GET /api/files/listing/{listingId}` - Get listing images
+
+### Error Responses
+
+**401 Unauthorized** - No JWT token or invalid token:
+```json
+"Authentication required"
+```
+
+**403 Forbidden** - Valid token but insufficient permissions:
+```json
+"You are not allowed to [action] this [resource]"
+```
 
 ## Response Format
 All API responses follow a consistent format:
@@ -177,7 +233,11 @@ curl -X GET "http://localhost:8100/api/listings/seller/123?page=0&size=5"
 #### 1.5 Create Listing
 **Endpoint**: `POST /api/listings/`
 
-**Description**: Creates a new listing.
+**Description**: Creates a new listing. Requires JWT authentication. The `sellerId` is automatically extracted from the JWT token.
+
+**Headers**:
+- `Content-Type: application/json`
+- `Authorization: Bearer <jwt-token>` (Required)
 
 **Request Body**:
 ```json
@@ -203,6 +263,7 @@ curl -X GET "http://localhost:8100/api/listings/seller/123?page=0&size=5"
 ```bash
 curl -X POST "http://localhost:8100/api/listings/" \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -d '{
     "title": "iPhone 12 Pro",
     "description": "Great condition iPhone 12 Pro, unlocked",
@@ -211,6 +272,24 @@ curl -X POST "http://localhost:8100/api/listings/" \
     "condition": "GOOD",
     "location": "San Francisco, CA"
   }'
+```
+
+**Postman Example**:
+1. Method: `POST`
+2. URL: `http://localhost:8100/api/listings/`
+3. Headers:
+   - `Content-Type`: `application/json`
+   - `Authorization`: `Bearer <your-jwt-token>`
+4. Body (raw, JSON):
+```json
+{
+  "title": "MacBook Pro 13-inch 2023",
+  "description": "Excellent condition MacBook Pro, barely used. Comes with original charger and box.",
+  "price": 1200.00,
+  "category": "ELECTRONICS",
+  "condition": "LIKE_NEW",
+  "location": "San Jose, CA"
+}
 ```
 
 **Example Response**:
@@ -235,12 +314,16 @@ curl -X POST "http://localhost:8100/api/listings/" \
 #### 1.6 Update Listing
 **Endpoint**: `PUT /api/listings/{listingId}`
 
-**Description**: Updates an existing listing. Only the listing owner can update.
+**Description**: Updates an existing listing. Only the listing owner can update. The `sellerId` is automatically extracted from the JWT token.
 
 **Parameters**:
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `listingId` | integer | Unique listing identifier |
+
+**Headers**:
+- `Content-Type: application/json`
+- `Authorization: Bearer <jwt-token>` (Required)
 
 **Request Body**: Same format as Create Listing, with optional `images` array
 
@@ -248,6 +331,7 @@ curl -X POST "http://localhost:8100/api/listings/" \
 ```bash
 curl -X PUT "http://localhost:8100/api/listings/1" \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -d '{
     "title": "MacBook Pro 13-inch (Updated)",
     "description": "Excellent condition MacBook Pro, barely used - price reduced!",
@@ -263,16 +347,20 @@ curl -X PUT "http://localhost:8100/api/listings/1" \
 #### 1.7 Mark Listing as Sold
 **Endpoint**: `PUT /api/listings/{listingId}/sold`
 
-**Description**: Marks a listing as sold. Only the listing owner can perform this action.
+**Description**: Marks a listing as sold. Only the listing owner can perform this action. Requires JWT authentication. The `sellerId` is automatically extracted from the JWT token.
 
 **Parameters**:
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `listingId` | integer | Unique listing identifier |
 
+**Headers**:
+- `Authorization: Bearer <jwt-token>` (Required)
+
 **Example Request**:
 ```bash
-curl -X PUT "http://localhost:8100/api/listings/1/sold"
+curl -X PUT "http://localhost:8100/api/listings/1/sold" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 **Example Response**:
@@ -297,16 +385,20 @@ curl -X PUT "http://localhost:8100/api/listings/1/sold"
 #### 1.8 Cancel Listing
 **Endpoint**: `PUT /api/listings/{listingId}/cancel`
 
-**Description**: Cancels a listing. Only the listing owner can perform this action.
+**Description**: Cancels a listing. Only the listing owner can perform this action. The `sellerId` is automatically extracted from the JWT token.
 
 **Parameters**:
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `listingId` | integer | Unique listing identifier |
 
+**Headers**:
+- `Authorization: Bearer <jwt-token>` (Required)
+
 **Example Request**:
 ```bash
-curl -X PUT "http://localhost:8100/api/listings/1/cancel"
+curl -X PUT "http://localhost:8100/api/listings/1/cancel" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
 ```
 
 **Example Response**: Same format as Mark as Sold response, with status: "CANCELLED"
@@ -314,16 +406,20 @@ curl -X PUT "http://localhost:8100/api/listings/1/cancel"
 #### 1.9 Delete Listing
 **Endpoint**: `DELETE /api/listings/{listingId}`
 
-**Description**: Permanently deletes a listing. Only the listing owner can perform this action.
+**Description**: Permanently deletes a listing. Requires JWT authentication. Only the listing owner can perform this action. The `sellerId` is automatically extracted from the JWT token and verified against the listing's owner. Returns 403 Forbidden if the user is not the owner.
 
 **Parameters**:
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `listingId` | integer | Unique listing identifier |
 
+**Headers**:
+- `Authorization: Bearer <jwt-token>` (Required) - JWT token containing `userId` claim
+
 **Example Request**:
 ```bash
-curl -X DELETE "http://localhost:8100/api/listings/1"
+curl -X DELETE "http://localhost:8100/api/listings/1" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 **Example Response**:
@@ -336,12 +432,15 @@ curl -X DELETE "http://localhost:8100/api/listings/1"
 #### 2.1 Upload Single Image
 **Endpoint**: `POST /api/files/upload/{listingId}`
 
-**Description**: Uploads a single image for a listing.
+**Description**: Uploads a single image for a listing. Requires JWT authentication. The `sellerId` is automatically extracted from the JWT token and verified against the listing's owner. Only the listing owner can upload images. Returns 401 Unauthorized if no valid JWT token is provided, or 403 Forbidden if the user is not the listing owner.
 
 **Parameters**:
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `listingId` | integer | Unique listing identifier |
+
+**Headers**:
+- `Authorization: Bearer <jwt-token>` (Required) - JWT token containing `userId` claim
 
 **Form Data**:
 | Field | Type | Description |
@@ -354,6 +453,7 @@ curl -X DELETE "http://localhost:8100/api/listings/1"
 **Example Request**:
 ```bash
 curl -X POST "http://localhost:8100/api/files/upload/1" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -F "file=@/path/to/image.jpg" \
   -F "displayOrder=1"
 ```
@@ -366,12 +466,15 @@ curl -X POST "http://localhost:8100/api/files/upload/1" \
 #### 2.2 Upload Multiple Images
 **Endpoint**: `POST /api/files/upload-multiple/{listingId}`
 
-**Description**: Uploads multiple images for a listing.
+**Description**: Uploads multiple images for a listing. Requires JWT authentication. The `sellerId` is automatically extracted from the JWT token and verified against the listing's owner. Only the listing owner can upload images. Returns 401 Unauthorized if no valid JWT token is provided, or 403 Forbidden if the user is not the listing owner.
 
 **Parameters**:
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `listingId` | integer | Unique listing identifier |
+
+**Headers**:
+- `Authorization: Bearer <jwt-token>` (Required) - JWT token containing `userId` claim
 
 **Form Data**:
 | Field | Type | Description |
@@ -382,6 +485,7 @@ curl -X POST "http://localhost:8100/api/files/upload/1" \
 **Example Request**:
 ```bash
 curl -X POST "http://localhost:8100/api/files/upload-multiple/1" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -F "files=@/path/to/image1.jpg" \
   -F "files=@/path/to/image2.jpg" \
   -F "displayOrders=1" \
@@ -431,7 +535,7 @@ curl -X GET "http://localhost:8100/api/files/listing/1"
 #### 2.4 Delete Image
 **Endpoint**: `DELETE /api/files/listing/{listingId}/{imageId}`
 
-**Description**: Deletes a specific image from a listing.
+**Description**: Deletes a specific image from a listing. Requires JWT authentication. The `sellerId` is automatically extracted from the JWT token and verified against the listing's owner. Only the listing owner can delete images. Returns 401 Unauthorized if no valid JWT token is provided, or 403 Forbidden if the user is not the listing owner.
 
 **Parameters**:
 | Parameter | Type | Description |
@@ -439,9 +543,13 @@ curl -X GET "http://localhost:8100/api/files/listing/1"
 | `listingId` | integer | Unique listing identifier |
 | `imageId` | integer | Unique image identifier |
 
+**Headers**:
+- `Authorization: Bearer <jwt-token>` (Required) - JWT token containing `userId` claim
+
 **Example Request**:
 ```bash
-curl -X DELETE "http://localhost:8100/api/files/listing/1/1"
+curl -X DELETE "http://localhost:8100/api/files/listing/1/1" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 **Example Response**:
@@ -454,7 +562,10 @@ curl -X DELETE "http://localhost:8100/api/files/listing/1/1"
 #### 3.1 Get All Reports
 **Endpoint**: `GET /api/reports`
 
-**Description**: Retrieves all reports with pagination and sorting options.
+**Description**: Retrieves all reports with pagination and sorting options. Requires JWT authentication with `ADMIN` role. The role is automatically extracted from the JWT token. Returns 401 Unauthorized if no valid JWT token is provided, or 403 Forbidden if the user does not have ADMIN role.
+
+**Headers**:
+- `Authorization: Bearer <jwt-token>` (Required) - JWT token containing `role` claim with value "ADMIN"
 
 **Parameters**:
 | Parameter | Type | Default | Description |
@@ -466,7 +577,8 @@ curl -X DELETE "http://localhost:8100/api/files/listing/1/1"
 
 **Example Request**:
 ```bash
-curl -X GET "http://localhost:8100/api/reports?page=0&size=10&sortBy=createdAt&sortDirection=desc"
+curl -X GET "http://localhost:8100/api/reports?page=0&size=10&sortBy=createdAt&sortDirection=desc" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 **Example Response**:
@@ -505,7 +617,10 @@ curl -X GET "http://localhost:8100/api/reports?page=0&size=10&sortBy=createdAt&s
 #### 3.2 Search Reports
 **Endpoint**: `GET /api/reports/search`
 
-**Description**: Advanced search functionality for reports with multiple filters.
+**Description**: Advanced search functionality for reports with multiple filters. Requires JWT authentication with `ADMIN` role. The role is automatically extracted from the JWT token. Returns 401 Unauthorized if no valid JWT token is provided, or 403 Forbidden if the user does not have ADMIN role.
+
+**Headers**:
+- `Authorization: Bearer <jwt-token>` (Required) - JWT token containing `role` claim with value "ADMIN"
 
 **Parameters**:
 | Parameter | Type | Required | Description |
@@ -536,7 +651,8 @@ curl -X GET "http://localhost:8100/api/reports?page=0&size=10&sortBy=createdAt&s
 
 **Example Request**:
 ```bash
-curl -X GET "http://localhost:8100/api/reports/search?status=PENDING&reportType=INAPPROPRIATE_CONTENT"
+curl -X GET "http://localhost:8100/api/reports/search?status=PENDING&reportType=INAPPROPRIATE_CONTENT" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 **Example Response**: Same format as Get All Reports
@@ -544,13 +660,17 @@ curl -X GET "http://localhost:8100/api/reports/search?status=PENDING&reportType=
 #### 3.3 Get Pending Reports
 **Endpoint**: `GET /api/reports/pending`
 
-**Description**: Retrieves all pending reports that need review.
+**Description**: Retrieves all pending reports that need review. Requires JWT authentication with `ADMIN` role. The role is automatically extracted from the JWT token. Returns 401 Unauthorized if no valid JWT token is provided, or 403 Forbidden if the user does not have ADMIN role.
+
+**Headers**:
+- `Authorization: Bearer <jwt-token>` (Required) - JWT token containing `role` claim with value "ADMIN"
 
 **Parameters**: Same pagination parameters as Get All Reports
 
 **Example Request**:
 ```bash
-curl -X GET "http://localhost:8100/api/reports/pending?page=0&size=20"
+curl -X GET "http://localhost:8100/api/reports/pending?page=0&size=20" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 **Example Response**: Same format as Get All Reports
@@ -558,7 +678,10 @@ curl -X GET "http://localhost:8100/api/reports/pending?page=0&size=20"
 #### 3.4 Get Reports by Reporter
 **Endpoint**: `GET /api/reports/reporter/{reporterId}`
 
-**Description**: Retrieves all reports submitted by a specific user.
+**Description**: Retrieves all reports submitted by a specific user. Requires JWT authentication with `ADMIN` role. The role is automatically extracted from the JWT token. Returns 401 Unauthorized if no valid JWT token is provided, or 403 Forbidden if the user does not have ADMIN role.
+
+**Headers**:
+- `Authorization: Bearer <jwt-token>` (Required) - JWT token containing `role` claim with value "ADMIN"
 
 **Parameters**:
 | Parameter | Type | Description |
@@ -569,7 +692,8 @@ curl -X GET "http://localhost:8100/api/reports/pending?page=0&size=20"
 
 **Example Request**:
 ```bash
-curl -X GET "http://localhost:8100/api/reports/reporter/123?page=0&size=5"
+curl -X GET "http://localhost:8100/api/reports/reporter/123?page=0&size=5" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 **Example Response**: Same pagination format as Get All Reports
@@ -577,7 +701,10 @@ curl -X GET "http://localhost:8100/api/reports/reporter/123?page=0&size=5"
 #### 3.5 Get Reports by Listing
 **Endpoint**: `GET /api/reports/listing/{listingId}`
 
-**Description**: Retrieves all reports for a specific listing.
+**Description**: Retrieves all reports for a specific listing. Requires JWT authentication with `ADMIN` role. The role is automatically extracted from the JWT token. Returns 401 Unauthorized if no valid JWT token is provided, or 403 Forbidden if the user does not have ADMIN role.
+
+**Headers**:
+- `Authorization: Bearer <jwt-token>` (Required) - JWT token containing `role` claim with value "ADMIN"
 
 **Parameters**:
 | Parameter | Type | Description |
@@ -588,7 +715,8 @@ curl -X GET "http://localhost:8100/api/reports/reporter/123?page=0&size=5"
 
 **Example Request**:
 ```bash
-curl -X GET "http://localhost:8100/api/reports/listing/456?page=0&size=10"
+curl -X GET "http://localhost:8100/api/reports/listing/456?page=0&size=10" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 **Example Response**: Same pagination format as Get All Reports
@@ -596,7 +724,10 @@ curl -X GET "http://localhost:8100/api/reports/listing/456?page=0&size=10"
 #### 3.6 Get Reports by Type
 **Endpoint**: `GET /api/reports/type/{reportType}`
 
-**Description**: Retrieves all reports of a specific type.
+**Description**: Retrieves all reports of a specific type. Requires JWT authentication with `ADMIN` role. The role is automatically extracted from the JWT token. Returns 401 Unauthorized if no valid JWT token is provided, or 403 Forbidden if the user does not have ADMIN role.
+
+**Headers**:
+- `Authorization: Bearer <jwt-token>` (Required) - JWT token containing `role` claim with value "ADMIN"
 
 **Parameters**:
 | Parameter | Type | Description |
@@ -607,7 +738,8 @@ curl -X GET "http://localhost:8100/api/reports/listing/456?page=0&size=10"
 
 **Example Request**:
 ```bash
-curl -X GET "http://localhost:8100/api/reports/type/SPAM?page=0&size=20"
+curl -X GET "http://localhost:8100/api/reports/type/SPAM?page=0&size=20" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 **Example Response**: Same pagination format as Get All Reports
@@ -615,7 +747,10 @@ curl -X GET "http://localhost:8100/api/reports/type/SPAM?page=0&size=20"
 #### 3.7 Get Reports by Status
 **Endpoint**: `GET /api/reports/status/{status}`
 
-**Description**: Retrieves all reports with a specific status.
+**Description**: Retrieves all reports with a specific status. Requires JWT authentication with `ADMIN` role. The role is automatically extracted from the JWT token. Returns 401 Unauthorized if no valid JWT token is provided, or 403 Forbidden if the user does not have ADMIN role.
+
+**Headers**:
+- `Authorization: Bearer <jwt-token>` (Required) - JWT token containing `role` claim with value "ADMIN"
 
 **Parameters**:
 | Parameter | Type | Description |
@@ -626,7 +761,8 @@ curl -X GET "http://localhost:8100/api/reports/type/SPAM?page=0&size=20"
 
 **Example Request**:
 ```bash
-curl -X GET "http://localhost:8100/api/reports/status/PENDING?page=0&size=20"
+curl -X GET "http://localhost:8100/api/reports/status/PENDING?page=0&size=20" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 **Example Response**: Same pagination format as Get All Reports
@@ -634,7 +770,10 @@ curl -X GET "http://localhost:8100/api/reports/status/PENDING?page=0&size=20"
 #### 3.8 Get Report by ID
 **Endpoint**: `GET /api/reports/{reportId}`
 
-**Description**: Retrieves a specific report by ID.
+**Description**: Retrieves a specific report by ID. Requires JWT authentication with `ADMIN` role. The role is automatically extracted from the JWT token. Returns 401 Unauthorized if no valid JWT token is provided, or 403 Forbidden if the user does not have ADMIN role.
+
+**Headers**:
+- `Authorization: Bearer <jwt-token>` (Required) - JWT token containing `role` claim with value "ADMIN"
 
 **Parameters**:
 | Parameter | Type | Description |
@@ -643,7 +782,8 @@ curl -X GET "http://localhost:8100/api/reports/status/PENDING?page=0&size=20"
 
 **Example Request**:
 ```bash
-curl -X GET "http://localhost:8100/api/reports/1"
+curl -X GET "http://localhost:8100/api/reports/1" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 **Example Response**:
@@ -665,12 +805,15 @@ curl -X GET "http://localhost:8100/api/reports/1"
 #### 3.9 Create Report
 **Endpoint**: `POST /api/reports/`
 
-**Description**: Creates a new report for a listing.
+**Description**: Creates a new report for a listing. Requires JWT authentication. The `reporterId` is automatically extracted from the JWT token.
+
+**Headers**:
+- `Content-Type: application/json`
+- `Authorization: Bearer <jwt-token>` (Required) - JWT token containing `role` claim with value "ADMIN"
 
 **Request Body**:
 ```json
 {
-  "reporterId": 123,
   "listingId": 456,
   "reportType": "INAPPROPRIATE_CONTENT",
   "description": "This listing contains inappropriate language"
@@ -678,10 +821,11 @@ curl -X GET "http://localhost:8100/api/reports/1"
 ```
 
 **Validation Rules**:
-- `reporterId`: Required, valid user ID
 - `listingId`: Required, valid listing ID
 - `reportType`: Required, must be valid enum value
 - `description`: Required, non-empty string
+
+**Note**: The `reporterId` is automatically extracted from the JWT token. You don't need to include it in the request body.
 
 **Example Request**:
 ```bash
@@ -714,7 +858,11 @@ curl -X POST "http://localhost:8100/api/reports/" \
 #### 3.10 Update Report
 **Endpoint**: `PUT /api/reports/{reportId}`
 
-**Description**: Updates an existing report. Only pending reports can be updated.
+**Description**: Updates an existing report. Requires JWT authentication.  Requires JWT authentication with `ADMIN` role. The role is automatically extracted from the JWT token. Returns 401 Unauthorized if no valid JWT token is provided, or 403 Forbidden if the user does not have ADMIN role.
+
+**Headers**:
+- `Content-Type: application/json`
+- `Authorization: Bearer <jwt-token>` (Required) - JWT token containing `role` claim with value "ADMIN"
 
 **Parameters**:
 | Parameter | Type | Description |
@@ -733,6 +881,7 @@ curl -X POST "http://localhost:8100/api/reports/" \
 ```bash
 curl -X PUT "http://localhost:8100/api/reports/1" \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
   -d '{
     "reportType": "FAKE_LISTING",
     "description": "This listing appears to be fake"
@@ -744,7 +893,10 @@ curl -X PUT "http://localhost:8100/api/reports/1" \
 #### 3.11 Mark Report as Reviewed
 **Endpoint**: `PUT /api/reports/{reportId}/review`
 
-**Description**: Marks a report as under review by an admin.
+**Description**: Marks a report as under review by an admin. Requires JWT authentication with `ADMIN` role. The role is automatically extracted from the JWT token, and the admin's user ID is stored as the reviewer. Returns 401 Unauthorized if no valid JWT token is provided, or 403 Forbidden if the user does not have ADMIN role.
+
+**Headers**:
+- `Authorization: Bearer <jwt-token>` (Required) - JWT token containing `role` claim with value "ADMIN" and `userId` claim
 
 **Parameters**:
 | Parameter | Type | Description |
@@ -753,7 +905,8 @@ curl -X PUT "http://localhost:8100/api/reports/1" \
 
 **Example Request**:
 ```bash
-curl -X PUT "http://localhost:8100/api/reports/1/review"
+curl -X PUT "http://localhost:8100/api/reports/1/review" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 **Example Response**:
@@ -775,7 +928,10 @@ curl -X PUT "http://localhost:8100/api/reports/1/review"
 #### 3.12 Mark Report as Resolved
 **Endpoint**: `PUT /api/reports/{reportId}/resolve`
 
-**Description**: Marks a report as resolved by an admin.
+**Description**: Marks a report as resolved by an admin. Requires JWT authentication with `ADMIN` role. The role is automatically extracted from the JWT token. Returns 401 Unauthorized if no valid JWT token is provided, or 403 Forbidden if the user does not have ADMIN role.
+
+**Headers**:
+- `Authorization: Bearer <jwt-token>` (Required) - JWT token containing `role` claim with value "ADMIN"
 
 **Parameters**:
 | Parameter | Type | Description |
@@ -784,7 +940,8 @@ curl -X PUT "http://localhost:8100/api/reports/1/review"
 
 **Example Request**:
 ```bash
-curl -X PUT "http://localhost:8100/api/reports/1/resolve"
+curl -X PUT "http://localhost:8100/api/reports/1/resolve" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 **Example Response**: Same format as Mark as Reviewed, with status: "RESOLVED"
@@ -792,7 +949,10 @@ curl -X PUT "http://localhost:8100/api/reports/1/resolve"
 #### 3.13 Mark Report as Dismissed
 **Endpoint**: `PUT /api/reports/{reportId}/dismiss`
 
-**Description**: Marks a report as dismissed by an admin.
+**Description**: Marks a report as dismissed by an admin. Requires JWT authentication with `ADMIN` role. The role is automatically extracted from the JWT token. Returns 401 Unauthorized if no valid JWT token is provided, or 403 Forbidden if the user does not have ADMIN role.
+
+**Headers**:
+- `Authorization: Bearer <jwt-token>` (Required) - JWT token containing `role` claim with value "ADMIN"
 
 **Parameters**:
 | Parameter | Type | Description |
@@ -801,7 +961,8 @@ curl -X PUT "http://localhost:8100/api/reports/1/resolve"
 
 **Example Request**:
 ```bash
-curl -X PUT "http://localhost:8100/api/reports/1/dismiss"
+curl -X PUT "http://localhost:8100/api/reports/1/dismiss" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 **Example Response**: Same format as Mark as Reviewed, with status: "DISMISSED"
@@ -809,7 +970,10 @@ curl -X PUT "http://localhost:8100/api/reports/1/dismiss"
 #### 3.14 Delete Report
 **Endpoint**: `DELETE /api/reports/{reportId}`
 
-**Description**: Permanently deletes a report.
+**Description**: Permanently deletes a report. Requires JWT authentication. Only the reporter who created the report can delete it. The `reporterId` is automatically extracted from the JWT token and verified against the report's reporter. Returns 401 Unauthorized if no valid JWT token is provided, or 403 Forbidden if the user is not the report owner.
+
+**Headers**:
+- `Authorization: Bearer <jwt-token>` (Required) - JWT token containing `userId` claim
 
 **Parameters**:
 | Parameter | Type | Description |
@@ -818,7 +982,8 @@ curl -X PUT "http://localhost:8100/api/reports/1/dismiss"
 
 **Example Request**:
 ```bash
-curl -X DELETE "http://localhost:8100/api/reports/1"
+curl -X DELETE "http://localhost:8100/api/reports/1" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 **Example Response**:
@@ -829,11 +994,15 @@ curl -X DELETE "http://localhost:8100/api/reports/1"
 #### 3.15 Get Report Counts
 **Endpoint**: `GET /api/reports/count`
 
-**Description**: Retrieves count of reports by status for dashboard statistics.
+**Description**: Retrieves count of reports by status for dashboard statistics. Requires JWT authentication with `ADMIN` role. The role is automatically extracted from the JWT token. Returns 401 Unauthorized if no valid JWT token is provided, or 403 Forbidden if the user does not have ADMIN role.
+
+**Headers**:
+- `Authorization: Bearer <jwt-token>` (Required) - JWT token containing `role` claim with value "ADMIN"
 
 **Example Request**:
 ```bash
-curl -X GET "http://localhost:8100/api/reports/count"
+curl -X GET "http://localhost:8100/api/reports/count" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 ```
 
 **Example Response**:

@@ -12,10 +12,13 @@ import com.commandlinecommandos.listingapi.model.ListingImage;
 import com.commandlinecommandos.listingapi.service.FileStorageService;
 import com.commandlinecommandos.listingapi.service.ListingService;
 import com.commandlinecommandos.listingapi.exception.UnauthorizedAccessException;
+import com.commandlinecommandos.listingapi.security.JwtHelper;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,11 +35,15 @@ public class FileUploadController {
     @Autowired
     private ListingService listingService;
 
+    @Autowired
+    private JwtHelper jwtHelper;
+
     @PostMapping("/upload/{listingId}")
     public ResponseEntity<String> uploadFile(
             @PathVariable Long listingId,
             @RequestParam("file") MultipartFile file,
-            @RequestParam("displayOrder") int displayOrder) {
+            @RequestParam("displayOrder") int displayOrder,
+            HttpServletRequest httpRequest) {
 
         if (file == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("File cannot be null");
@@ -52,9 +59,12 @@ public class FileUploadController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Listing not found");
             }
             
-            // TODO: retrieve user id
-            Long userId = 0L;
-            logger.debug("Using temporary user ID: {} for file upload authorization", userId);
+            Long userId = jwtHelper.extractUserIdFromRequest(httpRequest);
+            if (userId == null) {
+                logger.warn("Unauthorized file upload attempt - no valid JWT token");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication required");
+            }
+            logger.debug("Using user ID: {} from JWT for file upload authorization", userId);
             
             if (!verifyUser(listing, userId)) {
                 throw new UnauthorizedAccessException("listing", listingId, userId);
@@ -75,7 +85,8 @@ public class FileUploadController {
     public ResponseEntity<String> uploadMultipleFiles(
             @PathVariable Long listingId,
             @RequestParam("files") List<MultipartFile> files,
-            @RequestParam("displayOrders") int[] displayOrders) {
+            @RequestParam("displayOrders") int[] displayOrders,
+            HttpServletRequest httpRequest) {
 
         if (files == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Files cannot be null");
@@ -95,9 +106,12 @@ public class FileUploadController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Listing not found");
             }
             
-            // TODO: retrieve user id
-            Long userId = 0L;
-            logger.debug("Using temporary user ID: {} for multiple file upload authorization", userId);
+            Long userId = jwtHelper.extractUserIdFromRequest(httpRequest);
+            if (userId == null) {
+                logger.warn("Unauthorized multiple file upload attempt - no valid JWT token");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication required");
+            }
+            logger.debug("Using user ID: {} from JWT for multiple file upload authorization", userId);
             
             if (!verifyUser(listing, userId)) {
                 throw new UnauthorizedAccessException("listing", listingId, userId);
@@ -135,7 +149,8 @@ public class FileUploadController {
     }
 
     @DeleteMapping("/listing/{listingId}/{imageId}")
-    public ResponseEntity<String> deleteListingImage(@PathVariable Long listingId, @PathVariable Long imageId) {
+    public ResponseEntity<String> deleteListingImage(@PathVariable Long listingId, @PathVariable Long imageId,
+            HttpServletRequest httpRequest) {
         logger.info("Received request to delete image ID: {} for listing ID: {}", imageId, listingId);
         
         try {
@@ -145,9 +160,12 @@ public class FileUploadController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Listing not found");
             }
 
-            // TODO: retrieve user id
-            Long userId = 0L;
-            logger.debug("Using temporary user ID: {} for image deletion authorization", userId);
+            Long userId = jwtHelper.extractUserIdFromRequest(httpRequest);
+            if (userId == null) {
+                logger.warn("Unauthorized image deletion attempt - no valid JWT token");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication required");
+            }
+            logger.debug("Using user ID: {} from JWT for image deletion authorization", userId);
             
             if (!verifyUser(listing, userId)) {
                 throw new UnauthorizedAccessException("listing", listingId, userId);
@@ -163,11 +181,10 @@ public class FileUploadController {
         }
     }
 
-    // TODO: verify user id
     private boolean verifyUser(Listing listing, Long userId) {
+        boolean isOwner = listing.getSellerId().equals(userId);
         logger.debug("Verifying user access - listing ID: {}, seller ID: {}, user ID: {}, verified: {}", 
-                   listing.getListingId(), listing.getSellerId(), userId, true);
-        //return listing.getSellerId().equals(userId);
-        return true;
+                   listing.getListingId(), listing.getSellerId(), userId, isOwner);
+        return isOwner;
     }
 }
