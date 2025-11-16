@@ -176,6 +176,9 @@
                   "        pm.expect(product).to.have.property('title');",
                   "        pm.expect(product).to.have.property('price');",
                   "        pm.expect(product).to.have.property('category');",
+                  "        // Auto-save first productId for Similar Products request",
+                  "        pm.environment.set('product_id', product.productId);",
+                  "        console.log('✅ Saved productId for Similar Products:', product.productId);",
                   "    }",
                   "});"
                 ],
@@ -664,6 +667,9 @@
                   "    var jsonData = pm.response.json();",
                   "    if (jsonData.trending.length > 0) {",
                   "        pm.expect(jsonData.trending[0]).to.have.property('productId');",
+                  "        // Auto-save first productId for Similar Products request",
+                  "        pm.environment.set('product_id', jsonData.trending[0].productId);",
+                  "        console.log('✅ Saved productId for Similar Products:', jsonData.trending[0].productId);",
                   "    }",
                   "});"
                 ],
@@ -750,9 +756,52 @@
           "name": "Similar Products",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Try to get productId from environment or use a test UUID",
+                  "var productId = pm.environment.get('product_id');",
+                  "if (!productId || productId === 'REPLACE_WITH_PRODUCT_UUID' || productId === '{{product_id}}') {",
+                  "    // Use a placeholder UUID - replace with actual product ID from search/trending results",
+                  "    // This is a valid UUID format but won't exist in database",
+                  "    productId = '00000000-0000-0000-0000-000000000001';",
+                  "    console.log('⚠️ Using placeholder productId. Run a search or trending request first to get a real productId!');",
+                  "    console.log('⚠️ This will return 404 (product not found) but won't cause 400/401 errors');",
+                  "}",
+                  "// Validate UUID format",
+                  "var uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;",
+                  "if (!uuidRegex.test(productId)) {",
+                  "    console.error('❌ Invalid UUID format:', productId);",
+                  "    console.error('❌ This will cause a 400 Bad Request error!');",
+                  "    productId = '00000000-0000-0000-0000-000000000001';",
+                  "}",
+                  "pm.environment.set('product_id', productId);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "exec": [
+                  "// Debug 401 errors",
+                  "if (pm.response.code === 401) {",
+                  "    console.error('❌ 401 Unauthorized Error');",
+                  "    console.error('Response:', pm.response.text());",
+                  "    var authToken = pm.environment.get('auth_token');",
+                  "    if (!authToken) {",
+                  "        console.error('❌ auth_token is missing from environment!');",
+                  "    } else {",
+                  "        console.error('Token being used:', authToken.substring(0, 30) + '...');",
+                  "    }",
+                  "}",
+                  "",
+                  "// Debug 404 errors (product not found)",
+                  "if (pm.response.code === 404) {",
+                  "    console.warn('⚠️ 404 Not Found - Product ID might not exist');",
+                  "    console.warn('Try running a search or trending request first to get a valid productId');",
+                  "}",
+                  "",
                   "pm.test('Status code is 200 or 404', function () {",
                   "    pm.expect([200, 404]).to.include(pm.response.code);",
                   "});",
@@ -787,19 +836,13 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/discovery/similar/:productId?limit=10",
+              "raw": "{{base_url}}/discovery/similar/{{product_id}}?limit=10",
               "host": ["{{base_url}}"],
-              "path": ["discovery", "similar", ":productId"],
+              "path": ["discovery", "similar", "{{product_id}}"],
               "query": [
                 {
                   "key": "limit",
                   "value": "10"
-                }
-              ],
-              "variable": [
-                {
-                  "key": "productId",
-                  "value": "REPLACE_WITH_PRODUCT_UUID"
                 }
               ]
             }

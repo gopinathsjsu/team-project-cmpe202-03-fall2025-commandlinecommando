@@ -154,8 +154,18 @@ public class SearchController {
             User user = getCurrentUser(token);
             List<SearchHistory> history = searchHistoryRepository.findByUserOrderByCreatedAtDesc(user);
             
-            log.debug("Search history: user={}, items={}", user.getUsername(), history.size());
-            return ResponseEntity.ok(new SearchHistoryResponse(history));
+            // Convert to DTOs to avoid Hibernate proxy serialization issues
+            List<SearchHistoryItem> historyItems = history.stream()
+                .map(sh -> new SearchHistoryItem(
+                    sh.getId(),
+                    sh.getSearchQuery(),
+                    sh.getResultsCount(),
+                    sh.getCreatedAt()
+                ))
+                .toList();
+            
+            log.debug("Search history: user={}, items={}", user.getUsername(), historyItems.size());
+            return ResponseEntity.ok(new SearchHistoryResponse(historyItems));
         } catch (UnauthorizedException e) {
             log.warn("Unauthorized search history attempt: {}", e.getMessage());
             return ResponseEntity.status(401).build();

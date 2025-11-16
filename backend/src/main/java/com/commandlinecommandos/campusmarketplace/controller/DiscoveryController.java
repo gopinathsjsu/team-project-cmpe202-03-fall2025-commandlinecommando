@@ -135,8 +135,15 @@ public class DiscoveryController {
         
         try {
             // Similar items don't strictly require auth, but we validate if token is provided
+            User user = null;
             if (token != null && !token.isEmpty()) {
-                getCurrentUser(token);  // Validate token if provided
+                try {
+                    user = getCurrentUser(token);  // Validate token if provided
+                    log.debug("Similar items request with authenticated user: {}", user.getUsername());
+                } catch (UnauthorizedException e) {
+                    log.warn("Invalid token for similar request: {}", e.getMessage());
+                    return ResponseEntity.status(401).build();
+                }
             }
             
             List<ProductSummary> similar = discoveryService.getSimilarItems(productId, limit);
@@ -144,7 +151,7 @@ public class DiscoveryController {
             log.debug("Similar items: productId={}, count={}", productId, similar.size());
             return ResponseEntity.ok(new SimilarResponse(similar));
         } catch (UnauthorizedException e) {
-            log.warn("Invalid token for similar request: {}", e.getMessage());
+            log.warn("Unauthorized similar request: {}", e.getMessage());
             return ResponseEntity.status(401).build();
         } catch (NotFoundException e) {
             log.warn("Product not found for similar request: {}", e.getMessage());
@@ -168,7 +175,7 @@ public class DiscoveryController {
     public ResponseEntity<RecentlyViewedResponse> getRecentlyViewed(
             @Parameter(description = "Maximum number of products") 
             @RequestParam(defaultValue = "10") int limit,
-            @RequestHeader("Authorization") String token) {
+            @RequestHeader(value = "Authorization", required = false) String token) {
         
         try {
             User user = getCurrentUser(token);
