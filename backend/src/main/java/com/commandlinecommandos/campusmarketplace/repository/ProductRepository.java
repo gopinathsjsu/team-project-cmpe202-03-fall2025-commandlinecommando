@@ -134,7 +134,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
                                       Pageable pageable);
     
     /**
-     * Autocomplete suggestions using trigram similarity
+     * Autocomplete suggestions using trigram similarity (PostgreSQL only)
      * Returns distinct product titles similar to the query
      * 
      * @param universityId University UUID
@@ -152,6 +152,26 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
            nativeQuery = true)
     List<String> findTitleSuggestions(@Param("universityId") UUID universityId,
                                        @Param("query") String query);
+    
+    /**
+     * Autocomplete suggestions using LIKE (H2 compatible fallback)
+     * Returns distinct product titles matching the query
+     * 
+     * @param universityId University UUID
+     * @param query Search query (minimum 2 characters)
+     * @return List of title suggestions
+     */
+    @Query(value = "SELECT DISTINCT p.title " +
+           "FROM products p " +
+           "WHERE p.university_id = :universityId " +
+           "AND p.is_active = true " +
+           "AND p.moderation_status = 'APPROVED' " +
+           "AND LOWER(p.title) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "ORDER BY p.title " +
+           "LIMIT 10",
+           nativeQuery = true)
+    List<String> findTitleSuggestionsLike(@Param("universityId") UUID universityId,
+                                           @Param("query") String query);
     
     /**
      * Fuzzy search with typo tolerance using trigram similarity

@@ -18,7 +18,7 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
     
-    @Value("${jwt.secret:mySecretKey}")
+    @Value("${jwt.secret:myVerySecureSecretKeyForJWTTokensThatShouldBeAtLeast256BitsLongForHS256AlgorithmUpdated2024}")
     private String secret;
     
     @Value("${jwt.access-token.expiration:3600000}") // 1 hour

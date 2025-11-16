@@ -319,12 +319,21 @@ public class SearchService {
         }
         
         try {
+            // Try PostgreSQL similarity() first (for production)
             List<String> suggestions = productRepository.findTitleSuggestions(universityId, query);
             log.debug("Autocomplete: query='{}', suggestions={}", query, suggestions.size());
             return suggestions;
         } catch (Exception e) {
-            log.error("Autocomplete error: query='{}', error={}", query, e.getMessage(), e);
-            return List.of();
+            // Fallback to LIKE for H2 or if similarity() fails
+            log.debug("Autocomplete similarity() failed (likely H2), falling back to LIKE: {}", e.getMessage());
+            try {
+                List<String> suggestions = productRepository.findTitleSuggestionsLike(universityId, query);
+                log.debug("Autocomplete (LIKE fallback): query='{}', suggestions={}", query, suggestions.size());
+                return suggestions;
+            } catch (Exception e2) {
+                log.error("Autocomplete error: query='{}', error={}", query, e2.getMessage(), e2);
+                return List.of();
+            }
         }
     }
     

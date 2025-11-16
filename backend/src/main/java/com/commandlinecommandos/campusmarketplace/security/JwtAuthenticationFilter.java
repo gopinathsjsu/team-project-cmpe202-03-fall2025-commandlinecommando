@@ -53,12 +53,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             // Extract username from JWT
             username = jwtUtil.extractUsername(jwt);
+            logger.debug("Extracted username from JWT: {}", username);
             
             // If username is valid and no authentication is set in SecurityContext
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 
                 // Load user details
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                logger.debug("Loaded user details for: {}", username);
                 
                 // Validate token
                 if (jwtUtil.validateToken(jwt, userDetails)) {
@@ -77,17 +79,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                     logger.debug("JWT authentication successful for user: {}", username);
                 } else {
-                    logger.warn("JWT token validation failed for user: {} - token is invalid or expired", username);
+                    logger.warn("JWT token validation failed for user: {} - token is invalid or expired. Request URI: {}", username, request.getRequestURI());
                 }
+            } else if (username == null) {
+                logger.warn("Failed to extract username from JWT token. Request URI: {}", request.getRequestURI());
             }
         } catch (UsernameNotFoundException e) {
             // User not found in database - log at WARN level for visibility
             String usernameForLog = username != null ? username : "unknown";
-            logger.warn("JWT token validation failed: User '{}' not found in database. Token may be valid but user was deleted.", usernameForLog, e);
+            logger.warn("JWT token validation failed: User '{}' not found in database. Token may be valid but user was deleted. Request URI: {}", usernameForLog, request.getRequestURI(), e);
+        } catch (io.jsonwebtoken.JwtException e) {
+            // JWT parsing/signature errors
+            logger.warn("JWT token parsing failed: {}. This usually means the token signature is invalid or the JWT secret doesn't match. Request URI: {}", e.getMessage(), request.getRequestURI());
         } catch (Exception e) {
             // Log other exceptions (JWT parsing errors, etc.) at WARN level
             String usernameForLog = username != null ? username : "unknown";
-            logger.warn("JWT token validation failed for user '{}': {}", usernameForLog, e.getMessage(), e);
+            logger.warn("JWT token validation failed for user '{}': {}. Request URI: {}", usernameForLog, e.getMessage(), request.getRequestURI(), e);
         }
         
         // Continue with the filter chain

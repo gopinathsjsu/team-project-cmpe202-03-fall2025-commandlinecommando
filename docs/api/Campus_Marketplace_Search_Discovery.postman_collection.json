@@ -313,7 +313,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"query\": \"textbook\",\n  \"categories\": [\"TEXTBOOKS\", \"BOOKS\"],\n  \"page\": 0,\n  \"size\": 20\n}"
+              "raw": "{\n  \"query\": \"textbook\",\n  \"categories\": [\"TEXTBOOKS\"],\n  \"page\": 0,\n  \"size\": 20\n}"
             },
             "url": {
               "raw": "{{base_url}}/search",
