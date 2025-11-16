@@ -96,20 +96,32 @@ Content-Type: application/json
 **Request Body**:
 ```json
 {
-  "username": "testuser",
-  "password": "testpassword123"
+  "username": "student",
+  "password": "password123",
+  "deviceInfo": "Postman Test Device"
 }
 ```
+
+**⚠️ Important**: Use one of these test users from seed data:
+- **Student**: `student` / `password123`
+- **Admin**: `admin` / `password123`
+- **Other students**: `alice_chen`, `bob_martinez`, `sarah_kim` / `password123`
 
 **Expected Response** (200 OK):
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "userId": "123e4567-e89b-12d3-a456-426614174000",
-  "username": "testuser",
-  "email": "test@university.edu",
+  "accessToken": "eyJhbGciOiJIUzUxMiJ9...",
+  "refreshToken": "eyJhbGciOiJIUzUxMiJ9...",
+  "tokenType": "Bearer",
+  "expiresIn": 3600000,
   "role": "STUDENT",
-  "universityId": "234e5678-e89b-12d3-a456-426614174001"
+  "username": "student",
+  "userId": "00000000-0000-0000-0000-000000000101",
+  "email": "student@sjsu.edu",
+  "firstName": "John",
+  "lastName": "Student",
+  "phone": "555-0101",
+  "active": true
 }
 ```
 
@@ -118,10 +130,13 @@ Content-Type: application/json
 // Auto-save token and user ID
 if (pm.response.code === 200) {
     const jsonData = pm.response.json();
-    pm.environment.set("auth_token", jsonData.token);
+    // Save accessToken (not "token")
+    pm.environment.set("auth_token", jsonData.accessToken);
     pm.environment.set("user_id", jsonData.userId);
-    console.log("✅ Token saved:", jsonData.token.substring(0, 20) + "...");
+    pm.environment.set("refresh_token", jsonData.refreshToken);
+    console.log("✅ Access token saved:", jsonData.accessToken.substring(0, 20) + "...");
     console.log("✅ User ID saved:", jsonData.userId);
+    console.log("✅ Refresh token saved:", jsonData.refreshToken.substring(0, 20) + "...");
 }
 
 // Verify response structure
@@ -129,22 +144,35 @@ pm.test("Status code is 200", function () {
     pm.response.to.have.status(200);
 });
 
-pm.test("Response has token", function () {
+pm.test("Response has accessToken", function () {
     const jsonData = pm.response.json();
-    pm.expect(jsonData).to.have.property('token');
-    pm.expect(jsonData.token).to.be.a('string');
+    pm.expect(jsonData).to.have.property('accessToken');
+    pm.expect(jsonData.accessToken).to.be.a('string');
+});
+
+pm.test("Response has refreshToken", function () {
+    const jsonData = pm.response.json();
+    pm.expect(jsonData).to.have.property('refreshToken');
+    pm.expect(jsonData.refreshToken).to.be.a('string');
 });
 ```
 
 **⚠️ Common Errors**:
 
 ```json
-// 401 Unauthorized - Wrong credentials
+// 401 Unauthorized - Wrong credentials or user doesn't exist
 {
-  "error": "Unauthorized",
-  "message": "Invalid username or password"
+  "error": "Authentication failed",
+  "message": "Bad credentials"
 }
 ```
+
+**Troubleshooting 401 Error**:
+1. ✅ **Check username/password**: Use `student` / `password123` (not `testuser`)
+2. ✅ **Verify user exists**: Check database has seed data loaded
+3. ✅ **Check user is active**: User must have `is_active = true`
+4. ✅ **Check verification status**: User should be `VERIFIED` (not `PENDING` or `SUSPENDED`)
+5. ✅ **Verify password hash**: Seed data uses BCrypt hash for `password123`
 
 ---
 
