@@ -82,9 +82,77 @@ docker exec -it postgres psql -U marketplace_user -d marketplace_db -c "SELECT 1
 
 ## 🔐 Authentication Flow
 
+### Test 0: Register Test User (If Needed) ⚠️
+
+**Purpose**: Create a test user if seed data is not loaded
+
+**⚠️ Important**: If you're getting 401 on login, **register a user first**! Seed data may not be automatically loaded.
+
+**Endpoint**: `POST {{base_url}}/auth/register`
+
+**Headers**:
+```
+Content-Type: application/json
+```
+
+**Request Body**:
+```json
+{
+  "username": "testuser",
+  "email": "testuser@sjsu.edu",
+  "password": "password123",
+  "firstName": "Test",
+  "lastName": "User",
+  "phone": "555-1234",
+  "role": "STUDENT",
+  "studentId": "STU999",
+  "major": "Computer Science",
+  "graduationYear": 2025,
+  "campusLocation": "San Jose Main Campus"
+}
+```
+
+**Expected Response** (200 OK):
+```json
+{
+  "accessToken": "eyJhbGciOiJIUzUxMiJ9...",
+  "refreshToken": "eyJhbGciOiJIUzUxMiJ9...",
+  "tokenType": "Bearer",
+  "expiresIn": 3600000,
+  "role": "STUDENT",
+  "username": "testuser",
+  "userId": "...",
+  "email": "testuser@sjsu.edu",
+  "firstName": "Test",
+  "lastName": "User",
+  "active": true
+}
+```
+
+**Postman Tests Script** (Add to "Tests" tab):
+```javascript
+// Auto-save token and user ID
+if (pm.response.code === 200) {
+    const jsonData = pm.response.json();
+    pm.environment.set("auth_token", jsonData.accessToken);
+    pm.environment.set("user_id", jsonData.userId);
+    pm.environment.set("refresh_token", jsonData.refreshToken);
+    console.log("✅ User registered and token saved!");
+}
+```
+
+**Note**: After registration, you can use the same credentials to login, or use the tokens directly from the registration response.
+
+---
+
 ### Test 1: User Login ✅
 
 **Purpose**: Obtain JWT token for authenticated requests
+
+**⚠️ If you get 401 Unauthorized**: 
+- Try registering a user first (see Test 0 above)
+- Or check if seed data is loaded in your database
+- See [LOGIN_TROUBLESHOOTING.md](LOGIN_TROUBLESHOOTING.md) for detailed help
 
 **Endpoint**: `POST {{base_url}}/auth/login`
 
