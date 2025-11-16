@@ -925,9 +925,9 @@
               "raw": "{\n  \"query\": \"laptop\",\n  \"categories\": [\"ELECTRONICS\"],\n  \"page\": 0,\n  \"size\": 20\n}"
             },
             "url": {
-              "raw": "{{listing_api_url}}/listings/search/v2",
+              "raw": "{{listing_api_url}}/api/listings/search/v2",
               "host": ["{{listing_api_url}}"],
-              "path": ["listings", "search", "v2"]
+              "path": ["api", "listings", "search", "v2"]
             }
           }
         },
@@ -943,9 +943,9 @@
               }
             ],
             "url": {
-              "raw": "{{listing_api_url}}/listings/search/autocomplete?q=lap",
+              "raw": "{{listing_api_url}}/api/listings/search/autocomplete?q=lap",
               "host": ["{{listing_api_url}}"],
-              "path": ["listings", "search", "autocomplete"],
+              "path": ["api", "listings", "search", "autocomplete"],
               "query": [
                 {
                   "key": "q",
@@ -967,9 +967,9 @@
               }
             ],
             "url": {
-              "raw": "{{listing_api_url}}/listings/discovery/trending?limit=10",
+              "raw": "{{listing_api_url}}/api/listings/discovery/trending?limit=10",
               "host": ["{{listing_api_url}}"],
-              "path": ["listings", "discovery", "trending"],
+              "path": ["api", "listings", "discovery", "trending"],
               "query": [
                 {
                   "key": "limit",

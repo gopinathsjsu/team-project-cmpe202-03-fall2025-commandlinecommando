@@ -6,6 +6,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -35,10 +36,15 @@ public class SearchProxyService {
             RestTemplateBuilder restTemplateBuilder) {
         
         this.backendUrl = backendUrl;
+        
+        // Configure timeouts using SimpleClientHttpRequestFactory
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout((int) Duration.ofSeconds(5).toMillis());
+        factory.setReadTimeout((int) Duration.ofSeconds(10).toMillis());
+        
         this.restTemplate = restTemplateBuilder
             .rootUri(backendUrl)
-            .setConnectTimeout(Duration.ofSeconds(5))
-            .setReadTimeout(Duration.ofSeconds(10))
+            .requestFactory(() -> factory)
             .build();
     }
     
@@ -59,13 +65,14 @@ public class SearchProxyService {
         
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request, headers);
         
-        ResponseEntity<Map> response = restTemplate.postForEntity(
+        @SuppressWarnings("unchecked")
+        ResponseEntity<Map<String, Object>> response = restTemplate.postForEntity(
             "/search",
             entity,
-            Map.class
+            (Class<Map<String, Object>>) (Class<?>) Map.class
         );
         
-        return (Map<String, Object>) response.getBody();
+        return response.getBody();
     }
     
     /**
