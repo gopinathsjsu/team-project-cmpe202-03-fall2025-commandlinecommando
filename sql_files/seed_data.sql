@@ -124,7 +124,17 @@ SELECT 'Orders', COUNT(*) FROM orders
 UNION ALL
 SELECT 'Order Items', COUNT(*) FROM order_items
 UNION ALL
-SELECT 'Refresh Tokens', COUNT(*) FROM refresh_tokens;
+SELECT 'Refresh Tokens', COUNT(*) FROM refresh_tokens
+UNION ALL
+SELECT 'Listings', COUNT(*) FROM listings
+UNION ALL
+SELECT 'Listing Images', COUNT(*) FROM listing_images
+UNION ALL
+SELECT 'Reports', COUNT(*) FROM reports
+UNION ALL
+SELECT 'Conversations', COUNT(*) FROM conversations
+UNION ALL
+SELECT 'Messages', COUNT(*) FROM messages;
 
 -- =====================================================
 -- SEED DATA - LISTING API (Listings, Images, Reports)
@@ -149,9 +159,49 @@ VALUES
   (201, 3, 'SPAM', 'Looks like a duplicate listing posted multiple times.', 'PENDING', CURRENT_TIMESTAMP),
   (202, 1, 'INAPPROPRIATE_CONTENT', 'Listing description includes inappropriate language.', 'UNDER_REVIEW', CURRENT_TIMESTAMP);
 
--- Quick counts for Listing API entities
-SELECT 'Listings', COUNT(*) FROM listings
-UNION ALL
-SELECT 'Listing Images', COUNT(*) FROM listing_images
-UNION ALL
-SELECT 'Reports', COUNT(*) FROM reports;
+-- =====================================================
+-- SEED DATA - COMMUNICATION SERVICE (Conversations & Messages)
+-- =====================================================
+
+-- Sample conversations between buyers and sellers
+-- Note: buyer_id and seller_id use numeric IDs (matching listing API user IDs)
+-- listing_id references the listings table created above
+
+-- Conversation 1: Buyer 104 (Sarah) messaging Seller 101 about listing 1 (Dell XPS 13)
+INSERT INTO conversations (listing_id, buyer_id, seller_id, created_at, updated_at) VALUES
+  (1, 104, 101, CURRENT_TIMESTAMP - INTERVAL '2 days', CURRENT_TIMESTAMP - INTERVAL '1 hour');
+
+-- Conversation 2: Buyer 103 (Bob) messaging Seller 102 about listing 2 (Discrete Math Textbook)
+INSERT INTO conversations (listing_id, buyer_id, seller_id, created_at, updated_at) VALUES
+  (2, 103, 102, CURRENT_TIMESTAMP - INTERVAL '1 day', CURRENT_TIMESTAMP - INTERVAL '30 minutes');
+
+-- Conversation 3: Buyer 105 (Mike) messaging Seller 103 about listing 3 (iPad Air)
+INSERT INTO conversations (listing_id, buyer_id, seller_id, created_at, updated_at) VALUES
+  (3, 105, 103, CURRENT_TIMESTAMP - INTERVAL '3 hours', CURRENT_TIMESTAMP - INTERVAL '5 minutes');
+
+-- Messages for Conversation 1 (Dell XPS 13)
+-- Assumes conversation_id = 1 (first conversation inserted)
+INSERT INTO messages (conversation_id, sender_id, content, is_read, created_at) VALUES
+  (1, 104, 'Hi! Is the Dell XPS 13 still available?', true, CURRENT_TIMESTAMP - INTERVAL '2 days'),
+  (1, 101, 'Yes, it is! Are you interested in seeing it?', true, CURRENT_TIMESTAMP - INTERVAL '2 days' + INTERVAL '10 minutes'),
+  (1, 104, 'Yes, I would like to check it out. Can we meet at the library?', true, CURRENT_TIMESTAMP - INTERVAL '2 days' + INTERVAL '20 minutes'),
+  (1, 101, 'Sure! I can meet you there tomorrow at 2 PM. Does that work?', true, CURRENT_TIMESTAMP - INTERVAL '1 day'),
+  (1, 104, 'Perfect! See you then.', false, CURRENT_TIMESTAMP - INTERVAL '1 hour');
+
+-- Messages for Conversation 2 (Discrete Math Textbook)
+-- Assumes conversation_id = 2 (second conversation inserted)
+INSERT INTO messages (conversation_id, sender_id, content, is_read, created_at) VALUES
+  (2, 103, 'Hello, I saw your Discrete Math textbook listing. Is it the 8th edition?', true, CURRENT_TIMESTAMP - INTERVAL '1 day'),
+  (2, 102, 'Yes, it is the 8th edition. It is in great condition with minimal highlighting.', true, CURRENT_TIMESTAMP - INTERVAL '1 day' + INTERVAL '5 minutes'),
+  (2, 103, 'Great! Is the price negotiable?', true, CURRENT_TIMESTAMP - INTERVAL '1 day' + INTERVAL '15 minutes'),
+  (2, 102, 'I can do $55 if you can pick it up today.', false, CURRENT_TIMESTAMP - INTERVAL '30 minutes'),
+  (2, 103, 'Deal! Where should I meet you?', false, CURRENT_TIMESTAMP - INTERVAL '25 minutes');
+
+-- Messages for Conversation 3 (iPad Air)
+-- Assumes conversation_id = 3 (third conversation inserted)
+INSERT INTO messages (conversation_id, sender_id, content, is_read, created_at) VALUES
+  (3, 105, 'Hi, is the iPad still available?', true, CURRENT_TIMESTAMP - INTERVAL '3 hours'),
+  (3, 103, 'Yes, it is still available. The listing is pending approval but I can show it to you.', true, CURRENT_TIMESTAMP - INTERVAL '3 hours' + INTERVAL '2 minutes'),
+  (3, 105, 'Does it come with the Apple Pencil?', true, CURRENT_TIMESTAMP - INTERVAL '2 hours' + INTERVAL '30 minutes'),
+  (3, 103, 'Yes, it includes the Apple Pencil 2nd gen and a protective case.', true, CURRENT_TIMESTAMP - INTERVAL '2 hours' + INTERVAL '25 minutes'),
+  (3, 105, 'Perfect! Can you send me some photos?', false, CURRENT_TIMESTAMP - INTERVAL '5 minutes');

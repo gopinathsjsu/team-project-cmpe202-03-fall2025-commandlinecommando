@@ -143,6 +143,56 @@ services:
     networks:
       - campus-marketplace-network
 
+  # Communication Service
+  communication:
+    build:
+      context: ./communication
+      dockerfile: Dockerfile
+    container_name: campus-marketplace-communication
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+      listing-api:
+        condition: service_healthy
+    environment:
+      # Spring Profile
+      SPRING_PROFILES_ACTIVE: prod
+
+      # Database Configuration (shared with backend)
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: campus_marketplace
+      DB_APP_USER: ${DB_APP_USER:-cm_app_user}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:-changeme}
+
+      # JWT Configuration (must match backend)
+      JWT_SECRET: ${JWT_SECRET:-myVerySecureSecretKeyForJWTTokensThatShouldBeAtLeast256BitsLongForHS256AlgorithmUpdated2024}
+
+      # Backend URL for user management
+      BACKEND_URL: ${BACKEND_URL:-http://backend:8080/api}
+
+      # Listing API URL for listing verification
+      LISTING_API_URL: ${LISTING_API_URL:-http://listing-api:8100/api}
+
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+      # Server Configuration
+      PORT: 8200
+    ports:
+      - "${COMMUNICATION_PORT:-8200}:8200"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8200/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - campus-marketplace-network
+
 # Named volumes for data persistence
 volumes:
   postgres_data:
