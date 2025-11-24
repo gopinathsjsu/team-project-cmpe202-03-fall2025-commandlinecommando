@@ -37,7 +37,7 @@ CREATE INDEX IF NOT EXISTS idx_conversations_updated ON conversations(updated_at
 CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id);
 CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_id);
 CREATE INDEX IF NOT EXISTS idx_messages_created ON messages(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_messages_unread ON messages(conversation_id, is_read) WHERE is_read = false;
+CREATE INDEX IF NOT EXISTS idx_messages_unread ON messages(conversation_id, is_read);
 
 -- Function to update conversation updated_at timestamp
 CREATE OR REPLACE FUNCTION update_conversation_timestamp()

@@ -28,6 +28,21 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
     baseline-version: 0
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+    from: ${EMAIL_FROM:noreply@campusmarketplace.com}
 
 # JWT Configuration
 jwt:
@@ -70,6 +85,11 @@ backend:
 listing:
   api:
     url: ${LISTING_API_URL:http://localhost:8100/api}
+
+# Email notification configuration
+app:
+  email-notifications:
+    enabled: ${EMAIL_NOTIFICATIONS_ENABLED:true}
 
 ---
 # ==============================================

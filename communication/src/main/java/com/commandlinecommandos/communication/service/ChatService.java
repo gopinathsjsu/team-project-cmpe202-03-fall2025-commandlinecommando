@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -30,6 +31,9 @@ public class ChatService {
 
     @Autowired
     private ListingService listingService;
+
+    @Autowired(required = false)
+    private EmailNotificationService emailNotificationService;
 
     /**
      * Creates or gets an existing conversation for a listing between buyer and seller.
@@ -94,8 +98,20 @@ public class ChatService {
         Message message = new Message(conversation, senderId, content);
         message = messageRepository.save(message);
         
+        conversation.setUpdatedAt(LocalDateTime.now());
+        conversationRepository.save(conversation);
+        
         logger.info("Message {} sent in conversation {} by user {}", 
             message.getMessageId(), conversationId, senderId);
+        
+        if (emailNotificationService != null) {
+            try {
+                emailNotificationService.sendMessageNotification(conversation, message, senderId);
+            } catch (Exception e) {
+                logger.error("Failed to send email notification for message {}: {}", 
+                    message.getMessageId(), e.getMessage(), e);
+            }
+        }
         
         return message;
     }

@@ -177,6 +177,14 @@ services:
       # Listing API URL for listing verification
       LISTING_API_URL: ${LISTING_API_URL:-http://listing-api:8100/api}
 
+      # Email Notification Configuration
+      EMAIL_NOTIFICATIONS_ENABLED: ${EMAIL_NOTIFICATIONS_ENABLED:-true}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@campusmarketplace.com}
+
       # Logging
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
 

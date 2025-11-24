@@ -85,5 +85,19 @@ public class ListingService {
     public boolean listingExists(Long listingId) {
         return getListing(listingId) != null;
     }
+
+    /**
+     * Gets the title of a listing.
+     * 
+     * @param listingId The listing ID to get the title of
+     * @return The title of the listing, or null if not found
+     */
+    public String getListingTitle(Long listingId) {
+        Map<String, Object> listing = getListing(listingId);
+        if (listing != null && listing.containsKey("title")) {
+            return (String) listing.get("title");
+        }
+        return null;
+    }
 }
 
