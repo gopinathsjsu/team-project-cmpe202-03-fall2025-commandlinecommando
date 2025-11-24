@@ -102,5 +102,19 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
            "AND p.moderationStatus = 'APPROVED' " +
            "ORDER BY p.viewCount DESC")
     List<Product> findTopByViews(@Param("university") University university, Pageable pageable);
+    
+    /**
+     * Find all active products with approved status
+     */
+    Page<Product> findByIsActiveTrueAndModerationStatus(ModerationStatus moderationStatus, Pageable pageable);
+    
+    /**
+     * Find products by category with approved status
+     */
+    Page<Product> findByCategoryAndIsActiveTrueAndModerationStatus(
+        ProductCategory category,
+        ModerationStatus moderationStatus,
+        Pageable pageable
+    );
 }
 

@@ -1,13 +1,43 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LoginForm } from './components/LoginForm';
+import { RegisterForm } from './components/RegisterForm';
+import { ForgotPasswordForm } from './components/ForgotPasswordForm';
 import { ImageWithFallback } from './components/figma/ImageWithFallback';
 import { ShoppingBag, BookOpen, Users, ArrowRight } from 'lucide-react';
 import { MarketplacePage } from './components/MarketplacePage';
 import { ReportListingPage } from './components/ReportListingPage';
+import { AdminDashboard } from './components/AdminDashboard';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { useAuth } from './context/AuthContext';
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<'login' | 'marketplace' | 'reports'>('login');
+  const { isAuthenticated, user, isLoading } = useAuth()
+  const [currentPage, setCurrentPage] = useState<'login' | 'register' | 'forgot-password' | 'marketplace' | 'reports' | 'admin'>('login');
+
+  // Auto-navigate based on authentication state
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      if (user.role === 'ADMIN') {
+        setCurrentPage('admin')
+      } else {
+        setCurrentPage('marketplace')
+      }
+    } else if (!isLoading) {
+      setCurrentPage('login')
+    }
+  }, [isAuthenticated, user, isLoading])
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    )
+  }
 
   // Landing/Login Page
   if (currentPage === 'login') {
@@ -92,7 +122,14 @@ export default function App() {
               {/* Right Column - Login Form */}
               <div className="flex justify-center lg:justify-end">
                 <div className="w-full max-w-md">
-                  <LoginForm />
+                  <LoginForm 
+                    onLogin={() => {
+                      if (user?.role === 'ADMIN') setCurrentPage('admin')
+                      else setCurrentPage('marketplace')
+                    }}
+                    onSignUp={() => setCurrentPage('register')}
+                    onForgotPassword={() => setCurrentPage('forgot-password')}
+                  />
                   
                   {/* Additional CTA */}
                   <div className="mt-6 text-center">
@@ -116,23 +153,70 @@ export default function App() {
           <div className="absolute bottom-20 left-10 w-48 h-48 bg-[#0055A2]/5 rounded-full"></div>
           <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-[#E5A823]/10 rounded-full"></div>
         </div>
+      </div>
+    );
+  }
 
-        {/* Navigation Switcher */}
-        <div className="fixed bottom-4 right-4 z-50 bg-white rounded-lg shadow-lg border border-gray-200 p-4">
-          <p className="text-sm text-gray-600 mb-2">Demo Navigation:</p>
-          <div className="flex gap-2">
-            <button
-              className="px-3 py-1 rounded font-medium border bg-blue-600 text-white"
-              onClick={() => setCurrentPage('marketplace')}
-            >
-              Go to Marketplace
-            </button>
-            <button
-              className="px-3 py-1 rounded font-medium border bg-blue-600 text-white"
-              onClick={() => setCurrentPage('reports')}
-            >
-              Admin Reports
-            </button>
+  // Registration Page
+  if (currentPage === 'register') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
+        {/* Header with Logo */}
+        <header className="absolute top-0 left-0 right-0 z-10 p-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-[#0055A2] to-[#003d75] rounded-xl flex items-center justify-center shadow-lg">
+              <ShoppingBag className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl text-[#0055A2] tracking-tight">CampusConnect</h1>
+              <p className="text-xs text-gray-500">Campus Marketplace</p>
+            </div>
+          </div>
+        </header>
+
+        <div className="min-h-screen flex items-center justify-center p-6 pt-24">
+          <div className="w-full max-w-md">
+            <RegisterForm 
+              onRegister={(role) => {
+                // Use the role from the callback, or fall back to user state
+                const userRole = role || user?.role
+                if (userRole === 'ADMIN') {
+                  setCurrentPage('admin')
+                } else {
+                  setCurrentPage('marketplace')
+                }
+              }}
+              onBackToLogin={() => setCurrentPage('login')}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Forgot Password Page
+  if (currentPage === 'forgot-password') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
+        {/* Header with Logo */}
+        <header className="absolute top-0 left-0 right-0 z-10 p-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-[#0055A2] to-[#003d75] rounded-xl flex items-center justify-center shadow-lg">
+              <ShoppingBag className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl text-[#0055A2] tracking-tight">CampusConnect</h1>
+              <p className="text-xs text-gray-500">Campus Marketplace</p>
+            </div>
+          </div>
+        </header>
+
+        <div className="min-h-screen flex items-center justify-center p-6 pt-24">
+          <div className="w-full max-w-md">
+            <ForgotPasswordForm 
+              onBackToLogin={() => setCurrentPage('login')}
+              onResetSuccess={() => setCurrentPage('login')}
+            />
           </div>
         </div>
       </div>
@@ -142,18 +226,33 @@ export default function App() {
   // Other Pages with Navigation
   return (
     <div className="min-h-screen bg-gray-50">
-      {currentPage === 'marketplace' && <MarketplacePage />}
-      {currentPage === 'reports' && <ReportListingPage />}
+      {currentPage === 'marketplace' && (
+        <ProtectedRoute>
+          <MarketplacePage />
+        </ProtectedRoute>
+      )}
+      {currentPage === 'reports' && (
+        <ProtectedRoute>
+          <ReportListingPage />
+        </ProtectedRoute>
+      )}
+      {currentPage === 'admin' && (
+        <ProtectedRoute requiredRole="ADMIN">
+          <AdminDashboard />
+        </ProtectedRoute>
+      )}
       
-      {/* Navigation Switcher */}
+      {/* Navigation Switcher - Demo Only */}
       <div className="fixed bottom-4 right-4 z-50 bg-white rounded-lg shadow-lg border border-gray-200 p-4">
         <p className="text-sm text-gray-600 mb-2">Demo Navigation:</p>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <button
-            className={`px-3 py-1 rounded font-medium border bg-gray-100 text-gray-700`}
-            onClick={() => setCurrentPage('login')}
+            className={`px-3 py-1 rounded font-medium border ${currentPage === 'login' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+            onClick={() => {
+              setCurrentPage('login');
+            }}
           >
-            Back to Login
+            Logout
           </button>
           <button
             className={`px-3 py-1 rounded font-medium border ${currentPage === 'marketplace' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
@@ -162,10 +261,16 @@ export default function App() {
             Marketplace
           </button>
           <button
+            className={`px-3 py-1 rounded font-medium border ${currentPage === 'admin' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+            onClick={() => setCurrentPage('admin')}
+          >
+            Admin
+          </button>
+          <button
             className={`px-3 py-1 rounded font-medium border ${currentPage === 'reports' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
             onClick={() => setCurrentPage('reports')}
           >
-            Admin Reports
+            Reports
           </button>
         </div>
       </div>

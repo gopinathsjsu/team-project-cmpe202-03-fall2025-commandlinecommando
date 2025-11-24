@@ -24,10 +24,16 @@ import com.commandlinecommandos.campusmarketplace.security.JwtUtil;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 @Transactional
 public class AuthService {
+    
+    private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
     
     @Autowired
     private AuthenticationManager authenticationManager;
@@ -43,6 +49,24 @@ public class AuthService {
     
     @Autowired
     private PasswordEncoder passwordEncoder;
+    
+    // In-memory store for password reset tokens (for development)
+    // In production, this should be stored in database with expiration
+    private final Map<String, PasswordResetToken> resetTokens = new ConcurrentHashMap<>();
+    
+    private static class PasswordResetToken {
+        String email;
+        LocalDateTime expiresAt;
+        
+        PasswordResetToken(String email, LocalDateTime expiresAt) {
+            this.email = email;
+            this.expiresAt = expiresAt;
+        }
+        
+        boolean isExpired() {
+            return LocalDateTime.now().isAfter(expiresAt);
+        }
+    }
     
     public AuthResponse login(AuthRequest authRequest) throws AuthenticationException {
         try {
@@ -222,5 +246,55 @@ public class AuthService {
         response.setPhone(user.getPhone());
         response.setActive(user.isActive());
         return response;
+    }
+    
+    public String requestPasswordReset(String email) throws BadCredentialsException {
+        // Find user by email
+        Optional<User> userOpt = userRepository.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            // Don't reveal if email exists for security
+            throw new BadCredentialsException("If an account exists with this email, a password reset link has been sent.");
+        }
+        
+        User user = userOpt.get();
+        
+        // Generate reset token
+        String resetToken = UUID.randomUUID().toString();
+        
+        // Store token with expiration (1 hour)
+        resetTokens.put(resetToken, new PasswordResetToken(email, LocalDateTime.now().plusHours(1)));
+        
+        // In production, send email with reset link
+        // For development, we return the token directly
+        logger.info("Password reset token generated for email: {}", email);
+        
+        return resetToken;
+    }
+    
+    public void resetPassword(String token, String newPassword) throws BadCredentialsException {
+        // Find token
+        PasswordResetToken resetToken = resetTokens.get(token);
+        if (resetToken == null || resetToken.isExpired()) {
+            resetTokens.remove(token); // Clean up expired token
+            throw new BadCredentialsException("Invalid or expired reset token");
+        }
+        
+        // Find user by email
+        Optional<User> userOpt = userRepository.findByEmail(resetToken.email);
+        if (userOpt.isEmpty()) {
+            resetTokens.remove(token);
+            throw new BadCredentialsException("User not found");
+        }
+        
+        User user = userOpt.get();
+        
+        // Update password
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+        
+        // Remove used token
+        resetTokens.remove(token);
+        
+        logger.info("Password reset successful for user: {}", user.getUsername());
     }
 }

@@ -13,6 +13,8 @@ import com.commandlinecommandos.campusmarketplace.dto.AuthRequest;
 import com.commandlinecommandos.campusmarketplace.dto.AuthResponse;
 import com.commandlinecommandos.campusmarketplace.dto.RefreshTokenRequest;
 import com.commandlinecommandos.campusmarketplace.dto.RegisterRequest;
+import com.commandlinecommandos.campusmarketplace.dto.ForgotPasswordRequest;
+import com.commandlinecommandos.campusmarketplace.dto.ResetPasswordRequest;
 import com.commandlinecommandos.campusmarketplace.model.User;
 import com.commandlinecommandos.campusmarketplace.repository.UserRepository;
 import com.commandlinecommandos.campusmarketplace.service.AuthService;
@@ -26,7 +28,7 @@ import org.slf4j.LoggerFactory;
 @RestController
 @RequestMapping("/auth")
 @Validated
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001", "https://campus-marketplace.sjsu.edu"}, maxAge = 3600)
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001", "http://localhost:3002", "https://campus-marketplace.sjsu.edu"}, maxAge = 3600)
 public class AuthController {
     
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
@@ -223,6 +225,54 @@ public class AuthController {
             response.put("valid", false);
             response.put("error", "Token validation failed");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+    }
+    
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        logger.info("Password reset request for email: {}", request.getEmail());
+        try {
+            String resetToken = authService.requestPasswordReset(request.getEmail());
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Password reset token generated. Please check your email or use the token below for testing.");
+            response.put("token", resetToken); // In production, this would be sent via email only
+            response.put("note", "This is a development token. In production, this would be sent via email.");
+            return ResponseEntity.ok(response);
+        } catch (BadCredentialsException e) {
+            logger.warn("Password reset request failed for email: {} - {}", request.getEmail(), e.getMessage());
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Password reset failed");
+            error.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        } catch (Exception e) {
+            logger.error("Unexpected error during password reset request for email: {}", request.getEmail(), e);
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Internal server error");
+            error.put("message", "An unexpected error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        }
+    }
+    
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        logger.info("Password reset attempt with token");
+        try {
+            authService.resetPassword(request.getToken(), request.getNewPassword());
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "Password reset successful");
+            return ResponseEntity.ok(response);
+        } catch (BadCredentialsException e) {
+            logger.warn("Password reset failed - {}", e.getMessage());
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Password reset failed");
+            error.put("message", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        } catch (Exception e) {
+            logger.error("Unexpected error during password reset", e);
+            Map<String, String> error = new HashMap<>();
+            error.put("error", "Internal server error");
+            error.put("message", "An unexpected error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
         }
     }
 }
