@@ -79,7 +79,7 @@ public class CacheConfig {
                 
         } catch (Exception e) {
             log.warn("⚠️  Redis unavailable: {} - Falling back to Caffeine cache", e.getMessage());
-            return caffeineCacheManager();
+            return createCaffeineCacheManager();
         }
     }
 
@@ -90,6 +90,14 @@ public class CacheConfig {
     @Bean
     @ConditionalOnProperty(name = "spring.cache.type", havingValue = "caffeine")
     public CacheManager caffeineCacheManager() {
+        return createCaffeineCacheManager();
+    }
+    
+    /**
+     * Create Caffeine Cache Manager instance
+     * Shared by both explicit configuration and Redis fallback
+     */
+    private CacheManager createCaffeineCacheManager() {
         CaffeineCacheManager cacheManager = new CaffeineCacheManager(
             "searchResults",
             "trendingProducts",

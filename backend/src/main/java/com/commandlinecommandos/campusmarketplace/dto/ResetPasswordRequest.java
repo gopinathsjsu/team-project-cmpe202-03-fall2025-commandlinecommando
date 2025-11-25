@@ -12,6 +12,9 @@ public class ResetPasswordRequest {
     @Size(min = 6, message = "Password must be at least 6 characters")
     private String newPassword;
     
+    @NotBlank(message = "Password confirmation is required")
+    private String confirmPassword;
+    
     public ResetPasswordRequest() {
     }
     
@@ -34,6 +37,14 @@ public class ResetPasswordRequest {
     
     public void setNewPassword(String newPassword) {
         this.newPassword = newPassword;
+    }
+    
+    public String getConfirmPassword() {
+        return confirmPassword;
+    }
+    
+    public void setConfirmPassword(String confirmPassword) {
+        this.confirmPassword = confirmPassword;
     }
 }
 

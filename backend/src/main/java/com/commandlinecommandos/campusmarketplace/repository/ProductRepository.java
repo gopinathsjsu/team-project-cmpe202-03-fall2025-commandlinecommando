@@ -97,6 +97,66 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     long countBySellerAndIsActiveTrue(User seller);
     
     /**
+     * Full-text search with PostgreSQL ts_rank (falls back gracefully for H2)
+     */
+    @Query(value = "SELECT p.* FROM products p " +
+           "WHERE p.university_id = :universityId " +
+           "AND p.is_active = true " +
+           "AND p.moderation_status = 'APPROVED' " +
+           "AND (to_tsvector('english', p.title || ' ' || p.description) @@ plainto_tsquery('english', :query)) " +
+           "ORDER BY ts_rank(to_tsvector('english', p.title || ' ' || p.description), plainto_tsquery('english', :query)) DESC",
+           nativeQuery = true)
+    Page<Product> searchWithFullText(
+        @Param("universityId") UUID universityId,
+        @Param("query") String query,
+        Pageable pageable
+    );
+    
+    /**
+     * Fuzzy search using PostgreSQL similarity() function
+     */
+    @Query(value = "SELECT p.* FROM products p " +
+           "WHERE p.university_id = :universityId " +
+           "AND p.is_active = true " +
+           "AND p.moderation_status = 'APPROVED' " +
+           "AND (similarity(p.title, :query) > 0.3 OR similarity(p.description, :query) > 0.2) " +
+           "ORDER BY similarity(p.title, :query) DESC",
+           nativeQuery = true)
+    Page<Product> fuzzySearch(
+        @Param("universityId") UUID universityId,
+        @Param("query") String query,
+        Pageable pageable
+    );
+    
+    /**
+     * Find title suggestions for autocomplete using PostgreSQL similarity()
+     */
+    @Query(value = "SELECT DISTINCT p.title FROM products p " +
+           "WHERE p.university_id = :universityId " +
+           "AND p.is_active = true " +
+           "AND similarity(p.title, :query) > 0.3 " +
+           "ORDER BY similarity(p.title, :query) DESC " +
+           "LIMIT 10",
+           nativeQuery = true)
+    List<String> findTitleSuggestions(
+        @Param("universityId") UUID universityId,
+        @Param("query") String query
+    );
+    
+    /**
+     * Find title suggestions using LIKE (H2 fallback)
+     */
+    @Query("SELECT DISTINCT p.title FROM Product p " +
+           "WHERE p.university.universityId = :universityId " +
+           "AND p.isActive = true " +
+           "AND LOWER(p.title) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "ORDER BY p.title")
+    List<String> findTitleSuggestionsLike(
+        @Param("universityId") UUID universityId,
+        @Param("query") String query
+    );
+    
+    /**
      * Find top products by views
      */
     @Query("SELECT p FROM Product p WHERE p.university = :university " +

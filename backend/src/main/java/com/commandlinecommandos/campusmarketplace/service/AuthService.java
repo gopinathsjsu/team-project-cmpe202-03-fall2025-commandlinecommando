@@ -55,6 +55,15 @@ public class AuthService {
     @Autowired
     private PasswordEncoder passwordEncoder;
     
+    @Autowired(required = false)
+    private LoginAttemptService loginAttemptService;
+    
+    @Autowired(required = false)
+    private AuditService auditService;
+    
+    @Autowired
+    private UniversityRepository universityRepository;
+    
     // In-memory store for password reset tokens (for development)
     // In production, this should be stored in database with expiration
     private final Map<String, PasswordResetToken> resetTokens = new ConcurrentHashMap<>();
@@ -311,6 +320,37 @@ public class AuthService {
         response.setPhone(user.getPhone());
         response.setActive(user.isActive());
         return response;
+    }
+    
+    /**
+     * Find or create university based on email domain
+     */
+    private University findOrCreateUniversityForEmail(String email) {
+        // Extract domain from email
+        String domain = email.substring(email.indexOf('@') + 1);
+        
+        // Try to find existing university by domain
+        return universityRepository.findAll().stream()
+            .filter(u -> domain.toLowerCase().contains(u.getName().toLowerCase()) ||
+                        u.getName().toLowerCase().contains(domain.split("\\.")[0].toLowerCase()))
+            .findFirst()
+            .orElseGet(() -> {
+                // Create default university if not found
+                University defaultUniversity = universityRepository.findAll().stream()
+                    .filter(u -> u.getName().equalsIgnoreCase("San Jose State University"))
+                    .findFirst()
+                    .orElse(null);
+                
+                if (defaultUniversity != null) {
+                    return defaultUniversity;
+                }
+                
+                // If no default exists, create one
+                University newUniversity = new University();
+                newUniversity.setName("San Jose State University");
+                newUniversity.setDomain("sjsu.edu");
+                return universityRepository.save(newUniversity);
+            });
     }
     
     public String requestPasswordReset(String email) throws BadCredentialsException {
