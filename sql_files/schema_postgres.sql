@@ -15,6 +15,8 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Drop existing tables in correct order (foreign key dependencies)
 DROP TABLE IF EXISTS order_items CASCADE;
 DROP TABLE IF EXISTS orders CASCADE;
+DROP TABLE IF EXISTS product_views CASCADE;
+DROP TABLE IF EXISTS search_history CASCADE;
 DROP TABLE IF EXISTS products CASCADE;
 DROP TABLE IF EXISTS refresh_tokens CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
@@ -165,6 +167,40 @@ CREATE TABLE products (
 );
 
 -- =====================================================
+-- SEARCH HISTORY TABLE (Tracks user search queries)
+-- =====================================================
+
+CREATE TABLE search_history (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    search_query VARCHAR(500) NOT NULL,
+    results_count INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Foreign key constraints
+    CONSTRAINT fk_search_history_user FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+-- =====================================================
+-- PRODUCT VIEWS TABLE (Tracks product views for recommendations)
+-- =====================================================
+
+CREATE TABLE product_views (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    product_id UUID NOT NULL REFERENCES products(product_id) ON DELETE CASCADE,
+    viewed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    viewed_at_date DATE DEFAULT CURRENT_DATE,
+    
+    -- Foreign key constraints
+    CONSTRAINT fk_product_views_user FOREIGN KEY (user_id) REFERENCES users(user_id),
+    CONSTRAINT fk_product_views_product FOREIGN KEY (product_id) REFERENCES products(product_id),
+    
+    -- Unique constraint: one view per user per product per day
+    CONSTRAINT uniq_user_product_view_per_day UNIQUE (user_id, product_id, viewed_at_date)
+);
+
+-- =====================================================
 -- ORDERS TABLE (Shopping cart and completed orders)
 -- =====================================================
 
@@ -276,6 +312,17 @@ CREATE INDEX idx_products_status ON products(moderation_status);
 CREATE INDEX idx_products_price ON products(price);
 CREATE INDEX idx_products_search ON products(university_id, category, is_active, price);
 
+-- Search history indexes
+CREATE INDEX idx_search_history_user ON search_history(user_id, created_at DESC);
+CREATE INDEX idx_search_history_query ON search_history(search_query);
+CREATE INDEX idx_search_history_created ON search_history(created_at DESC);
+
+-- Product views indexes
+CREATE INDEX idx_product_views_user ON product_views(user_id, viewed_at DESC);
+CREATE INDEX idx_product_views_product ON product_views(product_id, viewed_at DESC);
+CREATE INDEX idx_product_views_user_product ON product_views(user_id, product_id, viewed_at DESC);
+CREATE INDEX idx_product_views_date ON product_views(viewed_at_date DESC);
+
 -- Order indexes
 CREATE INDEX idx_orders_buyer ON orders(buyer_id, status);
 CREATE INDEX idx_orders_status ON orders(status);
@@ -385,6 +432,171 @@ CREATE TRIGGER update_listings_updated_at
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- =====================================================
+-- COMMUNICATION SERVICE TABLES (Chat/Messaging)
+-- =====================================================
+
+-- Drop existing tables (Communication Service) in dependency order
+DROP TABLE IF EXISTS messages CASCADE;
+DROP TABLE IF EXISTS conversations CASCADE;
+
+-- CONVERSATIONS TABLE
+-- Links a buyer and seller for a specific listing
+CREATE TABLE conversations (
+    conversation_id BIGSERIAL PRIMARY KEY,
+    listing_id BIGINT NOT NULL,
+    buyer_id BIGINT NOT NULL,
+    seller_id BIGINT NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Ensure one conversation per buyer-seller-listing combination
+    CONSTRAINT unique_conversation UNIQUE (listing_id, buyer_id, seller_id)
+);
+
+-- MESSAGES TABLE
+-- Individual messages within a conversation
+CREATE TABLE messages (
+    message_id BIGSERIAL PRIMARY KEY,
+    conversation_id BIGINT NOT NULL REFERENCES conversations(conversation_id) ON DELETE CASCADE,
+    sender_id BIGINT NOT NULL,
+    content TEXT NOT NULL,
+    is_read BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for Communication Service tables
+CREATE INDEX idx_conversations_listing ON conversations(listing_id);
+CREATE INDEX idx_conversations_buyer ON conversations(buyer_id);
+CREATE INDEX idx_conversations_seller ON conversations(seller_id);
+CREATE INDEX idx_conversations_updated ON conversations(updated_at DESC);
+
+CREATE INDEX idx_messages_conversation ON messages(conversation_id);
+CREATE INDEX idx_messages_sender ON messages(sender_id);
+CREATE INDEX idx_messages_created ON messages(created_at DESC);
+CREATE INDEX idx_messages_unread ON messages(conversation_id, is_read) WHERE is_read = false;
+
+-- Function to update conversation updated_at timestamp when a message is added
+CREATE OR REPLACE FUNCTION update_conversation_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE conversations
+    SET updated_at = CURRENT_TIMESTAMP
+    WHERE conversation_id = NEW.conversation_id;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger to automatically update conversation timestamp when a message is added
+CREATE TRIGGER update_conversation_on_message
+    AFTER INSERT ON messages
+    FOR EACH ROW
+    EXECUTE FUNCTION update_conversation_timestamp();
+
+-- Trigger to auto-update updated_at on conversations
+CREATE TRIGGER update_conversations_updated_at
+    BEFORE UPDATE ON conversations
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- =====================================================
+-- USER MANAGEMENT TABLES (Authentication, Audit, Security)
+-- =====================================================
+
+-- Drop existing tables (User Management) in dependency order
+DROP TABLE IF EXISTS account_actions CASCADE;
+DROP TABLE IF EXISTS login_attempts CASCADE;
+DROP TABLE IF EXISTS audit_logs CASCADE;
+DROP TABLE IF EXISTS verification_tokens CASCADE;
+
+-- VERIFICATION TOKENS TABLE
+-- Stores email verification tokens, password reset tokens, and email change tokens
+CREATE TABLE verification_tokens (
+    token_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    token VARCHAR(100) NOT NULL UNIQUE,
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    token_type VARCHAR(50) NOT NULL CHECK (token_type IN ('EMAIL_VERIFICATION', 'PASSWORD_RESET', 'EMAIL_CHANGE')),
+    expires_at TIMESTAMP NOT NULL,
+    used_at TIMESTAMP,
+    is_used BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for verification_tokens
+CREATE INDEX idx_verification_token ON verification_tokens(token);
+CREATE INDEX idx_verification_user ON verification_tokens(user_id);
+CREATE INDEX idx_verification_expires ON verification_tokens(expires_at);
+CREATE INDEX idx_verification_type ON verification_tokens(token_type);
+
+-- AUDIT LOGS TABLE
+-- Comprehensive audit logging for all user actions and admin operations
+CREATE TABLE audit_logs (
+    audit_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(user_id) ON DELETE SET NULL,
+    username VARCHAR(50),  -- Store username for reference even if user is deleted
+    table_name VARCHAR(100) NOT NULL,
+    record_id UUID,
+    action VARCHAR(50) NOT NULL,
+    old_values TEXT,  -- JSONB stored as TEXT for compatibility
+    new_values TEXT,  -- JSONB stored as TEXT for compatibility
+    description VARCHAR(500),
+    ip_address VARCHAR(45),  -- Support IPv6
+    user_agent VARCHAR(500),
+    severity VARCHAR(20) DEFAULT 'INFO' CHECK (severity IN ('INFO', 'WARNING', 'ERROR', 'CRITICAL')),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+-- Indexes for audit_logs
+CREATE INDEX idx_audit_user ON audit_logs(user_id);
+CREATE INDEX idx_audit_username ON audit_logs(username);
+CREATE INDEX idx_audit_table ON audit_logs(table_name);
+CREATE INDEX idx_audit_action ON audit_logs(action);
+CREATE INDEX idx_audit_created ON audit_logs(created_at DESC);
+CREATE INDEX idx_audit_record ON audit_logs(record_id);
+CREATE INDEX idx_audit_severity ON audit_logs(severity);
+
+-- LOGIN ATTEMPTS TABLE
+-- Track login attempts for security monitoring and account lockout
+CREATE TABLE login_attempts (
+    attempt_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    username VARCHAR(50) NOT NULL,
+    ip_address VARCHAR(45) NOT NULL,
+    user_agent VARCHAR(500),
+    success BOOLEAN NOT NULL DEFAULT FALSE,
+    failure_reason VARCHAR(200),
+    device_info VARCHAR(200),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+-- Indexes for login_attempts
+CREATE INDEX idx_login_username ON login_attempts(username);
+CREATE INDEX idx_login_ip ON login_attempts(ip_address);
+CREATE INDEX idx_login_created ON login_attempts(created_at DESC);
+CREATE INDEX idx_login_success ON login_attempts(success);
+
+-- ACCOUNT ACTIONS TABLE
+-- Track account status changes for admin accountability and account recovery
+CREATE TABLE account_actions (
+    action_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    performed_by UUID NOT NULL REFERENCES users(user_id) ON DELETE SET NULL,
+    action_type VARCHAR(50) NOT NULL CHECK (action_type IN (
+        'SUSPEND', 'REACTIVATE', 'DELETE', 'ROLE_CHANGE', 
+        'PASSWORD_RESET', 'EMAIL_CHANGE', 'VERIFICATION_STATUS_CHANGE'
+    )),
+    reason VARCHAR(500),
+    notes TEXT,
+    scheduled_revert_at TIMESTAMP,  -- For temporary suspensions
+    reverted_at TIMESTAMP,
+    is_reverted BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Indexes for account_actions
+CREATE INDEX idx_account_user ON account_actions(user_id);
+CREATE INDEX idx_account_admin ON account_actions(performed_by);
+CREATE INDEX idx_account_type ON account_actions(action_type);
+CREATE INDEX idx_account_created ON account_actions(created_at DESC);
+
+-- =====================================================
 -- COMMENTS FOR DOCUMENTATION
 -- =====================================================
 
@@ -395,6 +607,15 @@ COMMENT ON TABLE refresh_tokens IS 'JWT refresh token storage with device tracki
 COMMENT ON TABLE products IS 'Marketplace product listings with flexible attributes and moderation';
 COMMENT ON TABLE orders IS 'Shopping cart and order management with complete lifecycle tracking';
 COMMENT ON TABLE order_items IS 'Order line items with snapshot of product data at purchase time';
+COMMENT ON TABLE listings IS 'Listing API product listings with images and reports';
+COMMENT ON TABLE listing_images IS 'Images associated with listings';
+COMMENT ON TABLE reports IS 'User reports against listings for moderation';
+COMMENT ON TABLE conversations IS 'Chat conversations between buyers and sellers for specific listings';
+COMMENT ON TABLE messages IS 'Individual messages within conversations';
+COMMENT ON TABLE verification_tokens IS 'Stores email verification, password reset, and email change tokens';
+COMMENT ON TABLE audit_logs IS 'Comprehensive audit logging for all user actions and admin operations';
+COMMENT ON TABLE login_attempts IS 'Tracks login attempts for security monitoring and account lockout';
+COMMENT ON TABLE account_actions IS 'Tracks account status changes for admin accountability';
 
 -- Key column comments
 COMMENT ON COLUMN users.verification_status IS 'Account verification state: PENDING, VERIFIED, or SUSPENDED';
