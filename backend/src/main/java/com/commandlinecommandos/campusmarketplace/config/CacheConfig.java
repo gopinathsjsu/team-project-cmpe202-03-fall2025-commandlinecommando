@@ -47,9 +47,11 @@ public class CacheConfig {
     /**
      * Redis Cache Manager (Primary)
      * Used when CACHE_TYPE=redis and Redis is available
+     * Not used in test profile (test profile has its own testCacheManager)
      */
     @Bean
     @Primary
+    @Profile("!test")
     @ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis", matchIfMissing = true)
     public CacheManager redisCacheManager(RedisConnectionFactory connectionFactory) {
         try {
@@ -86,8 +88,10 @@ public class CacheConfig {
     /**
      * Caffeine Cache Manager (Fallback)
      * Used when Redis is unavailable or CACHE_TYPE=caffeine
+     * Not used in test profile (test profile has its own testCacheManager)
      */
     @Bean
+    @Profile("!test")
     @ConditionalOnProperty(name = "spring.cache.type", havingValue = "caffeine")
     public CacheManager caffeineCacheManager() {
         return createCaffeineCacheManager();
@@ -121,8 +125,10 @@ public class CacheConfig {
      * Simple Cache Manager (No Caching / Testing)
      * Used when CACHE_TYPE=none or caching is disabled
      * Allows dynamic cache creation to prevent "cache not found" errors
+     * Not used in test profile (test profile has its own testCacheManager)
      */
     @Bean
+    @Profile("!test")
     @ConditionalOnProperty(name = "spring.cache.type", havingValue = "none", matchIfMissing = false)
     public CacheManager simpleCacheManager() {
         log.warn("⚠️  Caching DISABLED - Using no-op cache manager for testing");
