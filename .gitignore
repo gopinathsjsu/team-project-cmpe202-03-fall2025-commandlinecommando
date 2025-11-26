@@ -238,6 +238,9 @@ id_ed25519*
 # PROJECT SPECIFIC
 # ===========================================
 
+# Archived pre-refactoring code (optional - can be committed if desired)
+.archive/
+
 # Uploaded files directory (if created)
 uploads/
 files/
