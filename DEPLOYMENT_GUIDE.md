@@ -41,29 +41,30 @@ docker-compose up --build
 - Database Password: `changeme` (change in production!)
 - Database Name: `campus_marketplace`
 
-### Option 2: Local Development
+### Option 2: Local Development with Docker Database
 
-**Run backend locally with external database:**
+**Run backend locally while using Docker for PostgreSQL and Redis:**
 
 ```bash
+# 1. Start only the database and Redis (without backend)
+docker-compose up -d postgres redis
+
+# 2. Wait for database to be ready
+sleep 5
+
+# 3. Build the application
 cd backend
-
-# 1. Ensure PostgreSQL and Redis are running
-# PostgreSQL on localhost:5432
-# Redis on localhost:6379
-
-# 2. Update application.yml with your database credentials
-# Or use environment variables
-
-# 3. Run database migrations
-./mvnw flyway:migrate
-
-# 4. Build the application
 ./mvnw clean install
 
-# 5. Run the application
-./mvnw spring-boot:run
+# 4. Run the application with production profile
+SPRING_PROFILES_ACTIVE=prod ./mvnw spring-boot:run
+
+# Application will run on http://localhost:8080
+# Flyway migrations run automatically on startup
+# Press Ctrl+C to stop
 ```
+
+**Note:** The `./mvnw flyway:migrate` command requires additional Maven plugin configuration and is not needed since Spring Boot runs migrations automatically.
 
 ## Environment Variables
 
@@ -105,24 +106,24 @@ SQL_LOG_LEVEL=WARN
 
 ## Database Migration
 
-### Automatic Migration (Docker)
-Flyway migrations run automatically when the backend starts.
+### Automatic Migration (Recommended)
+Flyway migrations run automatically when the Spring Boot backend starts. This works for both Docker and local development.
 
-### Manual Migration
+### Manual Migration (Docker)
+If you need to run migrations manually using Docker:
+
 ```bash
-cd backend
+# Access the database container
+docker exec -it campus-marketplace-db psql -U cm_app_user -d campus_marketplace
 
-# Run all pending migrations
-./mvnw flyway:migrate
+# Or run SQL files directly
+docker exec -i campus-marketplace-db psql -U cm_app_user -d campus_marketplace < db/migrations/V1__campus_marketplace_core_schema.sql
+```
 
-# Check migration status
-./mvnw flyway:info
-
-# Rollback last migration (if needed)
-./mvnw flyway:undo
-
-# Clean database (CAUTION: Deletes all data)
-./mvnw flyway:clean
+### Check Migration Status
+```bash
+# Query Flyway history table
+docker exec -it campus-marketplace-db psql -U cm_app_user -d campus_marketplace -c "SELECT version, description, success, installed_on FROM flyway_schema_history ORDER BY installed_rank;"
 ```
 
 ### Migration History
