@@ -19,7 +19,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/chat")
+@RequestMapping("/chat")
 public class ChatController {
 
     private static final Logger logger = LoggerFactory.getLogger(ChatController.class);

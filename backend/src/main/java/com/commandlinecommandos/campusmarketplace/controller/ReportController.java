@@ -25,7 +25,7 @@ import java.util.UUID;
  * Handles content flagging and moderation
  */
 @RestController
-@RequestMapping("/api/reports")
+@RequestMapping("/reports")
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class ReportController {
     

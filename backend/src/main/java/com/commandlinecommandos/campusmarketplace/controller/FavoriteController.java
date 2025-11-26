@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
  * Allows users to save products to their favorites
  */
 @RestController
-@RequestMapping("/api/favorites")
+@RequestMapping("/favorites")
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class FavoriteController {
     

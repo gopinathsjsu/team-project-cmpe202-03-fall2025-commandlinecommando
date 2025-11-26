@@ -149,8 +149,8 @@ public class ChatControllerIntegrationTest {
         request.put("listingId", testListing.getProductId().toString());
         request.put("content", "Is this still available?");
 
-        // Use POST /api/chat/messages which creates conversation if needed
-        mockMvc.perform(post("/api/chat/messages")
+        // Use POST /chat/messages which creates conversation if needed
+        mockMvc.perform(post("/chat/messages")
                 .header("Authorization", "Bearer " + buyerToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
@@ -161,7 +161,7 @@ public class ChatControllerIntegrationTest {
 
     @Test
     public void testGetUserConversations_Success() throws Exception {
-        mockMvc.perform(get("/api/chat/conversations")
+        mockMvc.perform(get("/chat/conversations")
                 .header("Authorization", "Bearer " + buyerToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))))
@@ -170,7 +170,7 @@ public class ChatControllerIntegrationTest {
 
     @Test
     public void testGetUserConversations_Unauthorized() throws Exception {
-        mockMvc.perform(get("/api/chat/conversations"))
+        mockMvc.perform(get("/chat/conversations"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -179,8 +179,8 @@ public class ChatControllerIntegrationTest {
         Map<String, Object> messageRequest = new HashMap<>();
         messageRequest.put("content", "Hello, is this still available?");
 
-        // Use correct endpoint: POST /api/chat/conversations/{conversationId}/messages
-        mockMvc.perform(post("/api/chat/conversations/" + testConversation.getConversationId() + "/messages")
+        // Use correct endpoint: POST /chat/conversations/{conversationId}/messages
+        mockMvc.perform(post("/chat/conversations/" + testConversation.getConversationId() + "/messages")
                 .header("Authorization", "Bearer " + buyerToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(messageRequest)))
@@ -201,7 +201,7 @@ public class ChatControllerIntegrationTest {
         message.setIsRead(false);
         messageRepository.save(message);
 
-        mockMvc.perform(get("/api/chat/conversations/" + testConversation.getConversationId() + "/messages")
+        mockMvc.perform(get("/chat/conversations/" + testConversation.getConversationId() + "/messages")
                 .header("Authorization", "Bearer " + buyerToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(1))))
@@ -227,7 +227,7 @@ public class ChatControllerIntegrationTest {
         messageRequest.put("conversationId", testConversation.getConversationId().toString());
         messageRequest.put("content", "I shouldn't be able to send this");
 
-        mockMvc.perform(post("/api/chat/messages")
+        mockMvc.perform(post("/chat/messages")
                 .header("Authorization", "Bearer " + outsiderToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(messageRequest)))
@@ -251,7 +251,7 @@ public class ChatControllerIntegrationTest {
         unreadMessage2.setIsRead(false);
         messageRepository.save(unreadMessage2);
 
-        mockMvc.perform(get("/api/chat/unread-count")
+        mockMvc.perform(get("/chat/unread-count")
                 .header("Authorization", "Bearer " + buyerToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.unreadCount", greaterThanOrEqualTo(2)));
@@ -267,7 +267,7 @@ public class ChatControllerIntegrationTest {
         unreadMessage.setIsRead(false);
         unreadMessage = messageRepository.save(unreadMessage);
 
-        mockMvc.perform(put("/api/chat/messages/" + unreadMessage.getMessageId() + "/read")
+        mockMvc.perform(put("/chat/messages/" + unreadMessage.getMessageId() + "/read")
                 .header("Authorization", "Bearer " + buyerToken))
                 .andExpect(status().isOk());
 

@@ -24,7 +24,7 @@ import java.util.UUID;
  * Handles payment methods and transactions
  */
 @RestController
-@RequestMapping("/api/payments")
+@RequestMapping("/payments")
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"})
 public class PaymentController {
     
