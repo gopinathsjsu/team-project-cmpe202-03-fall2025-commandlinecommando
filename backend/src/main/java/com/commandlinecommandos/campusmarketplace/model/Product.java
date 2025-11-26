@@ -1,14 +1,13 @@
 package com.commandlinecommandos.campusmarketplace.model;
 
-import com.commandlinecommandos.campusmarketplace.converter.ModerationStatusConverter;
-import com.commandlinecommandos.campusmarketplace.converter.ProductCategoryConverter;
-import com.commandlinecommandos.campusmarketplace.converter.ProductConditionConverter;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.DecimalMin;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.Type;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 
 import java.math.BigDecimal;
@@ -59,12 +58,14 @@ public class Product {
     private String description;
     
     @NotNull
-    @Convert(converter = ProductCategoryConverter.class)
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(nullable = false)
     private ProductCategory category;
 
     @NotNull
-    @Convert(converter = ProductConditionConverter.class)
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "condition", nullable = false)
     private ProductCondition condition;
     
@@ -101,7 +102,8 @@ public class Product {
     @Column(name = "is_featured")
     private boolean isFeatured = false;
     
-    @Convert(converter = ModerationStatusConverter.class)
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "moderation_status")
     private ModerationStatus moderationStatus = ModerationStatus.PENDING;
     
