@@ -1,9 +1,11 @@
 package com.commandlinecommandos.campusmarketplace.controller;
 
+import com.commandlinecommandos.campusmarketplace.dto.ListingDetailResponse;
 import com.commandlinecommandos.campusmarketplace.model.User;
 import com.commandlinecommandos.campusmarketplace.model.UserFavorite;
 import com.commandlinecommandos.campusmarketplace.repository.UserRepository;
 import com.commandlinecommandos.campusmarketplace.service.FavoriteService;
+import com.commandlinecommandos.campusmarketplace.service.ListingsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -12,8 +14,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Controller for Favorites/Wishlist management
@@ -30,35 +34,56 @@ public class FavoriteController {
     @Autowired
     private UserRepository userRepository;
     
+    @Autowired
+    private ListingsService listingsService;
+    
     private User getCurrentUser(Authentication auth) {
         return userRepository.findByUsername(auth.getName())
             .orElseThrow(() -> new RuntimeException("User not found"));
     }
     
     /**
-     * Get user's favorites
+     * Get user's favorites - returns listings with favorite=true
      */
     @GetMapping
-    public ResponseEntity<Page<UserFavorite>> getFavorites(Authentication auth, 
-                                                           Pageable pageable) {
+    public ResponseEntity<List<ListingDetailResponse>> getFavorites(Authentication auth) {
         User user = getCurrentUser(auth);
-        Page<UserFavorite> favorites = favoriteService.getUserFavorites(user, pageable);
-        return ResponseEntity.ok(favorites);
+        Page<UserFavorite> favorites = favoriteService.getUserFavorites(user, Pageable.unpaged());
+        
+        // Convert to ListingDetailResponse with favorite=true
+        List<ListingDetailResponse> listings = favorites.getContent().stream()
+            .map(fav -> listingsService.toListingDetailResponse(fav.getProduct(), true))
+            .collect(Collectors.toList());
+        
+        return ResponseEntity.ok(listings);
     }
     
     /**
-     * Add product to favorites
+     * Toggle favorite - matches mockdata API: POST /favorites/{id}
+     * Returns { favorited: boolean }
      */
     @PostMapping("/{productId}")
-    public ResponseEntity<UserFavorite> addToFavorites(@PathVariable UUID productId,
-                                                       Authentication auth) {
+    public ResponseEntity<Map<String, Boolean>> toggleFavorite(@PathVariable UUID productId,
+                                                                Authentication auth) {
         User user = getCurrentUser(auth);
-        UserFavorite favorite = favoriteService.addToFavorites(user, productId);
-        return ResponseEntity.ok(favorite);
+        boolean isFavorited = favoriteService.isFavorited(user, productId);
+        
+        Map<String, Boolean> response = new HashMap<>();
+        if (isFavorited) {
+            // Remove from favorites
+            favoriteService.removeFromFavorites(user, productId);
+            response.put("favorited", false);
+        } else {
+            // Add to favorites
+            favoriteService.addToFavorites(user, productId);
+            response.put("favorited", true);
+        }
+        
+        return ResponseEntity.ok(response);
     }
     
     /**
-     * Remove product from favorites
+     * Remove product from favorites (legacy endpoint, kept for backward compatibility)
      */
     @DeleteMapping("/{productId}")
     public ResponseEntity<Void> removeFromFavorites(@PathVariable UUID productId,

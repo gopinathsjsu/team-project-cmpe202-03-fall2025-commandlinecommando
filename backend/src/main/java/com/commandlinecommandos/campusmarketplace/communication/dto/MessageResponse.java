@@ -6,9 +6,10 @@ import java.util.UUID;
 
 public class MessageResponse {
     
-    private UUID messageId;
-    private UUID conversationId;
-    private UUID senderId;
+    private String messageId;
+    private String conversationId;
+    private String senderId;
+    private String senderName;
     private String content;
     private Boolean isRead;
     private LocalDateTime createdAt;
@@ -17,36 +18,45 @@ public class MessageResponse {
     }
     
     public MessageResponse(Message message) {
-        this.messageId = message.getMessageId();
-        this.conversationId = message.getConversation().getConversationId();
-        this.senderId = message.getSenderId();
+        this.messageId = message.getMessageId().toString();
+        this.conversationId = message.getConversation().getConversationId().toString();
+        this.senderId = message.getSenderId().toString();
+        this.senderName = ""; // TODO: populate from User entity
         this.content = message.getContent();
         this.isRead = message.getIsRead();
         this.createdAt = message.getCreatedAt();
     }
     
-    public UUID getMessageId() {
+    public String getMessageId() {
         return messageId;
     }
     
-    public void setMessageId(UUID messageId) {
+    public void setMessageId(String messageId) {
         this.messageId = messageId;
     }
     
-    public UUID getConversationId() {
+    public String getConversationId() {
         return conversationId;
     }
     
-    public void setConversationId(UUID conversationId) {
+    public void setConversationId(String conversationId) {
         this.conversationId = conversationId;
     }
     
-    public UUID getSenderId() {
+    public String getSenderId() {
         return senderId;
     }
     
-    public void setSenderId(UUID senderId) {
+    public void setSenderId(String senderId) {
         this.senderId = senderId;
+    }
+    
+    public String getSenderName() {
+        return senderName;
+    }
+    
+    public void setSenderName(String senderName) {
+        this.senderName = senderName;
     }
     
     public String getContent() {

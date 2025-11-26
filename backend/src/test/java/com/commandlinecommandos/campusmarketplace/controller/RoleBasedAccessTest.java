@@ -24,7 +24,7 @@ class RoleBasedAccessTest {
     void testAdminCanAccessAdminDashboard() throws Exception {
         mockMvc.perform(get("/admin/dashboard"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("Welcome to Admin Dashboard"));
+                .andExpect(jsonPath("$.message").value("Admin dashboard loaded"));
     }
     
     @Test

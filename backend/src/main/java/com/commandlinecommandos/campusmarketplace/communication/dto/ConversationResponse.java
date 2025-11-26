@@ -8,10 +8,10 @@ import java.util.stream.Collectors;
 
 public class ConversationResponse {
     
-    private UUID conversationId;
-    private UUID listingId;
-    private UUID buyerId;
-    private UUID sellerId;
+    private String conversationId;
+    private String listingId;
+    private String buyerId;
+    private String sellerId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<MessageResponse> messages;
@@ -21,10 +21,10 @@ public class ConversationResponse {
     }
     
     public ConversationResponse(Conversation conversation) {
-        this.conversationId = conversation.getConversationId();
-        this.listingId = conversation.getListingId();
-        this.buyerId = conversation.getBuyerId();
-        this.sellerId = conversation.getSellerId();
+        this.conversationId = conversation.getConversationId().toString();
+        this.listingId = conversation.getListingId().toString();
+        this.buyerId = conversation.getBuyerId().toString();
+        this.sellerId = conversation.getSellerId().toString();
         this.createdAt = conversation.getCreatedAt();
         this.updatedAt = conversation.getUpdatedAt();
         if (conversation.getMessages() != null) {
@@ -34,35 +34,35 @@ public class ConversationResponse {
         }
     }
     
-    public UUID getConversationId() {
+    public String getConversationId() {
         return conversationId;
     }
     
-    public void setConversationId(UUID conversationId) {
+    public void setConversationId(String conversationId) {
         this.conversationId = conversationId;
     }
     
-    public UUID getListingId() {
+    public String getListingId() {
         return listingId;
     }
     
-    public void setListingId(UUID listingId) {
+    public void setListingId(String listingId) {
         this.listingId = listingId;
     }
     
-    public UUID getBuyerId() {
+    public String getBuyerId() {
         return buyerId;
     }
     
-    public void setBuyerId(UUID buyerId) {
+    public void setBuyerId(String buyerId) {
         this.buyerId = buyerId;
     }
     
-    public UUID getSellerId() {
+    public String getSellerId() {
         return sellerId;
     }
     
-    public void setSellerId(UUID sellerId) {
+    public void setSellerId(String sellerId) {
         this.sellerId = sellerId;
     }
     

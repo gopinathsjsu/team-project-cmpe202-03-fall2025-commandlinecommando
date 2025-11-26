@@ -18,10 +18,11 @@ public class AdminController {
     @RequireRole(UserRole.ADMIN)
     public ResponseEntity<?> getAdminDashboard() {
         Map<String, Object> dashboard = new HashMap<>();
-        dashboard.put("message", "Welcome to Admin Dashboard");
+        dashboard.put("message", "Admin dashboard loaded");
         dashboard.put("totalUsers", 150);
         dashboard.put("totalListings", 450);
         dashboard.put("pendingApprovals", 12);
+        dashboard.put("pendingReports", 3);
         return ResponseEntity.ok(dashboard);
     }
     
