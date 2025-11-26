@@ -1,5 +1,8 @@
 package com.commandlinecommandos.campusmarketplace.model;
 
+import com.commandlinecommandos.campusmarketplace.converter.ModerationStatusConverter;
+import com.commandlinecommandos.campusmarketplace.converter.ProductCategoryConverter;
+import com.commandlinecommandos.campusmarketplace.converter.ProductConditionConverter;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.DecimalMin;
@@ -56,13 +59,13 @@ public class Product {
     private String description;
     
     @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "product_category")
+    @Convert(converter = ProductCategoryConverter.class)
+    @Column(nullable = false)
     private ProductCategory category;
 
     @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "condition", nullable = false, columnDefinition = "product_condition")
+    @Convert(converter = ProductConditionConverter.class)
+    @Column(name = "condition", nullable = false)
     private ProductCondition condition;
     
     // Pricing
@@ -98,8 +101,8 @@ public class Product {
     @Column(name = "is_featured")
     private boolean isFeatured = false;
     
-    @Enumerated(EnumType.STRING)
-    @Column(name = "moderation_status", columnDefinition = "moderation_status")
+    @Convert(converter = ModerationStatusConverter.class)
+    @Column(name = "moderation_status")
     private ModerationStatus moderationStatus = ModerationStatus.PENDING;
     
     // Analytics

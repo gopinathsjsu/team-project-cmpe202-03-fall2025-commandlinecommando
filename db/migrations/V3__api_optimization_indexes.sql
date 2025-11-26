@@ -3,6 +3,7 @@
 -- CMPE 202 Project: Advanced Indexes & Query Optimization
 -- Version: 3.0.0
 -- Target: <200ms API Response Times
+-- NOTE: CONCURRENTLY removed to fix Flyway migration hangs on empty tables
 -- =============================================================================
 
 -- =============================================================================
@@ -13,27 +14,27 @@
 -- ============================================================================
 
 -- Marketplace product search with filters (most common API query)
-CREATE INDEX CONCURRENTLY idx_products_marketplace_search 
+CREATE INDEX IF NOT EXISTS idx_products_marketplace_search 
 ON products (university_id, category, is_active, moderation_status, price)
 WHERE is_active = true AND moderation_status = 'APPROVED';
 
 -- Product sorting by popularity (views + favorites)
-CREATE INDEX CONCURRENTLY idx_products_popularity 
+CREATE INDEX IF NOT EXISTS idx_products_popularity 
 ON products ((view_count + favorite_count) DESC, created_at DESC)
 WHERE is_active = true;
 
 -- Product availability check (prevent overselling)
-CREATE INDEX CONCURRENTLY idx_products_inventory 
+CREATE INDEX IF NOT EXISTS idx_products_inventory 
 ON products (product_id, quantity, sold_quantity)
 WHERE is_active = true AND quantity > 0;
 
 -- Price range queries for buyer filtering
-CREATE INDEX CONCURRENTLY idx_products_price_range 
+CREATE INDEX IF NOT EXISTS idx_products_price_range 
 ON products (university_id, category, price ASC)
 WHERE is_active = true AND moderation_status = 'APPROVED';
 
 -- Recent listings for buyer homepage
-CREATE INDEX CONCURRENTLY idx_products_recent 
+CREATE INDEX IF NOT EXISTS idx_products_recent 
 ON products (university_id, created_at DESC, is_active, moderation_status)
 WHERE is_active = true;
 
@@ -41,20 +42,20 @@ WHERE is_active = true;
 -- ============================================================================
 
 -- Seller dashboard - my active listings
-CREATE INDEX CONCURRENTLY idx_products_seller_dashboard 
+CREATE INDEX IF NOT EXISTS idx_products_seller_dashboard 
 ON products (seller_id, is_active, moderation_status, created_at DESC);
 
 -- Seller sales history (completed orders)
-CREATE INDEX CONCURRENTLY idx_order_items_seller_sales 
+CREATE INDEX IF NOT EXISTS idx_order_items_seller_sales 
 ON order_items (seller_id, fulfillment_status, created_at DESC);
 
 -- Seller revenue tracking
-CREATE INDEX CONCURRENTLY idx_seller_revenue 
+CREATE INDEX IF NOT EXISTS idx_seller_revenue 
 ON order_items (seller_id, total_price)
 WHERE fulfillment_status IN ('COMPLETED', 'DELIVERED');
 
 -- Pending orders for seller fulfillment
-CREATE INDEX CONCURRENTLY idx_order_items_seller_pending 
+CREATE INDEX IF NOT EXISTS idx_order_items_seller_pending 
 ON order_items (seller_id, fulfillment_status)
 WHERE fulfillment_status IN ('PAID', 'PROCESSING');
 
@@ -62,26 +63,26 @@ WHERE fulfillment_status IN ('PAID', 'PROCESSING');
 -- ============================================================================
 
 -- Moderation queue for admin review
-CREATE INDEX CONCURRENTLY idx_moderation_queue_pending 
+CREATE INDEX IF NOT EXISTS idx_moderation_queue_pending 
 ON moderation_queue (status, created_at ASC)
 WHERE status = 'PENDING';
 
 -- User management - verification pending
-CREATE INDEX CONCURRENTLY idx_users_pending_verification 
+CREATE INDEX IF NOT EXISTS idx_users_pending_verification 
 ON users (verification_status, created_at)
 WHERE verification_status = 'PENDING';
 
 -- Flagged content for admin review
-CREATE INDEX CONCURRENTLY idx_user_reports_pending 
+CREATE INDEX IF NOT EXISTS idx_user_reports_pending 
 ON user_reports (status, created_at DESC)
 WHERE status = 'PENDING';
 
 -- Platform analytics aggregation
-CREATE INDEX CONCURRENTLY idx_daily_analytics_admin 
+CREATE INDEX IF NOT EXISTS idx_daily_analytics_admin 
 ON daily_analytics (university_id, date DESC, revenue, orders_count);
 
 -- User activity monitoring for admin
-CREATE INDEX CONCURRENTLY idx_audit_logs_recent 
+CREATE INDEX IF NOT EXISTS idx_audit_logs_recent 
 ON audit_logs (created_at DESC, table_name, action)
 WHERE created_at > CURRENT_TIMESTAMP - INTERVAL '30 days';
 
@@ -90,36 +91,36 @@ WHERE created_at > CURRENT_TIMESTAMP - INTERVAL '30 days';
 -- =============================================================================
 
 -- Shopping cart management
-CREATE INDEX CONCURRENTLY idx_orders_cart_management 
+CREATE INDEX IF NOT EXISTS idx_orders_cart_management 
 ON orders (buyer_id, status, updated_at DESC)
 WHERE status = 'CART';
 
 -- Order history for buyer profile
-CREATE INDEX CONCURRENTLY idx_orders_buyer_history 
+CREATE INDEX IF NOT EXISTS idx_orders_buyer_history 
 ON orders (buyer_id, status, created_at DESC)
 WHERE status != 'CART';
 
 -- Order tracking (buyer checking order status)
-CREATE INDEX CONCURRENTLY idx_orders_tracking 
+CREATE INDEX IF NOT EXISTS idx_orders_tracking 
 ON orders (order_id, buyer_id, status, tracking_number)
 WHERE status IN ('SHIPPED', 'DELIVERED');
 
 -- Payment processing lookup
-CREATE INDEX CONCURRENTLY idx_transactions_processing 
+CREATE INDEX IF NOT EXISTS idx_transactions_processing 
 ON transactions (order_id, status, processed_at DESC);
 
 -- User payment methods for checkout
-CREATE INDEX CONCURRENTLY idx_payment_methods_active 
+CREATE INDEX IF NOT EXISTS idx_payment_methods_active 
 ON payment_methods (user_id, is_active, is_default)
 WHERE is_active = true;
 
 -- Product reviews for product detail page
-CREATE INDEX CONCURRENTLY idx_product_reviews_display 
+CREATE INDEX IF NOT EXISTS idx_product_reviews_display 
 ON product_reviews (product_id, is_visible, created_at DESC)
 WHERE is_visible = true;
 
 -- User wishlist/favorites retrieval
-CREATE INDEX CONCURRENTLY idx_user_favorites_display 
+CREATE INDEX IF NOT EXISTS idx_user_favorites_display 
 ON user_favorites (user_id, created_at DESC);
 
 -- =============================================================================
@@ -127,17 +128,17 @@ ON user_favorites (user_id, created_at DESC);
 -- =============================================================================
 
 -- Additional GIN indexes for advanced search
-CREATE INDEX CONCURRENTLY idx_products_description_search 
+CREATE INDEX IF NOT EXISTS idx_products_description_search 
 ON products USING gin(to_tsvector('english', description))
 WHERE is_active = true;
 
 -- Category-specific search optimization
-CREATE INDEX CONCURRENTLY idx_products_textbook_search 
+CREATE INDEX IF NOT EXISTS idx_products_textbook_search 
 ON products USING gin((attributes->>'isbn') gin_trgm_ops)
 WHERE category = 'TEXTBOOKS' AND is_active = true;
 
 -- Electronics model search
-CREATE INDEX CONCURRENTLY idx_products_electronics_search 
+CREATE INDEX IF NOT EXISTS idx_products_electronics_search 
 ON products USING gin(
     (COALESCE(attributes->>'brand', '') || ' ' || 
      COALESCE(attributes->>'model', '')) gin_trgm_ops
@@ -149,20 +150,20 @@ WHERE category = 'ELECTRONICS' AND is_active = true;
 -- =============================================================================
 
 -- Search analytics for recommendation engine
-CREATE INDEX CONCURRENTLY idx_search_history_analytics 
+CREATE INDEX IF NOT EXISTS idx_search_history_analytics 
 ON search_history (user_id, search_query, created_at DESC);
 
 -- Popular searches aggregation
-CREATE INDEX CONCURRENTLY idx_search_history_trends 
+CREATE INDEX IF NOT EXISTS idx_search_history_trends 
 ON search_history (search_query, created_at DESC)
 WHERE created_at > CURRENT_TIMESTAMP - INTERVAL '7 days';
 
 -- Product view patterns for recommendations
-CREATE INDEX CONCURRENTLY idx_product_views_patterns 
+CREATE INDEX IF NOT EXISTS idx_product_views_patterns 
 ON product_views (user_id, product_id, viewed_at DESC);
 
 -- Revenue reporting by date range
-CREATE INDEX CONCURRENTLY idx_transactions_revenue 
+CREATE INDEX IF NOT EXISTS idx_transactions_revenue 
 ON transactions (processed_at DESC, amount, status)
 WHERE status = 'COMPLETED';
 
@@ -171,22 +172,22 @@ WHERE status = 'COMPLETED';
 -- =============================================================================
 
 -- Featured products for homepage
-CREATE INDEX CONCURRENTLY idx_products_featured 
+CREATE INDEX IF NOT EXISTS idx_products_featured 
 ON products (university_id, is_featured, created_at DESC)
 WHERE is_active = true AND is_featured = true;
 
 -- Negotiable products for bargain hunters
-CREATE INDEX CONCURRENTLY idx_products_negotiable 
+CREATE INDEX IF NOT EXISTS idx_products_negotiable 
 ON products (university_id, category, negotiable, price ASC)
 WHERE is_active = true AND negotiable = true;
 
 -- Low stock alerts for sellers
-CREATE INDEX CONCURRENTLY idx_products_low_stock 
+CREATE INDEX IF NOT EXISTS idx_products_low_stock 
 ON products (seller_id, quantity, title)
 WHERE is_active = true AND quantity <= 3;
 
 -- Expired listings for cleanup
-CREATE INDEX CONCURRENTLY idx_products_expired 
+CREATE INDEX IF NOT EXISTS idx_products_expired 
 ON products (expires_at, seller_id)
 WHERE expires_at < CURRENT_TIMESTAMP AND is_active = true;
 
@@ -281,9 +282,9 @@ CREATE UNIQUE INDEX ON mv_university_stats (university_id);
 CREATE OR REPLACE FUNCTION refresh_marketplace_analytics()
 RETURNS void AS $$
 BEGIN
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_seller_performance;
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_popular_products;
-    REFRESH MATERIALIZED VIEW CONCURRENTLY mv_university_stats;
+    REFRESH MATERIALIZED VIEW mv_seller_performance;
+    REFRESH MATERIALIZED VIEW mv_popular_products;
+    REFRESH MATERIALIZED VIEW mv_university_stats;
 END;
 $$ LANGUAGE plpgsql;
 
