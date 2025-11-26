@@ -25,6 +25,9 @@ FROM eclipse-temurin:21-jre-alpine
 LABEL maintainer="Campus Marketplace Team"
 LABEL description="Campus Marketplace Backend API"
 
+# Install wget for health checks
+RUN apk add --no-cache wget
+
 # Create non-root user for security
 RUN addgroup -S spring && adduser -S spring -G spring
 

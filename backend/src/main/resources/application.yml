@@ -179,6 +179,9 @@ spring:
         jdbc:
           time_zone: UTC
           batch_size: 20
+        dialect:
+          postgres:
+            use_jdbc_metadata_defaults: false
         connection:
           provider_disables_autocommit: true
         cache:

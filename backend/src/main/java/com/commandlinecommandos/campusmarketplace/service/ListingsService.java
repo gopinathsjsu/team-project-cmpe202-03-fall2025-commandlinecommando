@@ -143,6 +143,90 @@ public class ListingsService {
     }
     
     /**
+     * Get listings by seller
+     */
+    public Page<Product> getListingsBySeller(UUID sellerId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        return productRepository.findBySellerUserIdAndIsActiveTrue(sellerId, pageable);
+    }
+
+    /**
+     * Update an existing listing
+     */
+    public Product updateListing(UUID listingId, Map<String, Object> updates, String userId) {
+        Product product = productRepository.findById(listingId)
+            .orElseThrow(() -> new RuntimeException("Listing not found with id: " + listingId));
+
+        // Verify ownership (unless admin)
+        if (!product.getSeller().getUserId().toString().equals(userId)) {
+            throw new RuntimeException("Unauthorized: You can only update your own listings");
+        }
+
+        // Update fields if provided
+        if (updates.containsKey("title")) {
+            product.setTitle((String) updates.get("title"));
+        }
+        if (updates.containsKey("description")) {
+            product.setDescription((String) updates.get("description"));
+        }
+        if (updates.containsKey("price")) {
+            Object priceObj = updates.get("price");
+            if (priceObj instanceof Number) {
+                product.setPrice(BigDecimal.valueOf(((Number) priceObj).doubleValue()));
+            } else if (priceObj instanceof String) {
+                product.setPrice(new BigDecimal((String) priceObj));
+            }
+        }
+        if (updates.containsKey("category")) {
+            String categoryStr = (String) updates.get("category");
+            try {
+                product.setCategory(ProductCategory.valueOf(categoryStr));
+            } catch (IllegalArgumentException e) {
+                // Keep existing category if invalid
+            }
+        }
+        if (updates.containsKey("condition")) {
+            String conditionStr = (String) updates.get("condition");
+            try {
+                product.setCondition(ProductCondition.valueOf(conditionStr));
+            } catch (IllegalArgumentException e) {
+                // Keep existing condition if invalid
+            }
+        }
+        if (updates.containsKey("location")) {
+            product.setPickupLocation((String) updates.get("location"));
+        }
+        if (updates.containsKey("negotiable")) {
+            product.setNegotiable((Boolean) updates.get("negotiable"));
+        }
+        if (updates.containsKey("quantity")) {
+            Object quantityObj = updates.get("quantity");
+            if (quantityObj instanceof Number) {
+                product.setQuantity(((Number) quantityObj).intValue());
+            }
+        }
+
+        return productRepository.save(product);
+    }
+
+    /**
+     * Delete a listing (soft delete by setting isActive to false)
+     */
+    public void deleteListing(UUID listingId, String userId) {
+        Product product = productRepository.findById(listingId)
+            .orElseThrow(() -> new RuntimeException("Listing not found with id: " + listingId));
+
+        // Verify ownership (unless admin)
+        if (!product.getSeller().getUserId().toString().equals(userId)) {
+            throw new RuntimeException("Unauthorized: You can only delete your own listings");
+        }
+
+        // Soft delete
+        product.setActive(false);
+        productRepository.save(product);
+    }
+
+    /**
      * Convert Product to DTO format for API response
      */
     public Map<String, Object> productToDto(Product product) {
@@ -157,10 +241,10 @@ public class ListingsService {
         dto.put("date", product.getPublishedAt() != null ? product.getPublishedAt().toString() : product.getCreatedAt().toString());
         dto.put("createdAt", product.getCreatedAt() != null ? product.getCreatedAt().toString() : "");
         String sellerId = product.getSeller().getUserId() != null ? product.getSeller().getUserId().toString() : "";
-        String sellerName = (product.getSeller().getFirstName() != null ? product.getSeller().getFirstName() : "") + 
+        String sellerName = (product.getSeller().getFirstName() != null ? product.getSeller().getFirstName() : "") +
                            " " + (product.getSeller().getLastName() != null ? product.getSeller().getLastName() : "");
         sellerName = sellerName.trim().isEmpty() ? product.getSeller().getUsername() : sellerName;
-        
+
         dto.put("sellerId", sellerId);
         Map<String, Object> sellerInfo = new HashMap<>();
         sellerInfo.put("id", sellerId);

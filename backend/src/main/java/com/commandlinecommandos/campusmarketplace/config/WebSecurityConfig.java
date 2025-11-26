@@ -90,8 +90,13 @@ public class WebSecurityConfig {
                 // Debug endpoints (admin only, development use)
                 .requestMatchers("/debug/**").hasRole("ADMIN")
                 
-                // Student and Admin endpoints (context path /api is already applied)
+                // Listings endpoints (context path /api is already applied)
+                // Public read access for GET requests
+                .requestMatchers("/listings", "/listings/{id}", "/listings/seller/{sellerId}").permitAll()
+                // Protected write operations require authentication
                 .requestMatchers("/listings/**").hasAnyRole("STUDENT", "ADMIN")
+
+                // Student and Admin endpoints
                 .requestMatchers("/user/**").hasAnyRole("STUDENT", "ADMIN")
 
                 .requestMatchers("/actuator/prometheus").permitAll()
