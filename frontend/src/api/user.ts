@@ -14,16 +14,16 @@ export interface UserProfile {
 }
 
 export async function getProfile() {
-  const res = await api.get('/user/profile')
+  const res = await api.get('/users/profile')
   return res.data
 }
 
 export async function updateProfile(data: Partial<UserProfile>) {
-  const res = await api.put('/user/profile', data)
+  const res = await api.put('/users/profile', data)
   return res.data
 }
 
 export async function changePassword(currentPassword: string, newPassword: string) {
-  const res = await api.put('/user/password', { currentPassword, newPassword })
+  const res = await api.post('/users/change-password', { currentPassword, newPassword })
   return res.data
 }

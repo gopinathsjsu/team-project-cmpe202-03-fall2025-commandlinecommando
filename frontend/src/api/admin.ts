@@ -49,13 +49,17 @@ export async function updateUser(userId: string, data: any) {
 }
 
 export async function getReports(status?: string) {
-  const url = status ? `/admin/reports?status=${status}` : '/admin/reports'
+  const url = status ? `/reports/admin?status=${status}` : '/reports/admin'
   const res = await api.get(url)
   return res.data
 }
 
-export async function updateReport(reportId: number, data: { status: string }) {
-  const res = await api.put(`/admin/reports/${reportId}`, data)
+export async function updateReport(reportId: string, data: { status: string; resolutionNotes?: string }) {
+  // Backend expects PUT /reports/admin/{reportId} with body containing status and notes (not resolutionNotes)
+  const res = await api.put(`/reports/admin/${reportId}`, {
+    status: data.status,
+    notes: data.resolutionNotes || (data.status === 'APPROVED' ? 'Report approved' : data.status === 'REJECTED' ? 'Report rejected' : 'Report flagged')
+  })
   return res.data
 }
 
