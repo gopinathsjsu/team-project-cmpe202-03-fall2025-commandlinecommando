@@ -166,10 +166,14 @@ cd backend
 
 ## Documentation
 
-### Getting Started
+📚 **See [DOCUMENTATION_INDEX.md](DOCUMENTATION_INDEX.md) for complete documentation guide**
+
+### Quick Links
 - **[🚀 Deployment Guide](DEPLOYMENT_GUIDE.md)** - Complete deployment instructions
 - **[📋 Refactoring Summary](REFACTORING_SUMMARY.md)** - Details of the consolidation effort
-- **[📝 Refactor Plan](refactor_plan.md)** - Original refactoring plan
+- **[📖 API Quick Reference](API_QUICK_REFERENCE.md)** - All API endpoints with examples
+- **[🧪 Postman Testing](POSTMAN_QUICK_START.md)** - Postman collection usage guide
+- **[✅ Test Results](POSTMAN_TEST_VERIFICATION.md)** - Latest test results (All passing ✅)
 
 ### Database Documentation
 - **[📚 Team Setup Guide](db/docs/TEAM_SETUP_GUIDE.md)** - Comprehensive setup guide
@@ -178,60 +182,31 @@ cd backend
 - **[🔧 Database Setup](db/docs/DATABASE_SETUP.md)** - Setup instructions
 - **[🚨 Troubleshooting](db/docs/TROUBLESHOOTING.md)** - Common issues
 
-### API Documentation
+### API Endpoints
 All endpoints available at `http://localhost:8080/api`:
 - **Authentication**: `/auth/*` - Login, register, refresh tokens
 - **Users**: `/users/*` - Profile management
 - **Listings**: `/listings/*` - Product listings with search
 - **Reports**: `/reports/*` - Content moderation
-- **Communication**: `/conversations/*`, `/messages/*` - Buyer-seller chat
+- **Communication**: `/chat/*` - Buyer-seller chat and notifications
 - **Orders**: `/orders/*` - Order processing
 - **Admin**: `/admin/*` - Admin operations
 
-## Archived Code
+## Testing
 
-The previous microservices architecture has been archived in `.archive/pre-refactoring-YYYYMMDD/`:
-- `listing-api/` - Old listing microservice (port 8100)
-- `communication/` - Old communication microservice (port 8200)  
-- `sql_files/` - Old manual SQL schemas (replaced by Flyway)
+### Postman Collection
+- **Collection File**: `Campus_Marketplace_Complete_API_Collection.postman_collection.json`
+- **Test Results**: ✅ All 30 tests passing (see [POSTMAN_TEST_VERIFICATION.md](POSTMAN_TEST_VERIFICATION.md))
+- **Quick Start**: See [POSTMAN_QUICK_START.md](POSTMAN_QUICK_START.md)
 
-These are kept for reference but are no longer used in development.
+### Running Tests
+```bash
+# Using Newman (Postman CLI)
+npx newman run Campus_Marketplace_Complete_API_Collection.postman_collection.json
 
-## Summary of areas of contributions : (Per Member)
-
-1. **Setup Environment**
-   ```bash
-   # Start database services
-   docker-compose up -d postgres redis
-   
-   # Wait for services to be ready
-   docker-compose ps
-   ```
-
-2. **Run Migrations** (First time only)
-   ```bash
-   cd backend
-   ./mvnw flyway:migrate
-   ```
-
-3. **Start Development**
-   ```bash
-   # Start unified backend
-   ./mvnw spring-boot:run
-   
-   # Backend available at http://localhost:8080
-   ```
-
-4. **Test API**
-   ```bash
-   # Health check
-   curl http://localhost:8080/api/actuator/health
-   
-   # Register a user
-   curl -X POST http://localhost:8080/api/auth/register \
-     -H "Content-Type: application/json" \
-     -d '{"email":"test@example.com","password":"password123","fullName":"Test User"}'
-   ```
+# Or import collection into Postman app
+# File: Campus_Marketplace_Complete_API_Collection.postman_collection.json
+```
 
 ## Troubleshooting
 
@@ -239,6 +214,7 @@ These are kept for reference but are no longer used in development.
 1. **Port 8080 already in use**: Stop other services or change port in `application.yml`
 2. **Database connection failed**: Ensure PostgreSQL is running: `docker-compose ps`
 3. **Migration failed**: Check Flyway status: `./mvnw flyway:info`
+4. **PostgreSQL role doesn't exist**: Run `./create-db-user.sh` to create `cm_app_user`
 
 ### Quick Fixes
 ```bash
@@ -258,12 +234,10 @@ cd backend && ./mvnw flyway:migrate
 
 The previous microservices architecture has been archived in `.archive/pre-refactoring-YYYYMMDD/`:
 - `listing-api/` - Old listing microservice (port 8100)
-- `communication/` - Old communication microservice (port 8200)
+- `communication/` - Old communication microservice (port 8200)  
 - `sql_files/` - Old manual SQL schemas (replaced by Flyway)
 
 These are kept for reference but are no longer used in development.
-
-## Summary of areas of contributions : (Per Member)
 
 ## Link to Project Journal
 
