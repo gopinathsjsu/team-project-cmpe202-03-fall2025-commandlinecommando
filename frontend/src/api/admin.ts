@@ -33,3 +33,29 @@ export async function deleteUser(userId: string): Promise<any> {
   return res.data
 }
 
+export async function getAnalytics() {
+  const res = await api.get('/admin/analytics')
+  return res.data
+}
+
+export async function getUser(userId: string) {
+  const res = await api.get(`/admin/users/${userId}`)
+  return res.data
+}
+
+export async function updateUser(userId: string, data: any) {
+  const res = await api.put(`/admin/users/${userId}`, data)
+  return res.data
+}
+
+export async function getReports(status?: string) {
+  const url = status ? `/admin/reports?status=${status}` : '/admin/reports'
+  const res = await api.get(url)
+  return res.data
+}
+
+export async function updateReport(reportId: number, data: { status: string }) {
+  const res = await api.put(`/admin/reports/${reportId}`, data)
+  return res.data
+}
+

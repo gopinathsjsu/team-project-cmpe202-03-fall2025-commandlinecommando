@@ -1,231 +1,252 @@
-
 import React, { useState, useEffect } from 'react';
 import { LoginForm } from './components/LoginForm';
 import { RegisterForm } from './components/RegisterForm';
 import { ForgotPasswordForm } from './components/ForgotPasswordForm';
-import { ImageWithFallback } from './components/figma/ImageWithFallback';
-import { ShoppingBag, BookOpen, Users, ArrowRight } from 'lucide-react';
+import { ThemeToggle } from './components/ThemeToggle';
 import { MarketplacePage } from './components/MarketplacePage';
 import { ReportListingPage } from './components/ReportListingPage';
 import { AdminDashboard } from './components/AdminDashboard';
+import { AskAIPage } from './components/AskAIPage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { useAuth } from './context/AuthContext';
 
 export default function App() {
-  const { isAuthenticated, user, isLoading } = useAuth()
-  const [currentPage, setCurrentPage] = useState<'login' | 'register' | 'forgot-password' | 'marketplace' | 'reports' | 'admin'>('login');
+  const { isAuthenticated, user, isLoading } = useAuth();
+  type PageType = 'login' | 'register' | 'forgot-password' | 'marketplace' | 'reports' | 'admin' | 'ask-ai';
+  const [currentPage, setCurrentPage] = useState<PageType>('login');
 
-  // Auto-navigate based on authentication state
   useEffect(() => {
     if (isAuthenticated && user) {
       if (user.role === 'ADMIN') {
-        setCurrentPage('admin')
+        setCurrentPage('admin');
       } else {
-        setCurrentPage('marketplace')
+        setCurrentPage('marketplace');
       }
     } else if (!isLoading) {
-      setCurrentPage('login')
+      setCurrentPage('login');
     }
-  }, [isAuthenticated, user, isLoading])
+  }, [isAuthenticated, user, isLoading]);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <div className="relative w-20 h-20 mx-auto mb-6">
+            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[hsl(var(--primary))] animate-spin"></div>
+            <div className="absolute inset-2 rounded-full border-4 border-transparent border-t-[hsl(var(--secondary))] animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
+            <div className="absolute inset-4 rounded-full gradient-primary opacity-20"></div>
+          </div>
+          <p className="text-muted text-lg">Loading CampusConnect...</p>
         </div>
       </div>
-    )
+    );
   }
 
-  // Landing/Login Page
   if (currentPage === 'login') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
-        {/* Header with Logo */}
-        <header className="absolute top-0 left-0 right-0 z-10 p-6">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#0055A2] to-[#003d75] rounded-xl flex items-center justify-center shadow-lg">
-              <ShoppingBag className="w-6 h-6 text-white" />
+      <div className="min-h-screen relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 via-purple-500/10 to-pink-500/20 dark:from-indigo-900/40 dark:via-purple-900/30 dark:to-pink-900/40"></div>
+        <div className="absolute top-20 -left-20 w-72 h-72 bg-purple-500/30 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div className="absolute bottom-20 -right-20 w-96 h-96 bg-indigo-500/30 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-indigo-500/10 to-purple-500/10 rounded-full blur-3xl"></div>
+        
+        <header className="absolute top-0 left-0 right-0 z-20 p-6">
+          <div className="flex items-center justify-between max-w-7xl mx-auto">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl gradient-primary flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold gradient-text">CampusConnect</h1>
+                <p className="text-sm text-muted">Campus Marketplace</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl text-[#0055A2] tracking-tight">CampusConnect</h1>
-              <p className="text-xs text-gray-500">Campus Marketplace</p>
-            </div>
+            <ThemeToggle />
           </div>
         </header>
 
-        {/* Main Content */}
-        <div className="min-h-screen flex items-center justify-center p-6 pt-24">
-          <div className="w-full max-w-7xl mx-auto">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              
-              {/* Left Column - Marketing Message */}
+        <div className="min-h-screen flex items-center justify-center p-6 pt-28 relative z-10">
+          <div className="w-full max-w-6xl mx-auto">
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
               <div className="space-y-8 text-center lg:text-left">
                 <div className="space-y-6">
-                  <div className="inline-flex items-center space-x-2 bg-[#E5A823]/10 text-[#B8860B] px-4 py-2 rounded-full border border-[#E5A823]/20">
-                    <Users className="w-4 h-4" />
-                    <span className="text-sm">Student Community</span>
+                  <div className="inline-flex items-center gap-2 glass-card px-4 py-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                    <span className="text-sm font-medium">Student Community</span>
                   </div>
                   
-                  <h2 className="text-4xl lg:text-5xl text-gray-900 leading-tight">
-                    Buy and sell easily within your 
-                    <span className="text-[#0055A2] block">campus community</span>
+                  <h2 className="text-5xl lg:text-6xl font-bold leading-tight">
+                    <span className="gradient-text">Buy & Sell</span>
+                    <br />
+                    <span className="text-[hsl(var(--foreground))]">Within Your Campus</span>
                   </h2>
                   
-                  <p className="text-lg text-gray-600 max-w-lg mx-auto lg:mx-0">
+                  <p className="text-lg text-muted max-w-lg mx-auto lg:mx-0">
                     Connect with fellow students to trade textbooks, electronics, furniture, and more. 
                     Safe, convenient, and campus-exclusive.
                   </p>
                 </div>
 
-                {/* Hero Image */}
-                <div className="relative">
-                  <div className="relative rounded-2xl overflow-hidden shadow-2xl">
-                    <ImageWithFallback
-                      src="https://images.unsplash.com/photo-1661009540490-315d16770038?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb2xsZWdlJTIwc3R1ZGVudHMlMjBjYW1wdXMlMjBtYXJrZXRwbGFjZSUyMGJvb2tzfGVufDF8fHx8MTc1OTcxMTEzN3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral"
-                      alt="Students on campus with books and laptops"
-                      className="w-full h-80 object-cover"
-                    />
-                    {/* Gradient Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-tr from-[#0055A2]/20 to-transparent"></div>
-                  </div>
-                  
-                  {/* Floating Feature Cards */}
-                  <div className="absolute -bottom-4 -left-4 bg-white rounded-xl shadow-lg p-4 border border-gray-100">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                        <BookOpen className="w-5 h-5 text-green-600" />
+                <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
+                  <div className="glass-card px-5 py-4 card-hover">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                        <svg className="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                        </svg>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-900">Textbooks</p>
-                        <p className="text-xs text-gray-500">Save up to 70%</p>
+                        <p className="font-semibold">Textbooks</p>
+                        <p className="text-sm text-muted">Save up to 70%</p>
                       </div>
                     </div>
                   </div>
                   
-                  <div className="absolute -top-4 -right-4 bg-white rounded-xl shadow-lg p-4 border border-gray-100">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <ShoppingBag className="w-5 h-5 text-blue-600" />
+                  <div className="glass-card px-5 py-4 card-hover">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                        <svg className="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-900">Electronics</p>
-                        <p className="text-xs text-gray-500">Trusted sellers</p>
+                        <p className="font-semibold">Electronics</p>
+                        <p className="text-sm text-muted">Verified sellers</p>
                       </div>
                     </div>
+                  </div>
+                  
+                  <div className="glass-card px-5 py-4 card-hover">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                        <svg className="w-6 h-6 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="font-semibold">Furniture</p>
+                        <p className="text-sm text-muted">Local pickup</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 justify-center lg:justify-start">
+                  <div className="flex -space-x-3">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="w-10 h-10 rounded-full gradient-primary border-2 border-[hsl(var(--background))] flex items-center justify-center text-white text-xs font-bold">
+                        {String.fromCharCode(64 + i)}
+                      </div>
+                    ))}
+                  </div>
+                  <div>
+                    <p className="font-semibold">2,500+ Students</p>
+                    <p className="text-sm text-muted">Already trading safely</p>
                   </div>
                 </div>
               </div>
 
-              {/* Right Column - Login Form */}
               <div className="flex justify-center lg:justify-end">
-                <div className="w-full max-w-md">
-                  <LoginForm 
-                    onLogin={() => {
-                      if (user?.role === 'ADMIN') setCurrentPage('admin')
-                      else setCurrentPage('marketplace')
-                    }}
-                    onSignUp={() => setCurrentPage('register')}
-                    onForgotPassword={() => setCurrentPage('forgot-password')}
-                  />
-                  
-                  {/* Additional CTA */}
-                  <div className="mt-6 text-center">
-                    <p className="text-sm text-gray-500 mb-3">
-                      Join thousands of SJSU students already trading safely
-                    </p>
-                    <div className="flex items-center justify-center space-x-2 text-[#0055A2] hover:text-[#003d75] cursor-pointer transition-colors">
-                      <span className="text-sm">Learn more about safety</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </div>
-                  </div>
-                </div>
+                <LoginForm 
+                  onLogin={() => {
+                    if (user?.role === 'ADMIN') setCurrentPage('admin');
+                    else setCurrentPage('marketplace');
+                  }}
+                  onSignUp={() => setCurrentPage('register')}
+                  onForgotPassword={() => setCurrentPage('forgot-password')}
+                />
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Background Decorative Elements */}
-        <div className="fixed top-0 left-0 w-full h-full pointer-events-none overflow-hidden">
-          <div className="absolute top-20 right-10 w-32 h-32 bg-[#E5A823]/5 rounded-full"></div>
-          <div className="absolute bottom-20 left-10 w-48 h-48 bg-[#0055A2]/5 rounded-full"></div>
-          <div className="absolute top-1/2 left-1/4 w-16 h-16 bg-[#E5A823]/10 rounded-full"></div>
         </div>
       </div>
     );
   }
 
-  // Registration Page
   if (currentPage === 'register') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
-        {/* Header with Logo */}
-        <header className="absolute top-0 left-0 right-0 z-10 p-6">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#0055A2] to-[#003d75] rounded-xl flex items-center justify-center shadow-lg">
-              <ShoppingBag className="w-6 h-6 text-white" />
+      <div className="min-h-screen relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 via-pink-500/10 to-orange-500/20 dark:from-purple-900/40 dark:via-pink-900/30 dark:to-orange-900/40"></div>
+        <div className="absolute top-40 -right-20 w-80 h-80 bg-pink-500/30 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div className="absolute bottom-40 -left-20 w-72 h-72 bg-purple-500/30 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1s' }}></div>
+        
+        <header className="absolute top-0 left-0 right-0 z-20 p-6">
+          <div className="flex items-center justify-between max-w-7xl mx-auto">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl gradient-accent flex items-center justify-center shadow-lg shadow-purple-500/30">
+                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold gradient-text">CampusConnect</h1>
+                <p className="text-sm text-muted">Campus Marketplace</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl text-[#0055A2] tracking-tight">CampusConnect</h1>
-              <p className="text-xs text-gray-500">Campus Marketplace</p>
-            </div>
+            <ThemeToggle />
           </div>
         </header>
 
-        <div className="min-h-screen flex items-center justify-center p-6 pt-24">
-          <div className="w-full max-w-md">
-            <RegisterForm 
-              onRegister={(role) => {
-                // Use the role from the callback, or fall back to user state
-                const userRole = role || user?.role
-                if (userRole === 'ADMIN') {
-                  setCurrentPage('admin')
-                } else {
-                  setCurrentPage('marketplace')
-                }
-              }}
-              onBackToLogin={() => setCurrentPage('login')}
-            />
-          </div>
+        <div className="min-h-screen flex items-center justify-center p-6 pt-28 relative z-10">
+          <RegisterForm 
+            onRegister={(role) => {
+              const userRole = role || user?.role;
+              if (userRole === 'ADMIN') {
+                setCurrentPage('admin');
+              } else {
+                setCurrentPage('marketplace');
+              }
+            }}
+            onBackToLogin={() => setCurrentPage('login')}
+          />
         </div>
       </div>
     );
   }
 
-  // Forgot Password Page
   if (currentPage === 'forgot-password') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
-        {/* Header with Logo */}
-        <header className="absolute top-0 left-0 right-0 z-10 p-6">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#0055A2] to-[#003d75] rounded-xl flex items-center justify-center shadow-lg">
-              <ShoppingBag className="w-6 h-6 text-white" />
+      <div className="min-h-screen relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-500/20 via-orange-500/10 to-red-500/20 dark:from-amber-900/40 dark:via-orange-900/30 dark:to-red-900/40"></div>
+        <div className="absolute top-20 left-20 w-64 h-64 bg-amber-500/30 rounded-full blur-3xl animate-pulse-slow"></div>
+        <div className="absolute bottom-20 right-20 w-80 h-80 bg-orange-500/30 rounded-full blur-3xl animate-pulse-slow" style={{ animationDelay: '1.5s' }}></div>
+        
+        <header className="absolute top-0 left-0 right-0 z-20 p-6">
+          <div className="flex items-center justify-between max-w-7xl mx-auto">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/30">
+                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold gradient-text">CampusConnect</h1>
+                <p className="text-sm text-muted">Campus Marketplace</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl text-[#0055A2] tracking-tight">CampusConnect</h1>
-              <p className="text-xs text-gray-500">Campus Marketplace</p>
-            </div>
+            <ThemeToggle />
           </div>
         </header>
 
-        <div className="min-h-screen flex items-center justify-center p-6 pt-24">
-          <div className="w-full max-w-md">
-            <ForgotPasswordForm 
-              onBackToLogin={() => setCurrentPage('login')}
-              onResetSuccess={() => setCurrentPage('login')}
-            />
-          </div>
+        <div className="min-h-screen flex items-center justify-center p-6 pt-28 relative z-10">
+          <ForgotPasswordForm 
+            onBackToLogin={() => setCurrentPage('login')}
+            onResetSuccess={() => setCurrentPage('login')}
+          />
         </div>
       </div>
     );
   }
 
-  // Other Pages with Navigation
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
+      {currentPage === 'ask-ai' && (
+        <ProtectedRoute>
+          <AskAIPage />
+        </ProtectedRoute>
+      )}
       {currentPage === 'marketplace' && (
         <ProtectedRoute>
           <MarketplacePage />
@@ -242,36 +263,49 @@ export default function App() {
         </ProtectedRoute>
       )}
       
-      {/* Navigation Switcher - Demo Only */}
-      <div className="fixed bottom-4 right-4 z-50 bg-white rounded-lg shadow-lg border border-gray-200 p-4">
-        <p className="text-sm text-gray-600 mb-2">Demo Navigation:</p>
-        <div className="flex gap-2 flex-wrap">
+      <div className="fixed bottom-4 sm:bottom-6 left-4 right-4 sm:right-auto sm:left-6 z-50 glass-card p-3 sm:p-4 shadow-xl">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
           <button
-            className={`px-3 py-1 rounded font-medium border ${currentPage === 'login' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
-            onClick={() => {
-              setCurrentPage('login');
-            }}
+            className={`px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 ${
+              currentPage === 'ask-ai' 
+                ? 'gradient-primary text-white shadow-lg shadow-indigo-500/30' 
+                : 'glass-button'
+            }`}
+            onClick={() => setCurrentPage('ask-ai')}
           >
-            Logout
+            Ask AI
           </button>
           <button
-            className={`px-3 py-1 rounded font-medium border ${currentPage === 'marketplace' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+            className={`px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 ${
+              currentPage === 'marketplace' 
+                ? 'gradient-primary text-white shadow-lg shadow-indigo-500/30' 
+                : 'glass-button'
+            }`}
             onClick={() => setCurrentPage('marketplace')}
           >
             Marketplace
           </button>
           <button
-            className={`px-3 py-1 rounded font-medium border ${currentPage === 'admin' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+            className={`px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 ${
+              currentPage === 'admin' 
+                ? 'gradient-primary text-white shadow-lg shadow-indigo-500/30' 
+                : 'glass-button'
+            }`}
             onClick={() => setCurrentPage('admin')}
           >
             Admin
           </button>
           <button
-            className={`px-3 py-1 rounded font-medium border ${currentPage === 'reports' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
+            className={`px-2 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all duration-300 ${
+              currentPage === 'reports' 
+                ? 'gradient-primary text-white shadow-lg shadow-indigo-500/30' 
+                : 'glass-button'
+            }`}
             onClick={() => setCurrentPage('reports')}
           >
             Reports
           </button>
+          <ThemeToggle />
         </div>
       </div>
     </div>

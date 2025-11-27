@@ -12,3 +12,8 @@ export async function getStudentDashboard(): Promise<StudentDashboard> {
   return res.data
 }
 
+export async function getMyListings() {
+  const res = await api.get('/student/my-listings')
+  return res.data
+}
+

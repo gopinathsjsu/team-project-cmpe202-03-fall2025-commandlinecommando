@@ -63,3 +63,63 @@ export async function searchListings(params: {
   const res = await api.get(`/student/listings/search?${queryParams.toString()}`)
   return res.data
 }
+
+export async function getListing(id: string) {
+  const res = await api.get(`/student/listings/${id}`)
+  return res.data
+}
+
+export async function updateListing(id: string, data: Partial<Listing>) {
+  const res = await api.put(`/student/listings/${id}`, data)
+  return res.data
+}
+
+export async function deleteListing(id: string) {
+  const res = await api.delete(`/student/listings/${id}`)
+  return res.data
+}
+
+export async function toggleFavorite(id: string) {
+  const res = await api.post(`/student/listings/${id}/favorite`)
+  return res.data
+}
+
+export async function getFavorites() {
+  const res = await api.get('/student/favorites')
+  return res.data
+}
+
+export async function reportListing(id: string, data: { reportType: string; description: string }) {
+  const res = await api.post(`/student/listings/${id}/report`, data)
+  return res.data
+}
+
+export async function getTrending(limit = 10) {
+  const res = await api.get(`/discovery/trending?limit=${limit}`)
+  return res.data
+}
+
+export async function getRecommended(limit = 10) {
+  const res = await api.get(`/discovery/recommended?limit=${limit}`)
+  return res.data
+}
+
+export async function getSimilar(productId: string, limit = 5) {
+  const res = await api.get(`/discovery/similar/${productId}?limit=${limit}`)
+  return res.data
+}
+
+export async function getRecentlyViewed(limit = 10) {
+  const res = await api.get(`/discovery/recently-viewed?limit=${limit}`)
+  return res.data
+}
+
+export async function autocomplete(query: string) {
+  const res = await api.get(`/search/autocomplete?q=${encodeURIComponent(query)}`)
+  return res.data
+}
+
+export async function getSearchHistory(limit = 10) {
+  const res = await api.get(`/search/history?limit=${limit}`)
+  return res.data
+}
