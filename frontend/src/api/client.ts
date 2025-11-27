@@ -1,8 +1,8 @@
 import axios from 'axios'
 
 // Vite exposes env vars on import.meta.env
-const baseURL = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE_URL)
-  ? String(import.meta.env.VITE_API_BASE_URL)
+const baseURL = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_BACKEND_API_BASE_URL)
+  ? String(import.meta.env.VITE_BACKEND_API_BASE_URL)
   : 'http://localhost:8080/api'
 
 const api = axios.create({
