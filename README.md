@@ -182,6 +182,10 @@ cd backend
 - **[🔧 Database Setup](db/docs/DATABASE_SETUP.md)** - Setup instructions
 - **[🚨 Troubleshooting](db/docs/TROUBLESHOOTING.md)** - Common issues
 
+### AWS Deployment
+- **[☁️ EC2 Deployment Guide](docs/deployment/AWS_EC2_DEPLOYMENT.md)** - Complete AWS EC2 deployment guide
+- **[✅ EC2 Readiness Assessment](docs/deployment/EC2_DEPLOYMENT_READINESS.md)** - Deployment readiness checklist
+
 ### Scripts
 - **[📜 Scripts README](scripts/README.md)** - Utility scripts documentation
 - **create-db-user.sh** - Create PostgreSQL user
