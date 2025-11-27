@@ -1,56 +1,100 @@
 package com.commandlinecommandos.campusmarketplace.controller;
 
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
-import com.commandlinecommandos.campusmarketplace.security.RequireRole;
+import com.commandlinecommandos.campusmarketplace.model.ModerationStatus;
 import com.commandlinecommandos.campusmarketplace.model.UserRole;
+import com.commandlinecommandos.campusmarketplace.repository.ProductRepository;
+import com.commandlinecommandos.campusmarketplace.repository.UserRepository;
+import com.commandlinecommandos.campusmarketplace.repository.UserReportRepository;
+import com.commandlinecommandos.campusmarketplace.security.RequireRole;
+import com.commandlinecommandos.campusmarketplace.service.ListingsService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/admin")
 @CrossOrigin(origins = "*", maxAge = 3600)
 public class AdminController {
     
+    @Autowired
+    private UserRepository userRepository;
+    
+    @Autowired
+    private ProductRepository productRepository;
+    
+    @Autowired
+    private UserReportRepository reportRepository;
+    
+    
+    /**
+     * Get admin dashboard with real statistics
+     */
     @GetMapping("/dashboard")
     @RequireRole(UserRole.ADMIN)
     public ResponseEntity<?> getAdminDashboard() {
         Map<String, Object> dashboard = new HashMap<>();
         dashboard.put("message", "Admin dashboard loaded");
-        dashboard.put("totalUsers", 150);
-        dashboard.put("totalListings", 450);
-        dashboard.put("pendingApprovals", 12);
-        dashboard.put("pendingReports", 3);
+        
+        // Total users
+        dashboard.put("totalUsers", userRepository.count());
+        
+        // Total listings (all products)
+        dashboard.put("totalListings", productRepository.count());
+        
+        // Pending approvals (products with PENDING moderation status)
+        dashboard.put("pendingApprovals", productRepository.findByModerationStatus(ModerationStatus.PENDING).size());
+        
+        // Pending reports
+        dashboard.put("pendingReports", reportRepository.countByStatus(ModerationStatus.PENDING));
+        
         return ResponseEntity.ok(dashboard);
     }
     
-    @GetMapping("/users")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> getAllUsers() {
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", "Admin access: All users data");
-        response.put("userCount", 150);
-        return ResponseEntity.ok(response);
-    }
-    
+    /**
+     * Moderate a listing (approve/reject/flag)
+     */
     @PostMapping("/moderate/{listingId}")
     @RequireRole(UserRole.ADMIN)
-    public ResponseEntity<?> moderateListing(@PathVariable Long listingId, @RequestParam String action) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", String.format("Listing %d has been %s", listingId, action));
-        response.put("listingId", listingId);
-        response.put("action", action);
-        return ResponseEntity.ok(response);
-    }
-    
-    @DeleteMapping("/users/{userId}")
-    @RequireRole(UserRole.ADMIN)
-    public ResponseEntity<?> deleteUser(@PathVariable Long userId) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("message", String.format("User %d has been deleted", userId));
-        response.put("userId", userId);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<?> moderateListing(
+            @PathVariable UUID listingId, 
+            @RequestParam String action) {
+        try {
+            var product = productRepository.findById(listingId)
+                .orElseThrow(() -> new RuntimeException("Listing not found"));
+            
+            ModerationStatus newStatus;
+            switch (action.toLowerCase()) {
+                case "approve":
+                    newStatus = ModerationStatus.APPROVED;
+                    break;
+                case "reject":
+                    newStatus = ModerationStatus.REJECTED;
+                    break;
+                case "flag":
+                    newStatus = ModerationStatus.FLAGGED;
+                    break;
+                default:
+                    return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Invalid action. Use: approve, reject, or flag"));
+            }
+            
+            product.setModerationStatus(newStatus);
+            productRepository.save(product);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", String.format("Listing %s has been %s", listingId, action + "d"));
+            response.put("listingId", listingId.toString());
+            response.put("action", action);
+            response.put("status", newStatus.toString());
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", "Failed to moderate listing", "message", e.getMessage()));
+        }
     }
 }

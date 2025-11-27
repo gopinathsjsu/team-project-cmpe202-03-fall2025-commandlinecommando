@@ -10,8 +10,11 @@ import com.commandlinecommandos.campusmarketplace.service.ReportService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -44,17 +47,34 @@ public class ReportController {
      * Submit a report
      */
     @PostMapping
-    public ResponseEntity<UserReport> submitReport(@Valid @RequestBody SubmitReportRequest request,
+    public ResponseEntity<?> submitReport(@Valid @RequestBody SubmitReportRequest request,
                                                    Authentication auth) {
-        User reporter = getCurrentUser(auth);
-        UserReport report = reportService.submitReport(
-            reporter,
-            request.getReportType(),
-            request.getTargetId(),
-            request.getReason(),
-            request.getDescription()
-        );
-        return ResponseEntity.ok(report);
+        try {
+            User reporter = getCurrentUser(auth);
+            UserReport report = reportService.submitReport(
+                reporter,
+                request.getReportType(),
+                request.getTargetId(),
+                request.getReason(),
+                request.getDescription()
+            );
+            
+            // Return a simplified response to avoid Hibernate proxy serialization issues
+            Map<String, Object> response = new HashMap<>();
+            response.put("reportId", report.getReportId() != null ? report.getReportId().toString() : null);
+            response.put("reportType", report.getReportType());
+            response.put("reason", report.getReason());
+            response.put("description", report.getDescription());
+            response.put("status", report.getStatus() != null ? report.getStatus().toString() : "PENDING");
+            response.put("priority", report.getPriority());
+            response.put("createdAt", report.getCreatedAt());
+            response.put("reportedEntityId", report.getReportedEntityId() != null ? report.getReportedEntityId().toString() : null);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Failed to create report", "message", e.getMessage()));
+        }
     }
     
     /**
@@ -159,5 +179,94 @@ public class ReportController {
         stats.put("pendingCount", reportService.countPendingReports());
         stats.put("highPriorityCount", reportService.countHighPriorityReports());
         return ResponseEntity.ok(stats);
+    }
+    
+    /**
+     * Admin: Get all reports (frontend expects GET /admin/reports)
+     */
+    @GetMapping("/admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getAllReports(
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            Authentication auth) {
+        try {
+            Pageable pageable = PageRequest.of(page, size);
+            Page<UserReport> reports;
+            
+            if (status != null && !status.isEmpty()) {
+                try {
+                    ModerationStatus reportStatus = ModerationStatus.valueOf(status.toUpperCase());
+                    reports = reportService.getReportsByStatus(reportStatus, pageable);
+                } catch (IllegalArgumentException e) {
+                    return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Invalid status", "validStatuses", 
+                            List.of("PENDING", "APPROVED", "REJECTED", "FLAGGED")));
+                }
+            } else {
+                // Return all reports, ordered by created date
+                reports = reportService.getAllReports(pageable);
+            }
+            
+            // Convert Page to Map for proper JSON serialization
+            Map<String, Object> response = new HashMap<>();
+            response.put("content", reports.getContent());
+            response.put("totalElements", reports.getTotalElements());
+            response.put("totalPages", reports.getTotalPages());
+            response.put("number", reports.getNumber());
+            response.put("size", reports.getSize());
+            response.put("first", reports.isFirst());
+            response.put("last", reports.isLast());
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Failed to retrieve reports", "message", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Admin: Update report status (frontend expects PUT /admin/reports/{reportId})
+     */
+    @PutMapping("/admin/{reportId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> updateReport(
+            @PathVariable UUID reportId,
+            @RequestBody Map<String, String> body,
+            Authentication auth) {
+        try {
+            User admin = getCurrentUser(auth);
+            String status = body.get("status");
+            
+            if (status == null) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Status is required"));
+            }
+            
+            UserReport report = reportService.getReport(reportId);
+            String notes = body.getOrDefault("notes", "");
+            
+            switch (status.toUpperCase()) {
+                case "APPROVED":
+                    report = reportService.approveReport(reportId, admin, notes);
+                    break;
+                case "REJECTED":
+                    report = reportService.rejectReport(reportId, admin, notes);
+                    break;
+                case "FLAGGED":
+                    report = reportService.flagReport(reportId, admin, notes);
+                    break;
+                default:
+                    return ResponseEntity.badRequest()
+                        .body(Map.of("error", "Invalid status", "validStatuses", 
+                            List.of("APPROVED", "REJECTED", "FLAGGED")));
+            }
+            
+            return ResponseEntity.ok(report);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Failed to update report", "message", e.getMessage()));
+        }
     }
 }

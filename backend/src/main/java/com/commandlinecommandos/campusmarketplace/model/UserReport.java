@@ -1,5 +1,6 @@
 package com.commandlinecommandos.campusmarketplace.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import org.hibernate.annotations.CreationTimestamp;
@@ -22,6 +23,7 @@ import java.util.UUID;
     @Index(name = "idx_user_reports_status", columnList = "status"),
     @Index(name = "idx_user_reports_created", columnList = "created_at")
 })
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class UserReport {
     
     @Id
@@ -32,18 +34,25 @@ public class UserReport {
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reporter_id", nullable = false)
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "passwordHash", "preferences"})
     private User reporter;
     
     @NotNull
     @Column(name = "report_type", nullable = false, length = 50)
     private String reportType; // PRODUCT, USER, REVIEW, MESSAGE
     
+    @NotNull
+    @Column(name = "reported_entity_id", nullable = false)
+    private UUID reportedEntityId; // Generic entity ID (required by DB)
+    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reported_product_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "seller", "university"})
     private Product reportedProduct;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reported_user_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "passwordHash", "preferences"})
     private User reportedUser;
     
     @Column(name = "reported_review_id")
@@ -68,6 +77,7 @@ public class UserReport {
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reviewed_by_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "passwordHash", "preferences"})
     private User reviewedBy;
     
     @Column(name = "resolution_notes", columnDefinition = "TEXT")
@@ -91,6 +101,15 @@ public class UserReport {
     public UserReport(User reporter, String reportType, String reason, String description) {
         this.reporter = reporter;
         this.reportType = reportType;
+        this.reason = reason;
+        this.description = description;
+        this.status = ModerationStatus.PENDING;
+    }
+    
+    public UserReport(User reporter, String reportType, UUID reportedEntityId, String reason, String description) {
+        this.reporter = reporter;
+        this.reportType = reportType;
+        this.reportedEntityId = reportedEntityId;
         this.reason = reason;
         this.description = description;
         this.status = ModerationStatus.PENDING;
@@ -145,6 +164,14 @@ public class UserReport {
     
     public void setReportType(String reportType) {
         this.reportType = reportType;
+    }
+    
+    public UUID getReportedEntityId() {
+        return reportedEntityId;
+    }
+    
+    public void setReportedEntityId(UUID reportedEntityId) {
+        this.reportedEntityId = reportedEntityId;
     }
     
     public Product getReportedProduct() {

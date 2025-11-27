@@ -2,7 +2,10 @@ package com.commandlinecommandos.campusmarketplace.controller;
 
 import com.commandlinecommandos.campusmarketplace.model.UserRole;
 import com.commandlinecommandos.campusmarketplace.model.VerificationStatus;
+import com.commandlinecommandos.campusmarketplace.model.ModerationStatus;
 import com.commandlinecommandos.campusmarketplace.repository.UserRepository;
+import com.commandlinecommandos.campusmarketplace.repository.ProductRepository;
+import com.commandlinecommandos.campusmarketplace.repository.UserReportRepository;
 import com.commandlinecommandos.campusmarketplace.repository.LoginAttemptRepository;
 import com.commandlinecommandos.campusmarketplace.repository.AuditLogRepository;
 import com.commandlinecommandos.campusmarketplace.security.RequireRole;
@@ -14,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,6 +32,12 @@ public class AdminAnalyticsController {
     
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private ProductRepository productRepository;
+    
+    @Autowired
+    private UserReportRepository reportRepository;
     
     @Autowired
     private LoginAttemptRepository loginAttemptRepository;
@@ -244,6 +254,75 @@ public class AdminAnalyticsController {
             logger.error("Error getting dashboard data", e);
             return ResponseEntity.internalServerError()
                 .body(Map.of("error", "Failed to retrieve dashboard", "message", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Get analytics endpoint matching frontend expectations
+     * Frontend calls GET /admin/analytics
+     */
+    @GetMapping
+    @RequireRole(UserRole.ADMIN)
+    public ResponseEntity<?> getAnalytics() {
+        try {
+            Map<String, Object> analytics = new HashMap<>();
+            
+            // User statistics
+            analytics.put("totalUsers", userRepository.count());
+            analytics.put("activeUsers", userRepository.findByIsActiveTrue().size());
+            
+            // Product/Listing statistics
+            long totalProducts = productRepository.count();
+            long activeListings = productRepository.findByModerationStatus(ModerationStatus.APPROVED).size();
+            analytics.put("totalProducts", totalProducts);
+            analytics.put("activeListings", activeListings);
+            
+            // Order statistics (placeholder - orders not fully implemented)
+            analytics.put("totalOrders", 0L);
+            analytics.put("completedOrders", 0L);
+            
+            // Report statistics
+            analytics.put("pendingReports", reportRepository.countByStatus(ModerationStatus.PENDING));
+            
+            // Revenue (placeholder)
+            analytics.put("revenue", 0.0);
+            
+            // Popular categories (placeholder - can be enhanced)
+            analytics.put("popularCategories", List.of());
+            
+            // Recent activity
+            Map<String, Object> recentActivity = new HashMap<>();
+            LocalDateTime today = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0);
+            LocalDateTime weekAgo = LocalDateTime.now().minusDays(7);
+            
+            long newUsersToday = userRepository.findAll().stream()
+                .filter(u -> u.getCreatedAt() != null && u.getCreatedAt().isAfter(today))
+                .count();
+            long newUsersThisWeek = userRepository.findAll().stream()
+                .filter(u -> u.getCreatedAt() != null && u.getCreatedAt().isAfter(weekAgo))
+                .count();
+            
+            recentActivity.put("newUsersToday", newUsersToday);
+            recentActivity.put("newUsersThisWeek", newUsersThisWeek);
+            recentActivity.put("newListingsToday", 0L);
+            recentActivity.put("newListingsThisWeek", 0L);
+            recentActivity.put("ordersToday", 0L);
+            recentActivity.put("ordersThisWeek", 0L);
+            
+            analytics.put("recentActivity", recentActivity);
+            
+            // Monthly growth (placeholder)
+            Map<String, Object> monthlyGrowth = new HashMap<>();
+            monthlyGrowth.put("users", 0.0);
+            monthlyGrowth.put("listings", 0.0);
+            monthlyGrowth.put("orders", 0.0);
+            analytics.put("monthlyGrowth", monthlyGrowth);
+            
+            return ResponseEntity.ok(analytics);
+        } catch (Exception e) {
+            logger.error("Error getting analytics", e);
+            return ResponseEntity.internalServerError()
+                .body(Map.of("error", "Failed to retrieve analytics", "message", e.getMessage()));
         }
     }
 }

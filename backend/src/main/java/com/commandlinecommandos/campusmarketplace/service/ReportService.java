@@ -37,7 +37,8 @@ public class ReportService {
      */
     public UserReport submitReport(User reporter, String reportType, UUID targetId, 
                                    String reason, String description) {
-        UserReport report = new UserReport(reporter, reportType, reason, description);
+        // Create report with reportedEntityId (required by DB)
+        UserReport report = new UserReport(reporter, reportType, targetId, reason, description);
         
         // Set the reported entity based on type
         switch (reportType.toUpperCase()) {
@@ -164,6 +165,13 @@ public class ReportService {
      */
     public long countHighPriorityReports() {
         return reportRepository.countByStatusAndPriority(ModerationStatus.PENDING, "HIGH");
+    }
+    
+    /**
+     * Get all reports with pagination
+     */
+    public Page<UserReport> getAllReports(Pageable pageable) {
+        return reportRepository.findAll(pageable);
     }
     
     /**
