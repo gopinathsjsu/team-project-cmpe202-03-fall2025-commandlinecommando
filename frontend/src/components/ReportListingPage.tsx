@@ -53,8 +53,8 @@ function formatDate(dateString: string) {
 }
 
 export function ReportListingPage() {
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'ADMIN';
+  const { user, isAdmin: checkIsAdmin } = useAuth();
+  const isAdmin = checkIsAdmin();
   
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');

@@ -5,9 +5,11 @@ export interface LoginResponse {
   refreshToken: string
   tokenType: string
   expiresIn: number
-  role: string
+  roles: string[]  // Changed from single role to array
   username: string
   userId: string
+  // Legacy field for backwards compatibility
+  role?: string
 }
 
 export async function login(username: string, password: string): Promise<LoginResponse> {

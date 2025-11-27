@@ -11,13 +11,14 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { useAuth } from './context/AuthContext';
 
 export default function App() {
-  const { isAuthenticated, user, isLoading } = useAuth();
+  const { isAuthenticated, user, isLoading, isAdmin } = useAuth();
   type PageType = 'login' | 'register' | 'forgot-password' | 'marketplace' | 'reports' | 'admin' | 'ask-ai';
   const [currentPage, setCurrentPage] = useState<PageType>('login');
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      if (user.role === 'ADMIN') {
+      // Use helper method to check for ADMIN role
+      if (isAdmin()) {
         setCurrentPage('admin');
       } else {
         setCurrentPage('marketplace');
@@ -151,7 +152,8 @@ export default function App() {
               <div className="flex justify-center lg:justify-end">
                 <LoginForm 
                   onLogin={() => {
-                    if (user?.role === 'ADMIN') setCurrentPage('admin');
+                    // Check if user has ADMIN role
+                    if (isAdmin()) setCurrentPage('admin');
                     else setCurrentPage('marketplace');
                   }}
                   onSignUp={() => setCurrentPage('register')}
@@ -191,9 +193,10 @@ export default function App() {
 
         <div className="min-h-screen flex items-center justify-center p-6 pt-28 relative z-10">
           <RegisterForm 
-            onRegister={(role) => {
-              const userRole = role || user?.role;
-              if (userRole === 'ADMIN') {
+            onRegister={(roles) => {
+              // Check if returned roles include ADMIN
+              const hasAdmin = roles?.includes('ADMIN');
+              if (hasAdmin) {
                 setCurrentPage('admin');
               } else {
                 setCurrentPage('marketplace');

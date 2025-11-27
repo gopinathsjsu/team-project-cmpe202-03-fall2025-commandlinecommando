@@ -6,7 +6,7 @@ export const mockUsers = [
     firstName: 'John',
     lastName: 'Student',
     phone: '555-0101',
-    role: 'STUDENT',
+    roles: ['BUYER', 'SELLER'],  // Students have both roles
     verificationStatus: 'VERIFIED',
     universityId: '00000000-0000-0000-0000-000000000001',
     studentId: 'STU001',
@@ -24,7 +24,7 @@ export const mockUsers = [
     firstName: 'Alice',
     lastName: 'Chen',
     phone: '555-0102',
-    role: 'STUDENT',
+    roles: ['BUYER', 'SELLER'],  // Students have both roles
     verificationStatus: 'VERIFIED',
     universityId: '00000000-0000-0000-0000-000000000001',
     studentId: 'STU002',
@@ -42,7 +42,7 @@ export const mockUsers = [
     firstName: 'Bob',
     lastName: 'Martinez',
     phone: '555-0103',
-    role: 'STUDENT',
+    roles: ['BUYER', 'SELLER'],  // Students have both roles
     verificationStatus: 'VERIFIED',
     universityId: '00000000-0000-0000-0000-000000000001',
     studentId: 'STU003',
@@ -60,7 +60,7 @@ export const mockUsers = [
     firstName: 'Admin',
     lastName: 'User',
     phone: '555-0100',
-    role: 'ADMIN',
+    roles: ['ADMIN'],  // Admin is exclusive
     verificationStatus: 'VERIFIED',
     universityId: '00000000-0000-0000-0000-000000000001',
     isActive: true,
@@ -75,7 +75,7 @@ export const mockUsers = [
     firstName: 'Sarah',
     lastName: 'Kim',
     phone: '555-0104',
-    role: 'STUDENT',
+    roles: ['BUYER', 'SELLER'],  // Students have both roles
     verificationStatus: 'VERIFIED',
     universityId: '00000000-0000-0000-0000-000000000001',
     studentId: 'STU004',
