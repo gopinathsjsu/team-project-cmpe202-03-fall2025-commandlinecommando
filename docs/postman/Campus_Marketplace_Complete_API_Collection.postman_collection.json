@@ -76,7 +76,8 @@
 									"pm.test('Response has correct fields', function () {",
 									"    var jsonData = pm.response.json();",
 									"    pm.expect(jsonData).to.have.property('username');",
-									"    pm.expect(jsonData).to.have.property('role');",
+									"    pm.expect(jsonData).to.have.property('roles');",
+									"    pm.expect(jsonData.roles).to.be.an('array');",
 									"    pm.expect(jsonData).to.have.property('tokenType', 'Bearer');",
 									"});"
 								],
@@ -190,7 +191,8 @@
 									"    pm.expect(jsonData).to.have.property('accessToken');",
 									"    pm.expect(jsonData).to.have.property('refreshToken');",
 									"    pm.expect(jsonData).to.have.property('tokenType', 'Bearer');",
-									"    pm.expect(jsonData).to.have.property('role');",
+									"    pm.expect(jsonData).to.have.property('roles');",
+									"    pm.expect(jsonData.roles).to.be.an('array');",
 									"    pm.expect(jsonData).to.have.property('userId');",
 									"});"
 								],
@@ -238,7 +240,8 @@
 									"    pm.expect(jsonData).to.have.property('id');",
 									"    pm.expect(jsonData).to.have.property('username');",
 									"    pm.expect(jsonData).to.have.property('email');",
-									"    pm.expect(jsonData).to.have.property('role');",
+									"    pm.expect(jsonData).to.have.property('roles');",
+									"    pm.expect(jsonData.roles).to.be.an('array');",
 									"    pm.expect(jsonData).to.have.property('isActive');",
 									"});"
 								],
@@ -1313,7 +1316,8 @@
 									"pm.collectionVariables.set('admin_user_id', jsonData.userId);",
 									"",
 									"pm.test('Admin login successful', function () {",
-									"    pm.expect(jsonData).to.have.property('role', 'ADMIN');",
+									"    pm.expect(jsonData).to.have.property('roles');",
+									"    pm.expect(jsonData.roles).to.include('ADMIN');",
 									"});"
 								],
 								"type": "text/javascript"

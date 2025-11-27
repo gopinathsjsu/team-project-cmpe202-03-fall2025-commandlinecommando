@@ -13,9 +13,10 @@
 -- =============================================================================
 
 -- Create the junction table for many-to-many user-role relationship
+-- Using VARCHAR(20) for role column for JPA/Hibernate compatibility
 CREATE TABLE IF NOT EXISTS user_roles (
     user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
-    role user_role NOT NULL,
+    role VARCHAR(20) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (user_id, role)
 );
@@ -35,33 +36,33 @@ CREATE INDEX IF NOT EXISTS idx_user_roles_role ON user_roles(role);
 
 -- Insert existing BUYER users with both BUYER and SELLER roles
 INSERT INTO user_roles (user_id, role)
-SELECT user_id, 'BUYER'::user_role
+SELECT user_id, 'BUYER'
 FROM users
 WHERE role = 'BUYER'
 ON CONFLICT (user_id, role) DO NOTHING;
 
 INSERT INTO user_roles (user_id, role)
-SELECT user_id, 'SELLER'::user_role
+SELECT user_id, 'SELLER'
 FROM users
 WHERE role = 'BUYER'
 ON CONFLICT (user_id, role) DO NOTHING;
 
 -- Insert existing SELLER users with both BUYER and SELLER roles
 INSERT INTO user_roles (user_id, role)
-SELECT user_id, 'BUYER'::user_role
+SELECT user_id, 'BUYER'
 FROM users
 WHERE role = 'SELLER'
 ON CONFLICT (user_id, role) DO NOTHING;
 
 INSERT INTO user_roles (user_id, role)
-SELECT user_id, 'SELLER'::user_role
+SELECT user_id, 'SELLER'
 FROM users
 WHERE role = 'SELLER'
 ON CONFLICT (user_id, role) DO NOTHING;
 
 -- Insert ADMIN users with only ADMIN role
 INSERT INTO user_roles (user_id, role)
-SELECT user_id, 'ADMIN'::user_role
+SELECT user_id, 'ADMIN'
 FROM users
 WHERE role = 'ADMIN'
 ON CONFLICT (user_id, role) DO NOTHING;
