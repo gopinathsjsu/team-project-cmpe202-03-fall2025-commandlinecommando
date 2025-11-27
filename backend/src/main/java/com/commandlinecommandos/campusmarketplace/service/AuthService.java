@@ -1,5 +1,7 @@
 package com.commandlinecommandos.campusmarketplace.service;
 
+import org.hibernate.Hibernate;
+import org.hibernate.LazyInitializationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -381,6 +383,24 @@ public class AuthService {
      * Map User entity to UserResponse DTO
      */
     public com.commandlinecommandos.campusmarketplace.dto.UserResponse toUserResponse(User user) {
+        University resolvedUniversity = null;
+        if (user.getUniversity() != null) {
+            resolvedUniversity = user.getUniversity();
+            try {
+                if (!Hibernate.isInitialized(resolvedUniversity)) {
+                    resolvedUniversity = universityRepository.findById(resolvedUniversity.getUniversityId())
+                        .orElse(null);
+                }
+            } catch (LazyInitializationException ex) {
+                UUID universityId = resolvedUniversity.getUniversityId();
+                if (universityId != null) {
+                    resolvedUniversity = universityRepository.findById(universityId).orElse(null);
+                } else {
+                    resolvedUniversity = null;
+                }
+            }
+        }
+
         return com.commandlinecommandos.campusmarketplace.dto.UserResponse.builder()
             .userId(user.getUserId())
             .username(user.getUsername())
@@ -400,8 +420,8 @@ public class AuthService {
             .universityEmail(user.getUniversityEmail())
             .graduationYear(user.getGraduationYear())
             .major(user.getMajor())
-            .universityId(user.getUniversity() != null ? user.getUniversity().getUniversityId() : null)
-            .universityName(user.getUniversity() != null ? user.getUniversity().getName() : null)
+            .universityId(resolvedUniversity != null ? resolvedUniversity.getUniversityId() : null)
+            .universityName(resolvedUniversity != null ? resolvedUniversity.getName() : null)
             .preferences(user.getPreferences())
             .build();
     }

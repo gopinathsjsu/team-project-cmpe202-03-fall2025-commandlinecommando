@@ -126,7 +126,7 @@ public class ListingController {
      * Create a new listing
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('STUDENT', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('STUDENT', 'SELLER', 'ADMIN')")
     @Operation(summary = "Create new listing", description = "Create a new marketplace listing")
     public ResponseEntity<?> createListing(
             @Valid @RequestBody Map<String, Object> listing,
@@ -160,7 +160,7 @@ public class ListingController {
      * Update an existing listing
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('STUDENT', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('STUDENT', 'SELLER', 'ADMIN')")
     @Operation(summary = "Update listing", description = "Update an existing listing")
     public ResponseEntity<?> updateListing(
             @Parameter(description = "Listing UUID")
@@ -192,7 +192,7 @@ public class ListingController {
      * Delete a listing
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('STUDENT', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('STUDENT', 'SELLER', 'ADMIN')")
     @Operation(summary = "Delete listing", description = "Delete a listing (soft delete)")
     public ResponseEntity<?> deleteListing(
             @Parameter(description = "Listing UUID")
@@ -262,7 +262,7 @@ public class ListingController {
      * Get my listings (authenticated user)
      */
     @GetMapping("/my-listings")
-    @PreAuthorize("hasAnyRole('STUDENT', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('STUDENT', 'SELLER', 'ADMIN')")
     @Operation(summary = "Get my listings", description = "Retrieve all listings created by the authenticated user")
     public ResponseEntity<?> getMyListings(
             Authentication authentication,

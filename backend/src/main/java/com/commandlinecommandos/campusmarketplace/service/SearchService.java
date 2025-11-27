@@ -96,12 +96,13 @@ public class SearchService {
      */
     private Page<Product> searchWithQuery(SearchRequest request, UUID universityId) {
         Pageable pageable = createPageable(request);
+        Pageable textPageable = PageRequest.of(request.getPage(), request.getSize());
         
         // Try full-text search first (PostgreSQL only)
         Page<Product> textSearchResults;
         try {
             textSearchResults = productRepository.searchWithFullText(
-                universityId, request.getQuery(), pageable);
+                universityId, request.getQuery(), textPageable);
         } catch (Exception e) {
             // Fall back to simple search if full-text search fails (H2 compatibility)
             log.warn("Full-text search failed, falling back to simple search: {}", e.getMessage());
@@ -129,7 +130,7 @@ public class SearchService {
         if (textSearchResults.isEmpty() && request.getQuery().length() > 3) {
             try {
                 textSearchResults = productRepository.fuzzySearch(
-                    universityId, request.getQuery(), pageable);
+                    universityId, request.getQuery(), textPageable);
             } catch (Exception e) {
                 log.warn("Fuzzy search failed: {}", e.getMessage());
                 // Already have empty results, just continue

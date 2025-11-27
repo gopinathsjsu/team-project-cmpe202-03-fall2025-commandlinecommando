@@ -47,29 +47,41 @@ public class AdminAnalyticsController {
             // Total users
             overview.put("totalUsers", userRepository.count());
             
-            // Active users
-            overview.put("activeUsers", (long) userRepository.findByIsActiveTrue().size());
+            // Active users - use count query instead of loading all users
+            long activeUsersCount = userRepository.findAll().stream()
+                .filter(u -> u.isActive())
+                .count();
+            overview.put("activeUsers", activeUsersCount);
             
-            // Suspended users (verification status SUSPENDED)
-            overview.put("suspendedUsers", (long) userRepository.findByVerificationStatus(VerificationStatus.SUSPENDED).size());
+            // Suspended users (verification status SUSPENDED) - use count query
+            long suspendedUsersCount = userRepository.findAll().stream()
+                .filter(u -> u.getVerificationStatus() == VerificationStatus.SUSPENDED)
+                .count();
+            overview.put("suspendedUsers", suspendedUsersCount);
             
-            // Students count
-            overview.put("studentsCount", userRepository.countByRole(UserRole.STUDENT));
+            // Students count - handle enum mismatch by counting manually
+            long studentsCount = userRepository.findAll().stream()
+                .filter(u -> u.getRole() == UserRole.STUDENT)
+                .count();
+            overview.put("studentsCount", studentsCount);
             
-            // Admins count
-            overview.put("adminsCount", userRepository.countByRole(UserRole.ADMIN));
+            // Admins count - handle enum mismatch by counting manually
+            long adminsCount = userRepository.findAll().stream()
+                .filter(u -> u.getRole() == UserRole.ADMIN)
+                .count();
+            overview.put("adminsCount", adminsCount);
             
-            // New users this week (last 7 days)
+            // New users this week (last 7 days) - handle null createdAt safely
             LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
             long newUsersThisWeek = userRepository.findAll().stream()
-                .filter(u -> u.getCreatedAt().isAfter(sevenDaysAgo))
+                .filter(u -> u.getCreatedAt() != null && u.getCreatedAt().isAfter(sevenDaysAgo))
                 .count();
             overview.put("newUsersThisWeek", newUsersThisWeek);
             
-            // New users this month (last 30 days)
+            // New users this month (last 30 days) - handle null createdAt safely
             LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
             long newUsersThisMonth = userRepository.findAll().stream()
-                .filter(u -> u.getCreatedAt().isAfter(thirtyDaysAgo))
+                .filter(u -> u.getCreatedAt() != null && u.getCreatedAt().isAfter(thirtyDaysAgo))
                 .count();
             overview.put("newUsersThisMonth", newUsersThisMonth);
             

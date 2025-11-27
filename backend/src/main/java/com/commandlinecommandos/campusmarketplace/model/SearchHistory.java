@@ -20,7 +20,7 @@ public class SearchHistory {
     
     @Id
     @GeneratedValue(generator = "UUID")
-    @Column(name = "id", updatable = false, nullable = false)
+    @Column(name = "search_id", updatable = false, nullable = false)
     private UUID id;
     
     @ManyToOne(fetch = FetchType.LAZY)

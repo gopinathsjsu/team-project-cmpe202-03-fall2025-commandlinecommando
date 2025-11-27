@@ -2,6 +2,7 @@ package com.commandlinecommandos.campusmarketplace.dto;
 
 import com.commandlinecommandos.campusmarketplace.model.UserRole;
 import com.commandlinecommandos.campusmarketplace.model.VerificationStatus;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -12,6 +13,7 @@ import java.util.UUID;
  */
 public class UserResponse {
     
+    @JsonProperty("id") // expose as `id` in JSON while keeping existing `userId` field name
     private UUID userId;
     private String username;
     private String email;
@@ -21,6 +23,7 @@ public class UserResponse {
     private String avatarUrl;
     private UserRole role;
     private VerificationStatus verificationStatus;
+    @JsonProperty("isActive")
     private boolean isActive;
     private LocalDateTime lastLoginAt;
     private LocalDateTime emailVerifiedAt;

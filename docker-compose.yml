@@ -67,6 +67,8 @@ services:
       # Redis Configuration
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
 
       # Email Notification Configuration
       EMAIL_NOTIFICATIONS_ENABLED: ${EMAIL_NOTIFICATIONS_ENABLED:-true}
