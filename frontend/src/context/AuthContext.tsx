@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { login as apiLogin, logout as apiLogout, validateToken, me, refresh as apiRefresh } from '../api/auth';
+import { authApi } from '../api';
 
 interface User {
   id: string;
@@ -84,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const refreshToken = localStorage.getItem('refreshToken');
         if (refreshToken) {
-          const response = await apiRefresh(refreshToken);
+          const response = await authApi.refresh(refreshToken);
           localStorage.setItem('accessToken', response.accessToken);
           localStorage.setItem('refreshToken', response.refreshToken);
         }
@@ -114,12 +114,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Validate token (axios timeout is now configured in client.ts)
       try {
-        const validation = await validateToken();
+        const validation = await authApi.validateToken();
         
         if (validation?.valid) {
           // Get user info
           try {
-            const userInfo = await me();
+            const userInfo = await authApi.me();
             
             setUser({
               id: userInfo?.id || userInfo?.userId,
@@ -159,7 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const refreshToken = localStorage.getItem('refreshToken');
           if (refreshToken) {
             try {
-              const response = await apiRefresh(refreshToken);
+              const response = await authApi.refresh(refreshToken);
               localStorage.setItem('accessToken', response.accessToken);
               localStorage.setItem('refreshToken', response.refreshToken);
               await checkAuth(); // Retry
@@ -207,7 +207,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function login(username: string, password: string) {
     try {
-      const response = await apiLogin(username, password);
+      const response = await authApi.login(username, password);
       
       // Store tokens
       localStorage.setItem('accessToken', response.accessToken);
@@ -226,11 +226,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Fetch complete user info
       try {
-        const userInfo = await me();
+        const userInfo = await authApi.me();
         setUser({
-          id: userInfo.id || response.userId,
+          id: userInfo.id || userInfo.userId || response.userId,
           username: userInfo.username,
-          email: userInfo.email,
+          email: userInfo.email || '',
           role: userInfo.role,
           firstName: userInfo.firstName,
           lastName: userInfo.lastName,
@@ -279,7 +279,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   async function logout() {
     try {
-      await apiLogout();
+      await authApi.logout();
     } catch (error) {
       console.error('Logout API call failed:', error);
     } finally {
