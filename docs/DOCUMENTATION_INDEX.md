@@ -1,6 +1,6 @@
 # Campus Marketplace - Documentation Index
 
-**Last Updated:** January 2025  
+**Last Updated:** November 2025  
 **Project Status:** ✅ Production Ready - All 129 Tests Passing
 
 ---
@@ -17,6 +17,7 @@ This project has a clean, focused documentation structure. All essential docs ar
 |----------|----------|-------------|
 | **README.md** | `/README.md` | Project overview, quick start, architecture |
 | **API Documentation** | `docs/api/BACKEND_API_DOCUMENTATION.md` | Complete API reference (70+ endpoints) |
+| **E2E Testing Guide** | `docs/E2E_TESTING_GUIDE.md` | End-to-end testing instructions |
 | **Deployment Guide** | `docs/DEPLOYMENT_GUIDE.md` | Docker deployment instructions |
 | **Docker Deployment** | `docs/DOCKER_DEPLOYMENT.md` | Advanced Docker configuration |
 | **Auth & Security** | `docs/Authentication_Authorization_ReadMe.md` | JWT authentication details |
@@ -39,6 +40,7 @@ This project has a clean, focused documentation structure. All essential docs ar
 
 | Resource | Location | Description |
 |----------|----------|-------------|
+| **E2E Testing Guide** | `docs/E2E_TESTING_GUIDE.md` | Complete E2E testing instructions |
 | **Postman Collection** | `docs/postman/Campus_Marketplace_API.postman_collection.json` | 40+ endpoint tests |
 | **Unit Tests** | `backend/src/test/` | 129 JUnit tests |
 
@@ -52,6 +54,7 @@ This project has a clean, focused documentation structure. All essential docs ar
 │
 ├── docs/
 │   ├── DOCUMENTATION_INDEX.md          # This file
+│   ├── E2E_TESTING_GUIDE.md            # ⭐ E2E testing guide
 │   ├── DEPLOYMENT_GUIDE.md             # Docker deployment
 │   ├── DOCKER_DEPLOYMENT.md            # Advanced Docker config
 │   ├── Authentication_Authorization_ReadMe.md
@@ -88,6 +91,7 @@ This project has a clean, focused documentation structure. All essential docs ar
 |--------------|-------|
 | Get started quickly | [README.md](../README.md) |
 | Deploy with Docker | [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) |
+| Run E2E tests | [E2E_TESTING_GUIDE.md](E2E_TESTING_GUIDE.md) |
 | Integrate with API | [BACKEND_API_DOCUMENTATION.md](api/BACKEND_API_DOCUMENTATION.md) |
 | Set up the database | [db/docs/DATABASE_SETUP.md](../db/docs/DATABASE_SETUP.md) |
 | Test with Postman | [postman/Campus_Marketplace_API.postman_collection.json](postman/Campus_Marketplace_API.postman_collection.json) |
@@ -98,13 +102,24 @@ This project has a clean, focused documentation structure. All essential docs ar
 
 ## 🔑 Test Credentials
 
-| Username | Password | Role |
-|----------|----------|------|
-| `sjsu_admin` | `password123` | ADMIN |
-| `alice_buyer` | `password123` | BUYER |
-| `bob_buyer` | `password123` | BUYER |
-| `carol_seller` | `password123` | SELLER |
-| `david_techseller` | `password123` | SELLER |
+> ⚠️ **Important**: Only test accounts have valid password hashes. Demo accounts exist for display data only.
+
+### Working Test Accounts
+
+| Username | Password | Role | Notes |
+|----------|----------|------|-------|
+| `test_buyer` | `password123` | BUYER, SELLER | ✅ Primary test account |
+| `test_admin` | `password123` | ADMIN | ✅ Admin test account |
+
+### Demo Accounts (Display Only - Cannot Login)
+
+| Username | Role | Purpose |
+|----------|------|---------|
+| `alice_buyer` | BUYER, SELLER | Demo buyer profile |
+| `bob_buyer` | BUYER, SELLER | Demo buyer profile |
+| `carol_seller` | BUYER, SELLER | Demo seller with listings |
+| `david_techseller` | BUYER, SELLER | Demo seller with electronics |
+| `sjsu_admin` | ADMIN | Demo admin profile |
 
 ---
 
@@ -121,5 +136,5 @@ This project has a clean, focused documentation structure. All essential docs ar
 
 ---
 
-**Last Cleanup:** January 2025
+**Last Cleanup:** November 2025
 

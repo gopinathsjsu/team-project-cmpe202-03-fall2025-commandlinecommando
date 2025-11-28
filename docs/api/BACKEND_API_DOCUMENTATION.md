@@ -1118,7 +1118,11 @@ All admin endpoints require ADMIN role.
 **Success Response (200):**
 ```json
 {
-  "message": "Admin dashboard loaded"
+  "message": "Admin dashboard loaded",
+  "totalUsers": 8,
+  "totalListings": 5,
+  "pendingApprovals": 0,
+  "pendingReports": 0
 }
 ```
 
@@ -1337,13 +1341,26 @@ Create a new admin user.
 
 ## Test Credentials
 
-| Username | Password | Roles |
-|----------|----------|-------|
-| `alice_buyer` | `password123` | BUYER, SELLER |
-| `bob_buyer` | `password123` | BUYER, SELLER |
-| `carol_seller` | `password123` | BUYER, SELLER |
-| `david_techseller` | `password123` | BUYER, SELLER |
-| `sjsu_admin` | `password123` | ADMIN |
+> ⚠️ **Important**: Only test accounts (created in V12 migration) have valid bcrypt password hashes. Demo accounts from V2 migration have placeholder hashes and cannot be used for login.
+
+### Working Test Accounts
+
+| Username | Password | Roles | Notes |
+|----------|----------|-------|-------|
+| `test_buyer` | `password123` | BUYER, SELLER | ✅ Primary test account |
+| `test_admin` | `password123` | ADMIN | ✅ Admin test account |
+
+### Demo Accounts (Display Only)
+
+These accounts exist in the database but have invalid password hashes. They are for demo data display purposes only:
+
+| Username | Roles | Purpose |
+|----------|-------|---------|
+| `alice_buyer` | BUYER, SELLER | Demo buyer profile |
+| `bob_buyer` | BUYER, SELLER | Demo buyer profile |
+| `carol_seller` | BUYER, SELLER | Demo seller with listings |
+| `david_techseller` | BUYER, SELLER | Demo seller with electronics |
+| `sjsu_admin` | ADMIN | Demo admin profile |
 
 ---
 
@@ -1353,7 +1370,7 @@ Create a new admin user.
 ```bash
 curl -X POST http://localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username": "alice_buyer", "password": "password123"}'
+  -d '{"username": "test_buyer", "password": "password123"}'
 ```
 
 ### 2. Get Listings (with token)
@@ -1374,6 +1391,13 @@ curl -X POST http://localhost:8080/api/listings \
     "category": "ELECTRONICS",
     "condition": "LIKE_NEW"
   }'
+```
+
+### 4. Logout (requires refresh token)
+```bash
+curl -X POST http://localhost:8080/api/auth/logout \
+  -H "Content-Type: application/json" \
+  -d '{"refreshToken": "YOUR_REFRESH_TOKEN"}'
 ```
 
 ---
