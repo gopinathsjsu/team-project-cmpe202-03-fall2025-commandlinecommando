@@ -1,291 +1,194 @@
-# Campus Marketplace - Unified Backend
+# Campus Marketplace – Unified Backend
 
-A secure and scalable marketplace platform for university students to buy and sell items within their campus community.
+A campus-exclusive marketplace for SJSU students to buy and sell items such as textbooks, electronics, gadgets, and essentials.  
+Our team built a unified backend system by combining multiple services into one clean and modular architecture.
 
-**🎉 Unified Architecture**: Consolidated 3 microservices into a single, modular backend for improved maintainability and performance.
+---
 
 ## Team Name
 **Commandline Commandos**
 
-## Team Member Names
-1. Vineet Kumar
-2. Sakshat Patil
-3. Wilson Huang
-4. Lam Nguyen
+## Team Members
+1. Vineet Kumar  
+2. Sakshat Patil  
+3. Wilson Huang  
+4. Lam Nguyen  
 
 ---
 
 # Component Ownership
-- Lam: User Management System (backend), Search Integration, Authentication
-- Vineet: AWS Deployment, Infrastructure, ChatGPT Search Feature
-- Wilson: Listing API, DB Integration, File Upload Service
-- Sakshat: Frontend UI (Login, Listings, Management), E2E UI Integration
+To divide the work clearly, each team member took responsibility for one major part of the system:
+
+| Team Member | Component Owned |
+|-------------|-----------------|
+| **Lam** | User Management System (backend), Search Integration, Authentication |
+| **Vineet** | AWS Deployment, Infrastructure Setup, ChatGPT Search Feature |
+| **Wilson** | Listing API, Database Integration, File Upload Service |
+| **Sakshat** | Frontend UI (Login, Listings, Management), E2E UI Integration |
 
 ---
 
-## Quick Start
+# Project Journal & Scrum Artifacts
+
+All project documentation is maintained inside the `/project-journal` folder.
+
+| Artifact | Location |
+|----------|----------|
+| Weekly Scrum Reports | `project-journal/week1...week12` |
+| XP Core Values | `project-journal/xp-values.md` |
+| Sprint Backlogs (all 6 sprints) | `project-journal/sprint-artifacts/` |
+| Task Board Summary | `project-journal/task-board/task-board-summary.md` |
+| Burndown Chart Data | `project-journal/burndown/` |
+
+---
+
+# Quick Start
 
 ### Option 1: Docker Compose (Recommended)
 ```bash
-# Start all services (PostgreSQL, Redis, Backend)
 docker-compose up --build
-
-# Backend will be available at http://localhost:8080
-# Flyway migrations run automatically
 ```
+
+Backend will be available at **http://localhost:8080**.  
+PostgreSQL, Redis, and migrations start automatically.
 
 ### Option 2: Local Development
 ```bash
-# 1. Start database services
 docker-compose up -d postgres redis
-
-# 2. Start unified backend (connects to Docker PostgreSQL)
 cd backend
 ./mvnw spring-boot:run
-
-# Backend runs on: http://localhost:8080
 ```
 
-### Test Credentials
+---
+
+## Test Credentials
+
 | Username | Password | Roles |
 |----------|----------|-------|
-| `alice_buyer` | `password123` | BUYER, SELLER |
-| `bob_buyer` | `password123` | BUYER, SELLER |
-| `carol_seller` | `password123` | BUYER, SELLER |
-| `david_techseller` | `password123` | BUYER, SELLER |
-| `sjsu_admin` | `password123` | ADMIN |
+| alice_buyer | password123 | BUYER, SELLER |
+| bob_buyer | password123 | BUYER, SELLER |
+| carol_seller | password123 | BUYER, SELLER |
+| david_techseller | password123 | BUYER, SELLER |
+| sjsu_admin | password123 | ADMIN |
 
-### Quick Test
-```bash
-# Health check
-curl http://localhost:8080/api/actuator/health
+---
 
-# Login
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username": "alice_buyer", "password": "password123"}'
+# API Documentation
+
+Full API reference is available in:
+
+📌 **`docs/api/BACKEND_API_DOCUMENTATION.md`**
+
+### Major API Modules:
+
+| Module | Path | Description |
+|--------|------|-------------|
+| Auth | `/api/auth/*` | Login, register, tokens |
+| Users | `/api/users/*` | Profile management |
+| Listings | `/api/listings/*` | Marketplace item CRUD |
+| Search | `/api/search/*` | Search, autocomplete |
+| Chat | `/api/chat/*` | Buyer–seller messaging |
+| Reports | `/api/reports/*` | Listing/content reports |
+| Admin | `/api/admin/*` | Admin tools |
+
+---
+
+# Project Structure
+
+```
+backend/                 # Unified Spring Boot backend (port 8080)
+frontend/                # React/Vite frontend
+ai-integration-server/   # Optional AI microservice
+db/                      # Flyway SQL migrations and DB scripts
+docs/                    # API, deployment, testing docs
+docker-compose.yml       # Local dev environment
+project-journal/         # Scrum reports, XP values, sprint artifacts
 ```
 
 ---
 
-## API Documentation
-
-📖 **[Complete API Documentation](docs/api/BACKEND_API_DOCUMENTATION.md)** - Full endpoint reference for frontend integration
-
-### API Endpoints Overview
-All endpoints available at `http://localhost:8080/api`:
-
-| Module | Endpoint | Description |
-|--------|----------|-------------|
-| **Auth** | `/api/auth/*` | Login, register, token refresh, password reset |
-| **Users** | `/api/users/*` | Profile management |
-| **Listings** | `/api/listings/*` | Product listings CRUD |
-| **Search** | `/api/search/*` | Full-text search, autocomplete |
-| **Discovery** | `/api/discovery/*` | Trending, recommended, similar items |
-| **Favorites** | `/api/favorites/*` | Wishlist management |
-| **Chat** | `/api/chat/*` | Buyer-seller messaging |
-| **Orders** | `/api/orders/*` | Cart & order processing |
-| **Payments** | `/api/payments/*` | Payment methods & transactions |
-| **Reports** | `/api/reports/*` | Content flagging |
-| **Admin** | `/api/admin/*` | User management, moderation, analytics |
-
-### Services
-- **Backend API**: http://localhost:8080/api
-- **Health Check**: http://localhost:8080/api/actuator/health
-- **PostgreSQL**: localhost:5432 (database: `campus_marketplace`)
-- **Redis**: localhost:6379
-- **Frontend**: http://localhost:5173 (when running)
-
----
-
-## Project Structure
-
-```
-├── backend/                 # Unified Spring Boot application (Port 8080)
-│   ├── src/main/java/com/commandlinecommandos/campusmarketplace/
-│   │   ├── controller/     # REST API controllers
-│   │   ├── service/        # Business logic
-│   │   ├── repository/     # Data access layer
-│   │   ├── model/          # Entity classes
-│   │   ├── dto/            # Data transfer objects
-│   │   ├── security/       # JWT & authentication
-│   │   ├── config/         # Application configuration
-│   │   ├── exception/      # Exception handling
-│   │   ├── listing/        # Listing module
-│   │   └── communication/  # Chat & messaging module
-│   └── pom.xml             # Maven dependencies
-├── frontend/               # React/Vite frontend (TypeScript)
-├── ai-integration-server/  # AI service (optional, Java Spring Boot)
-├── db/                     # Database infrastructure
-│   ├── migrations/         # Flyway SQL migrations (V1-V14)
-│   ├── scripts/            # Utility scripts
-│   └── docs/               # Database documentation
-├── docs/                   # Project documentation
-│   ├── api/                # API documentation
-│   ├── deployment/         # Deployment guides
-│   └── testing/            # Testing documentation
-├── docker-compose.yml      # Docker services configuration
-└── scripts/                # Development scripts
-```
-
----
-
-## Architecture
-
-### Unified Backend
-Single Spring Boot application with modular packages:
+# Architecture (Simplified)
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Unified Backend (8080)                    │
-├─────────────┬─────────────┬─────────────┬──────────────────┤
-│    Auth     │  Listings   │    Chat     │      Admin       │
-│   Module    │   Module    │   Module    │     Module       │
-├─────────────┴─────────────┴─────────────┴──────────────────┤
-│              Shared Services & Security                      │
+│                    Unified Backend (Spring Boot)            │
+├──────────┬────────────┬────────────┬────────────────────────┤
+│  Auth    │  Listings  │   Chat     │        Admin           │
+├──────────┴────────────┴────────────┴────────────────────────┤
+│              Shared Services, Security, DTOs                │
 ├─────────────────────────────────────────────────────────────┤
-│              PostgreSQL + Redis + Flyway                     │
+│                PostgreSQL + Redis + Flyway                  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Key Features
-- ✅ **Many-to-Many User Roles**: Users can have multiple roles (BUYER, SELLER, ADMIN)
-- ✅ **JWT Authentication**: Access tokens (1hr) + Refresh tokens (7 days)
-- ✅ **UUID-based IDs**: Consistent UUID usage across all entities
-- ✅ **Flyway Migrations**: Automated database schema management
-- ✅ **Redis Caching**: Session management and caching
-- ✅ **Unified Exception Handling**: Consistent error responses
-
 ---
 
-## Features
+# Features (Short Summary)
 
-### 🔐 Authentication & Authorization
-- JWT-based authentication with refresh tokens
-- Role-based access control (BUYER, SELLER, ADMIN)
-- Password reset via email
-- Account deactivation with recovery period
+### 🔐 Authentication
+- JWT access + refresh tokens  
+- Role-based access (Buyer / Seller / Admin)  
+- Password reset and profile management  
 
 ### 📦 Marketplace
-- Product listings with categories (Electronics, Books, Clothing, etc.)
-- Full-text search with filters and sorting
-- Favorites/wishlist functionality
-- Image upload support
+- Listing creation with photo upload  
+- Search with filters, sorting, autocomplete  
+- Saved items, reports, admin moderation  
 
-### 💬 Communication
-- Real-time chat between buyers and sellers
-- Unread message count
-- Conversation history
+### 💬 Chat
+- Buyer–seller chat  
+- Unread messages  
+- Conversation history  
 
-### 🛒 Orders
-- Shopping cart functionality
-- Order lifecycle management
-- Seller order dashboard
-
-### 👮 Admin
-- User management (suspend, reactivate, delete)
-- Content moderation (reports)
-- Analytics dashboard
+### 🛠 Admin Tools
+- User suspension/reactivation  
+- Report moderation  
+- Basic analytics  
 
 ---
 
-## Development
+# Development Commands
 
-### Running Tests
+### Run Backend Tests
 ```bash
 cd backend
-
-# Run all tests
 ./mvnw test
-
-# Run specific test class
-./mvnw test -Dtest=RoleBasedAccessTest
 ```
 
-### Database Commands
+### Flyway Migration Commands
 ```bash
-# Check migration status
-cd backend && ./mvnw flyway:info
-
-# Run migrations manually
+./mvnw flyway:info
 ./mvnw flyway:migrate
-
-# Connect to database
-docker exec -it campus-marketplace-db psql -U cm_app_user -d campus_marketplace
 ```
 
 ### Docker Commands
 ```bash
-# Start all services
 docker-compose up -d
-
-# Rebuild backend after code changes
-docker-compose build --no-cache backend
-docker-compose up -d backend
-
-# View logs
-docker-compose logs -f backend
-
-# Stop all services
-docker-compose down
-```
-
----
-
-## Documentation
-
-### Quick Links
-| Document | Description |
-|----------|-------------|
-| **[📖 API Documentation](docs/api/BACKEND_API_DOCUMENTATION.md)** | Complete API reference for frontend |
-| **[🚀 Deployment Guide](docs/DEPLOYMENT_GUIDE.md)** | Production deployment instructions |
-| **[🧪 Testing Guide](docs/testing/E2E_TEST_MANUAL.md)** | E2E testing procedures |
-| **[📚 Documentation Index](docs/DOCUMENTATION_INDEX.md)** | All documentation links |
-
-### Database Documentation
-- **[Database Setup](db/docs/DATABASE_SETUP.md)** - Initial setup
-- **[Schema Design](db/docs/SCHEMA_DESIGN.md)** - Database schema
-- **[Troubleshooting](db/docs/TROUBLESHOOTING.md)** - Common issues
-
----
-
-## Troubleshooting
-
-### Common Issues
-
-| Issue | Solution |
-|-------|----------|
-| Port 8080 in use | `docker stop campus-marketplace-backend` or kill process |
-| Database connection failed | `docker-compose up -d postgres redis` |
-| "database does not exist" | Database auto-created by Docker; restart with `docker-compose down -v && docker-compose up -d` |
-| Backend keeps restarting with "password authentication failed" | PostgreSQL volume has stale credentials. Run `docker-compose down -v && docker-compose up --build` to reset volumes |
-| Tests failing | Run `./mvnw test` in backend directory |
-
-### Quick Fixes
-```bash
-# Restart all services
-docker-compose restart
-
-# Full reset (deletes data)
 docker-compose down -v
-docker-compose up -d
-
-# Check service health
-docker-compose ps
-curl http://localhost:8080/api/actuator/health
+docker-compose logs -f backend
 ```
 
 ---
 
-## Contributing
+# Troubleshooting
 
-1. Create feature branch from `main`
-2. Make changes and add tests
-3. Run `./mvnw test` to ensure all tests pass
-4. Submit pull request
+| Issue | Fix |
+|-------|------|
+| Port 8080 busy | Stop other backend instances |
+| DB connection error | `docker-compose up -d postgres redis` |
+| Schema mismatch | `docker-compose down -v && docker-compose up --build` |
+| Build keeps restarting | Reset Postgres volumes and rebuild backend |
 
 ---
 
-## Links
+# Contributing
 
-- **GitHub Classroom**: [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/kvgvOCnV)
+1. Create a feature branch  
+2. Commit with clear messages  
+3. Run tests before PR  
+4. Submit PR for review  
+
+---
+
+# Links  
+- **GitHub Classroom**: https://classroom.github.com/a/kvgvOCnV  
