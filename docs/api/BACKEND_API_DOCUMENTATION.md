@@ -336,7 +336,15 @@ Reset password using the token from email.
 ```json
 {
   "currentPassword": "string",
-  "newPassword": "string"
+  "newPassword": "string (8+ chars, at least 1 letter and 1 number)",
+  "confirmPassword": "string (must match newPassword)"
+}
+```
+
+**Success Response (200):**
+```json
+{
+  "message": "Password changed successfully"
 }
 ```
 
@@ -1345,10 +1353,10 @@ Create a new admin user.
 
 ### Working Test Accounts
 
-| Username | Password | Roles | Notes |
-|----------|----------|-------|-------|
-| `test_buyer` | `password123` | BUYER, SELLER | ✅ Primary test account |
-| `test_admin` | `password123` | ADMIN | ✅ Admin test account |
+| Username | Password | Roles | Email | Notes |
+|----------|----------|-------|-------|-------|
+| `test_buyer` | `password123` | BUYER, SELLER | test.buyer@sjsu.edu | ✅ Primary test account for user flows |
+| `test_admin` | `password123` | ADMIN | test.admin@sjsu.edu | ✅ Admin test account for admin features |
 
 ### Demo Accounts (Display Only)
 
@@ -1361,6 +1369,27 @@ These accounts exist in the database but have invalid password hashes. They are 
 | `carol_seller` | BUYER, SELLER | Demo seller with listings |
 | `david_techseller` | BUYER, SELLER | Demo seller with electronics |
 | `sjsu_admin` | ADMIN | Demo admin profile |
+
+### New User Registration
+
+You can also register new users through the frontend or API. New users automatically receive both BUYER and SELLER roles:
+
+```bash
+curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "newuser",
+    "email": "newuser@sjsu.edu",
+    "password": "Password123!",
+    "firstName": "New",
+    "lastName": "User"
+  }'
+```
+
+**Password Requirements:**
+- Minimum 8 characters
+- At least one letter (a-z or A-Z)
+- At least one number (0-9)
 
 ---
 
