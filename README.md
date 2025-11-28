@@ -250,6 +250,7 @@ docker-compose down
 | Port 8080 in use | `docker stop campus-marketplace-backend` or kill process |
 | Database connection failed | `docker-compose up -d postgres redis` |
 | "database does not exist" | Database auto-created by Docker; restart with `docker-compose down -v && docker-compose up -d` |
+| Backend keeps restarting with "password authentication failed" | PostgreSQL volume has stale credentials. Run `docker-compose down -v && docker-compose up --build` to reset volumes |
 | Tests failing | Run `./mvnw test` in backend directory |
 
 ### Quick Fixes
