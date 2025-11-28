@@ -47,8 +47,24 @@ export async function getConversations() {
   return res.data
 }
 
+/**
+ * Create a conversation by sending a message to a listing.
+ * Backend uses POST /chat/messages to create conversation and send initial message.
+ */
 export async function createConversation(data: { listingId: string; initialMessage: string }) {
-  const res = await api.post('/chat/conversations', data)
+  // Backend expects POST /chat/messages with { listingId, content }
+  const res = await api.post('/chat/messages', {
+    listingId: data.listingId,
+    content: data.initialMessage,
+  })
+  return res.data
+}
+
+/**
+ * Get or create a conversation for a listing (without sending a message)
+ */
+export async function getConversationForListing(listingId: string) {
+  const res = await api.get(`/chat/conversations/listing/${listingId}`)
   return res.data
 }
 
