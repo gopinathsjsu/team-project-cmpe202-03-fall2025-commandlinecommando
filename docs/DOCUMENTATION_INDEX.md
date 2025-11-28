@@ -1,162 +1,125 @@
 # Campus Marketplace - Documentation Index
 
-**Last Updated:** November 26, 2025  
-**Project Status:** ✅ Production Ready - All Tests Passing
+**Last Updated:** January 2025  
+**Project Status:** ✅ Production Ready - All 129 Tests Passing
 
 ---
 
-## 📚 Quick Navigation
+## 📚 Documentation Overview
 
-### 🚀 Getting Started
-- **[README.md](../README.md)** - Main project overview and quick start guide
-- **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Complete deployment instructions
-- **[API_QUICK_REFERENCE.md](API_QUICK_REFERENCE.md)** - API endpoint quick reference
-
-### 📋 Project Status & History
-- **[REFACTORING_SUMMARY.md](REFACTORING_SUMMARY.md)** - Complete refactoring documentation (3 services → 1 unified backend)
-- **[REFACTORING_COMPARISON.md](REFACTORING_COMPARISON.md)** - Before/after comparison of functionality
-- **[EMAIL_COMMUNICATION_VERIFICATION.md](EMAIL_COMMUNICATION_VERIFICATION.md)** - Email functionality verification
-
-### 🧪 Testing & Quality Assurance
-- **[POSTMAN_TEST_VERIFICATION.md](POSTMAN_TEST_VERIFICATION.md)** - Postman collection test results (✅ All passing)
-- **[POSTMAN_QUICK_START.md](POSTMAN_QUICK_START.md)** - Quick guide to using Postman collections
-
-### 🗄️ Database Documentation
-- **[db/docs/TEAM_SETUP_GUIDE.md](db/docs/TEAM_SETUP_GUIDE.md)** - Comprehensive database setup guide
-- **[db/docs/QUICK_REFERENCE.md](db/docs/QUICK_REFERENCE.md)** - Daily database commands
-- **[db/docs/TROUBLESHOOTING.md](db/docs/TROUBLESHOOTING.md)** - Common database issues and solutions
-- **[db/docs/ONBOARDING_CHECKLIST.md](db/docs/ONBOARDING_CHECKLIST.md)** - New developer checklist
-
-### 📖 Planning & Architecture
-- **[refactor_plan.md](refactor_plan.md)** - Original refactoring plan (historical reference)
+This project has a clean, focused documentation structure. All essential docs are organized below.
 
 ---
 
-## 📁 Documentation Structure
+## 🚀 Core Documentation
+
+| Document | Location | Description |
+|----------|----------|-------------|
+| **README.md** | `/README.md` | Project overview, quick start, architecture |
+| **API Documentation** | `docs/api/BACKEND_API_DOCUMENTATION.md` | Complete API reference (70+ endpoints) |
+| **Deployment Guide** | `docs/DEPLOYMENT_GUIDE.md` | Docker deployment instructions |
+| **Docker Deployment** | `docs/DOCKER_DEPLOYMENT.md` | Advanced Docker configuration |
+| **Auth & Security** | `docs/Authentication_Authorization_ReadMe.md` | JWT authentication details |
+
+---
+
+## 🗄️ Database Documentation
+
+| Document | Location | Description |
+|----------|----------|-------------|
+| **Database Setup** | `db/docs/DATABASE_SETUP.md` | Complete PostgreSQL setup guide |
+| **Schema Design** | `db/docs/SCHEMA_DESIGN.md` | ERD, tables, relationships |
+| **Security** | `db/docs/SECURITY.md` | Database security practices |
+| **Troubleshooting** | `db/docs/TROUBLESHOOTING.md` | Common issues and solutions |
+| **DB README** | `db/docs/README.md` | Database overview |
+
+---
+
+## 🧪 Testing Resources
+
+| Resource | Location | Description |
+|----------|----------|-------------|
+| **Postman Collection** | `docs/postman/Campus_Marketplace_API.postman_collection.json` | 40+ endpoint tests |
+| **Unit Tests** | `backend/src/test/` | 129 JUnit tests |
+
+---
+
+## 📁 Directory Structure
 
 ```
 .
-├── README.md                          # Main project overview (root)
+├── README.md                           # ⭐ Start here
 │
-├── docs/                              # All documentation
-│   ├── README.md                      # Documentation index
-│   ├── DOCUMENTATION_INDEX.md         # This file
-│   ├── API_QUICK_REFERENCE.md         # API endpoint reference
-│   ├── DEPLOYMENT_GUIDE.md            # Deployment instructions
-│   ├── POSTMAN_QUICK_START.md         # Postman usage guide
-│   ├── POSTMAN_TEST_VERIFICATION.md   # Postman test results
-│   ├── REFACTORING_SUMMARY.md         # Refactoring summary
-│   ├── REFACTORING_COMPARISON.md      # Before/after comparison
-│   ├── EMAIL_COMMUNICATION_VERIFICATION.md
-│   ├── postman/                       # Postman collections
-│   ├── api/                           # API documentation
-│   ├── deployment/                    # Deployment guides
-│   └── implementation/                # Implementation docs
+├── docs/
+│   ├── DOCUMENTATION_INDEX.md          # This file
+│   ├── DEPLOYMENT_GUIDE.md             # Docker deployment
+│   ├── DOCKER_DEPLOYMENT.md            # Advanced Docker config
+│   ├── Authentication_Authorization_ReadMe.md
+│   ├── api/
+│   │   └── BACKEND_API_DOCUMENTATION.md  # ⭐ Complete API reference
+│   └── postman/
+│       └── Campus_Marketplace_API.postman_collection.json
 │
-├── scripts/                           # Utility scripts
-│   ├── README.md                      # Scripts documentation
-│   ├── create-db-user.sh
-│   ├── setup-database.sh
-│   └── start-dev-db.sh
+├── db/
+│   ├── docs/
+│   │   ├── README.md
+│   │   ├── DATABASE_SETUP.md           # ⭐ DB setup guide
+│   │   ├── SCHEMA_DESIGN.md
+│   │   ├── SECURITY.md
+│   │   └── TROUBLESHOOTING.md
+│   └── migrations/                     # Flyway V1-V14 migrations
 │
 ├── backend/
 │   ├── QUICK_START_GUIDE.md
-│   └── USER_MANAGEMENT_README.md
+│   └── src/
 │
-└── db/
-    ├── docs/                          # Database documentation
-    └── migrations/                    # Flyway migrations
+├── frontend/
+│   └── src/
+│
+└── scripts/
+    └── *.sh                            # Database setup scripts
 ```
-
----
-
-## 🗂️ Document Categories
-
-### Core Documentation (Essential)
-These documents are essential for understanding and working with the project:
-
-1. **README.md** - Start here! Project overview, quick start, architecture
-2. **DEPLOYMENT_GUIDE.md** - How to deploy the application
-3. **API_QUICK_REFERENCE.md** - All API endpoints with examples
-4. **REFACTORING_SUMMARY.md** - Understanding the unified architecture
-
-### Status & Verification (Current State)
-These documents show the current state of the project:
-
-1. **POSTMAN_TEST_VERIFICATION.md** - Latest test results (✅ All passing)
-2. **REFACTORING_COMPARISON.md** - Functionality preservation verification
-3. **EMAIL_COMMUNICATION_VERIFICATION.md** - Email features verification
-
-### Historical Reference (Archive)
-These documents are kept for historical reference but may contain outdated information:
-
-1. **refactor_plan.md** - Original refactoring plan
-2. **TEST_STATUS_REPORT.md** - Old test report (superseded by POSTMAN_TEST_VERIFICATION.md)
-3. **TESTING_PROGRESS_REPORT.md** - Old progress report (superseded)
-4. **FEATURE_RESTORATION_COMPLETE.md** - Feature restoration status (completed)
-5. **ENHANCEMENT_SUMMARY.md** - Enhancement status (completed)
-6. **REFACTORING_STATUS.md** - Refactoring status (completed, see REFACTORING_SUMMARY.md)
-7. **DOCKER_FIX_SUMMARY.md** - Docker fixes (completed, see DEPLOYMENT_GUIDE.md)
-8. **API_ENDPOINT_ALIGNMENT.md** - Endpoint alignment (completed, see API_QUICK_REFERENCE.md)
-
----
-
-## 📝 Document Status
-
-### ✅ Current & Active
-- ✅ README.md
-- ✅ DEPLOYMENT_GUIDE.md
-- ✅ API_QUICK_REFERENCE.md
-- ✅ REFACTORING_SUMMARY.md
-- ✅ REFACTORING_COMPARISON.md
-- ✅ POSTMAN_TEST_VERIFICATION.md
-- ✅ POSTMAN_QUICK_START.md
-- ✅ EMAIL_COMMUNICATION_VERIFICATION.md
-- ✅ All db/docs/* files
-
-### 📦 Historical (Keep for Reference)
-- 📦 refactor_plan.md
-- 📦 TEST_STATUS_REPORT.md
-- 📦 TESTING_PROGRESS_REPORT.md
-- 📦 FEATURE_RESTORATION_COMPLETE.md
-- 📦 ENHANCEMENT_SUMMARY.md
-- 📦 REFACTORING_STATUS.md
-- 📦 DOCKER_FIX_SUMMARY.md
-- 📦 API_ENDPOINT_ALIGNMENT.md
-- 📦 POSTMAN_COLLECTION_SUMMARY.md
-- 📦 POSTMAN_TEST_RESULTS.md
-- 📦 POSTMAN_TESTING_GUIDE.md (duplicate of POSTMAN_QUICK_START.md)
-
-### 🗑️ Obsolete (Can be removed)
-- 🗑️ DEV_ENVIRONMENT_SETUP.md (superseded by DEPLOYMENT_GUIDE.md)
-- 🗑️ mockdataadaptation.md (frontend-specific, outdated)
 
 ---
 
 ## 🎯 Quick Links by Task
 
-### I want to...
-- **Get started quickly** → [README.md](README.md)
-- **Deploy the application** → [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
-- **Use the API** → [API_QUICK_REFERENCE.md](API_QUICK_REFERENCE.md)
-- **Test with Postman** → [POSTMAN_QUICK_START.md](POSTMAN_QUICK_START.md)
-- **Set up the database** → [db/docs/TEAM_SETUP_GUIDE.md](db/docs/TEAM_SETUP_GUIDE.md)
-- **Understand the refactoring** → [REFACTORING_SUMMARY.md](REFACTORING_SUMMARY.md)
-- **See test results** → [POSTMAN_TEST_VERIFICATION.md](POSTMAN_TEST_VERIFICATION.md)
-- **Troubleshoot issues** → [db/docs/TROUBLESHOOTING.md](db/docs/TROUBLESHOOTING.md)
+| I want to... | Go to |
+|--------------|-------|
+| Get started quickly | [README.md](../README.md) |
+| Deploy with Docker | [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) |
+| Integrate with API | [BACKEND_API_DOCUMENTATION.md](api/BACKEND_API_DOCUMENTATION.md) |
+| Set up the database | [db/docs/DATABASE_SETUP.md](../db/docs/DATABASE_SETUP.md) |
+| Test with Postman | [postman/Campus_Marketplace_API.postman_collection.json](postman/Campus_Marketplace_API.postman_collection.json) |
+| Troubleshoot DB issues | [db/docs/TROUBLESHOOTING.md](../db/docs/TROUBLESHOOTING.md) |
+| Understand auth flow | [Authentication_Authorization_ReadMe.md](Authentication_Authorization_ReadMe.md) |
 
 ---
 
-## 📊 Project Status Summary
+## 🔑 Test Credentials
 
-**Architecture:** ✅ Unified Backend (3 services → 1)  
-**Database:** ✅ PostgreSQL 16 with Flyway migrations  
-**Testing:** ✅ All Postman tests passing (30/30)  
-**Documentation:** ✅ Complete and up-to-date  
-**Deployment:** ✅ Docker Compose ready  
-**Email:** ✅ Fully functional with SMTP support  
+| Username | Password | Role |
+|----------|----------|------|
+| `sjsu_admin` | `password123` | ADMIN |
+| `alice_buyer` | `password123` | BUYER |
+| `bob_buyer` | `password123` | BUYER |
+| `carol_seller` | `password123` | SELLER |
+| `david_techseller` | `password123` | SELLER |
 
 ---
 
-**For questions or updates to this index, please update this file directly.**
+## 📊 Project Status
+
+| Component | Status |
+|-----------|--------|
+| **Architecture** | ✅ Unified Spring Boot backend |
+| **Database** | ✅ PostgreSQL 16 + Redis 7 |
+| **Tests** | ✅ 129/129 passing |
+| **API Endpoints** | ✅ 70+ documented |
+| **Docker** | ✅ Compose ready |
+| **Documentation** | ✅ Clean & consolidated |
+
+---
+
+**Last Cleanup:** January 2025
 

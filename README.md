@@ -2,7 +2,7 @@
 
 A secure and scalable marketplace platform for university students to buy and sell items within their campus community.
 
-**🎉 Recently Refactored**: Consolidated 3 microservices into a unified backend architecture for improved maintainability and performance.
+**🎉 Unified Architecture**: Consolidated 3 microservices into a single, modular backend for improved maintainability and performance.
 
 ## Team Name
 **Commandline Commandos**
@@ -12,6 +12,8 @@ A secure and scalable marketplace platform for university students to buy and se
 2. Sakshat Patil
 3. Wilson Huang
 4. Lam Nguyen
+
+---
 
 ## Quick Start
 
@@ -29,228 +31,252 @@ docker-compose up --build
 # 1. Start database services
 docker-compose up -d postgres redis
 
-# 2. Run database migrations (first time only)
+# 2. Start unified backend (connects to Docker PostgreSQL)
 cd backend
-./mvnw flyway:migrate
-
-# 3. Start unified backend
 ./mvnw spring-boot:run
 
 # Backend runs on: http://localhost:8080
 ```
 
-### Access Services
-- **Unified Backend API**: http://localhost:8080/api
-  - Authentication: `/api/auth/*`
-  - Users: `/api/users/*`
-  - Listings: `/api/listings/*`
-  - Reports: `/api/reports/*`
-  - Communication: `/api/conversations/*`, `/api/messages/*`
-  - Orders: `/api/orders/*`
-  - Admin: `/api/admin/*`
+### Test Credentials
+| Username | Password | Roles |
+|----------|----------|-------|
+| `alice_buyer` | `password123` | BUYER, SELLER |
+| `bob_buyer` | `password123` | BUYER, SELLER |
+| `carol_seller` | `password123` | BUYER, SELLER |
+| `david_techseller` | `password123` | BUYER, SELLER |
+| `sjsu_admin` | `password123` | ADMIN |
+
+### Quick Test
+```bash
+# Health check
+curl http://localhost:8080/api/actuator/health
+
+# Login
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "alice_buyer", "password": "password123"}'
+```
+
+---
+
+## API Documentation
+
+📖 **[Complete API Documentation](docs/api/BACKEND_API_DOCUMENTATION.md)** - Full endpoint reference for frontend integration
+
+### API Endpoints Overview
+All endpoints available at `http://localhost:8080/api`:
+
+| Module | Endpoint | Description |
+|--------|----------|-------------|
+| **Auth** | `/api/auth/*` | Login, register, token refresh, password reset |
+| **Users** | `/api/users/*` | Profile management |
+| **Listings** | `/api/listings/*` | Product listings CRUD |
+| **Search** | `/api/search/*` | Full-text search, autocomplete |
+| **Discovery** | `/api/discovery/*` | Trending, recommended, similar items |
+| **Favorites** | `/api/favorites/*` | Wishlist management |
+| **Chat** | `/api/chat/*` | Buyer-seller messaging |
+| **Orders** | `/api/orders/*` | Cart & order processing |
+| **Payments** | `/api/payments/*` | Payment methods & transactions |
+| **Reports** | `/api/reports/*` | Content flagging |
+| **Admin** | `/api/admin/*` | User management, moderation, analytics |
+
+### Services
+- **Backend API**: http://localhost:8080/api
 - **Health Check**: http://localhost:8080/api/actuator/health
 - **PostgreSQL**: localhost:5432 (database: `campus_marketplace`)
 - **Redis**: localhost:6379
+- **Frontend**: http://localhost:5173 (when running)
+
+---
 
 ## Project Structure
 
 ```
 ├── backend/                 # Unified Spring Boot application (Port 8080)
 │   ├── src/main/java/com/commandlinecommandos/campusmarketplace/
-│   │   ├── auth/           # Authentication & JWT
-│   │   ├── user/           # User management
-│   │   ├── listing/        # Listing management (merged from listing-api)
-│   │   ├── communication/  # Chat & messaging (merged from communication)
-│   │   ├── order/          # Order processing
-│   │   ├── admin/          # Admin operations
-│   │   ├── security/       # Security configuration
+│   │   ├── controller/     # REST API controllers
+│   │   ├── service/        # Business logic
+│   │   ├── repository/     # Data access layer
+│   │   ├── model/          # Entity classes
+│   │   ├── dto/            # Data transfer objects
+│   │   ├── security/       # JWT & authentication
 │   │   ├── config/         # Application configuration
-│   │   ├── exception/      # Unified exception handling
-│   │   └── dto/            # Data transfer objects
-│   ├── src/main/resources/
-│   │   └── application.yml # Unified configuration
-│   └── pom.xml            # Consolidated dependencies (Java 21)
-├── frontend/               # React/Vite frontend
-├── db/                    # Database infrastructure
-│   ├── migrations/        # Flyway migrations (V1-V8)
-│   ├── scripts/           # Backup & monitoring utilities
-│   └── docs/             # Database documentation
-├── docker-compose.yml    # Unified deployment (3 services: postgres, redis, backend)
-├── .archive/             # Archived pre-refactoring code
-│   └── pre-refactoring-YYYYMMDD/
-│       ├── listing-api/   # Old listing microservice (archived)
-│       ├── communication/ # Old communication microservice (archived)
-│       └── sql_files/     # Old manual SQL schemas (archived)
-├── DEPLOYMENT_GUIDE.md   # Deployment instructions
-├── REFACTORING_SUMMARY.md # Refactoring documentation
-└── refactor_plan.md      # Original refactoring plan
+│   │   ├── exception/      # Exception handling
+│   │   ├── listing/        # Listing module
+│   │   └── communication/  # Chat & messaging module
+│   └── pom.xml             # Maven dependencies
+├── frontend/               # React/Vite frontend (TypeScript)
+├── ai-integration-server/  # AI service (optional, Java Spring Boot)
+├── db/                     # Database infrastructure
+│   ├── migrations/         # Flyway SQL migrations (V1-V14)
+│   ├── scripts/            # Utility scripts
+│   └── docs/               # Database documentation
+├── docs/                   # Project documentation
+│   ├── api/                # API documentation
+│   ├── deployment/         # Deployment guides
+│   └── testing/            # Testing documentation
+├── docker-compose.yml      # Docker services configuration
+└── scripts/                # Development scripts
 ```
+
+---
 
 ## Architecture
 
-### Unified Backend (Single Service)
-The application has been refactored from 3 separate microservices into a single, modular monolith:
+### Unified Backend
+Single Spring Boot application with modular packages:
 
-**Before (3 Services)**:
-- Backend (8080): User management, authentication, orders
-- Listing API (8100): Listings, reports, search
-- Communication (8200): Chat, messages, notifications
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Unified Backend (8080)                    │
+├─────────────┬─────────────┬─────────────┬──────────────────┤
+│    Auth     │  Listings   │    Chat     │      Admin       │
+│   Module    │   Module    │   Module    │     Module       │
+├─────────────┴─────────────┴─────────────┴──────────────────┤
+│              Shared Services & Security                      │
+├─────────────────────────────────────────────────────────────┤
+│              PostgreSQL + Redis + Flyway                     │
+└─────────────────────────────────────────────────────────────┘
+```
 
-**After (1 Service)**:
-- Unified Backend (8080): All functionality in modular packages
+### Key Features
+- ✅ **Many-to-Many User Roles**: Users can have multiple roles (BUYER, SELLER, ADMIN)
+- ✅ **JWT Authentication**: Access tokens (1hr) + Refresh tokens (7 days)
+- ✅ **UUID-based IDs**: Consistent UUID usage across all entities
+- ✅ **Flyway Migrations**: Automated database schema management
+- ✅ **Redis Caching**: Session management and caching
+- ✅ **Unified Exception Handling**: Consistent error responses
 
-**Benefits**:
-- ✅ Eliminated ~734 lines of duplicate code
-- ✅ Single database with proper foreign key constraints
-- ✅ UUID-based IDs throughout (no lossy conversions)
-- ✅ Unified exception handling and security
-- ✅ Simplified deployment (1 service instead of 3)
-- ✅ No inter-service HTTP calls
-- ✅ Single configuration file
+---
 
 ## Features
 
-### 🏗️ Unified Architecture
-- **Single Codebase**: All functionality in one application
-- **Modular Design**: Organized into domain packages (auth, user, listing, communication, order, admin)
-- **Flyway Migrations**: Automated database schema management (V1-V8)
-- **UUID-Based IDs**: Consistent UUID usage across all tables
-- **Foreign Key Constraints**: Proper referential integrity
+### 🔐 Authentication & Authorization
+- JWT-based authentication with refresh tokens
+- Role-based access control (BUYER, SELLER, ADMIN)
+- Password reset via email
+- Account deactivation with recovery period
 
-### 🗄️ Database Infrastructure
-- **PostgreSQL 16** with connection pooling (HikariCP)
-- **Flyway Migrations**: V8 migration consolidates schemas with UUID conversion
-- **Foreign Keys**: 6 constraints ensure data integrity
-- **Automated backups** with retention policies
-- **Real-time monitoring** and health checks
+### 📦 Marketplace
+- Product listings with categories (Electronics, Books, Clothing, etc.)
+- Full-text search with filters and sorting
+- Favorites/wishlist functionality
+- Image upload support
 
-### 🔐 Security Features
-- **JWT Authentication**: Token-based with refresh tokens
-- **Role-based Access Control**: Student and Admin roles
-- **UUID-based Authorization**: Proper owner verification
-- **Session Management**: Redis-backed sessions
-- **Unified Exception Handling**: 20+ exception handlers
+### 💬 Communication
+- Real-time chat between buyers and sellers
+- Unread message count
+- Conversation history
 
-### 📦 Core Features
-- **User Management**: Registration, login, profile management
-- **Listing Management**: CRUD operations with search and filtering
-- **Communication**: Real-time chat between buyers and sellers
-- **Report System**: Content moderation with admin dashboard
-- **Order Processing**: Order creation and tracking
-- **File Upload**: Image upload for listings
-- **Email Notifications**: SMTP-based notifications
+### 🛒 Orders
+- Shopping cart functionality
+- Order lifecycle management
+- Seller order dashboard
 
-## Database Management
+### 👮 Admin
+- User management (suspend, reactivate, delete)
+- Content moderation (reports)
+- Analytics dashboard
 
-### Quick Commands
-```bash
-# Run Flyway migrations
-cd backend
-./mvnw flyway:migrate
+---
 
-# Check migration status
-./mvnw flyway:info
-
-# Health check (if using provided scripts)
-./db/scripts/monitor.sh --health
-
-# Create backup (if using provided scripts)
-./db/scripts/backup.sh
-```
-
-### Database Schema
-- **Managed by**: Flyway migrations in `db/migrations/`
-- **Latest Version**: V8 (Schema unification with UUID conversion)
-- **Tables**: users, listings, conversations, messages, orders, reports, etc.
-- **All IDs**: UUID (no BIGINT)
-
-## Documentation
-
-📚 **See [docs/DOCUMENTATION_INDEX.md](docs/DOCUMENTATION_INDEX.md) for complete documentation guide**
-
-### Quick Links
-- **[🚀 Deployment Guide](docs/DEPLOYMENT_GUIDE.md)** - Complete deployment instructions
-- **[📋 Refactoring Summary](docs/REFACTORING_SUMMARY.md)** - Details of the consolidation effort
-- **[📖 API Quick Reference](docs/API_QUICK_REFERENCE.md)** - All API endpoints with examples
-- **[🧪 Postman Testing](docs/POSTMAN_QUICK_START.md)** - Postman collection usage guide
-- **[✅ Test Results](docs/POSTMAN_TEST_VERIFICATION.md)** - Latest test results (All passing ✅)
-
-### Database Documentation
-- **[📚 Team Setup Guide](db/docs/TEAM_SETUP_GUIDE.md)** - Comprehensive setup guide
-- **[⚡ Quick Reference](db/docs/QUICK_REFERENCE.md)** - Daily commands
-- **[✅ Onboarding Checklist](db/docs/ONBOARDING_CHECKLIST.md)** - New developer checklist
-- **[🔧 Database Setup](db/docs/DATABASE_SETUP.md)** - Setup instructions
-- **[🚨 Troubleshooting](db/docs/TROUBLESHOOTING.md)** - Common issues
-
-### AWS Deployment
-- **[☁️ EC2 Deployment Guide](docs/deployment/AWS_EC2_DEPLOYMENT.md)** - Complete AWS EC2 deployment guide
-- **[✅ EC2 Readiness Assessment](docs/deployment/EC2_DEPLOYMENT_READINESS.md)** - Deployment readiness checklist
-
-### Scripts
-- **[📜 Scripts README](scripts/README.md)** - Utility scripts documentation
-- **create-db-user.sh** - Create PostgreSQL user
-- **setup-database.sh** - Complete database setup
-- **start-dev-db.sh** - Quick development database start
-
-### API Endpoints
-All endpoints available at `http://localhost:8080/api`:
-- **Authentication**: `/auth/*` - Login, register, refresh tokens
-- **Users**: `/users/*` - Profile management
-- **Listings**: `/listings/*` - Product listings with search
-- **Reports**: `/reports/*` - Content moderation
-- **Communication**: `/chat/*` - Buyer-seller chat and notifications
-- **Orders**: `/orders/*` - Order processing
-- **Admin**: `/admin/*` - Admin operations
-
-## Testing
-
-### Postman Collection
-- **Collection File**: `Campus_Marketplace_Complete_API_Collection.postman_collection.json`
-- **Test Results**: ✅ All 30 tests passing (see [POSTMAN_TEST_VERIFICATION.md](POSTMAN_TEST_VERIFICATION.md))
-- **Quick Start**: See [POSTMAN_QUICK_START.md](POSTMAN_QUICK_START.md)
+## Development
 
 ### Running Tests
 ```bash
-# Using Newman (Postman CLI)
-npx newman run docs/postman/Campus_Marketplace_Complete_API_Collection.postman_collection.json
+cd backend
 
-# Or import collection into Postman app
-# File: docs/postman/Campus_Marketplace_Complete_API_Collection.postman_collection.json
+# Run all tests
+./mvnw test
+
+# Run specific test class
+./mvnw test -Dtest=RoleBasedAccessTest
 ```
+
+### Database Commands
+```bash
+# Check migration status
+cd backend && ./mvnw flyway:info
+
+# Run migrations manually
+./mvnw flyway:migrate
+
+# Connect to database
+docker exec -it campus-marketplace-db psql -U cm_app_user -d campus_marketplace
+```
+
+### Docker Commands
+```bash
+# Start all services
+docker-compose up -d
+
+# Rebuild backend after code changes
+docker-compose build --no-cache backend
+docker-compose up -d backend
+
+# View logs
+docker-compose logs -f backend
+
+# Stop all services
+docker-compose down
+```
+
+---
+
+## Documentation
+
+### Quick Links
+| Document | Description |
+|----------|-------------|
+| **[📖 API Documentation](docs/api/BACKEND_API_DOCUMENTATION.md)** | Complete API reference for frontend |
+| **[🚀 Deployment Guide](docs/DEPLOYMENT_GUIDE.md)** | Production deployment instructions |
+| **[🧪 Testing Guide](docs/testing/E2E_TEST_MANUAL.md)** | E2E testing procedures |
+| **[📚 Documentation Index](docs/DOCUMENTATION_INDEX.md)** | All documentation links |
+
+### Database Documentation
+- **[Database Setup](db/docs/DATABASE_SETUP.md)** - Initial setup
+- **[Schema Design](db/docs/SCHEMA_DESIGN.md)** - Database schema
+- **[Troubleshooting](db/docs/TROUBLESHOOTING.md)** - Common issues
+
+---
 
 ## Troubleshooting
 
 ### Common Issues
-1. **Port 8080 already in use**: Stop other services or change port in `application.yml`
-2. **Database connection failed**: Ensure PostgreSQL is running: `docker-compose ps`
-3. **Migration failed**: Check Flyway status: `./mvnw flyway:info`
-4. **PostgreSQL role doesn't exist**: Run `./create-db-user.sh` to create `cm_app_user`
+
+| Issue | Solution |
+|-------|----------|
+| Port 8080 in use | `docker stop campus-marketplace-backend` or kill process |
+| Database connection failed | `docker-compose up -d postgres redis` |
+| "database does not exist" | Database auto-created by Docker; restart with `docker-compose down -v && docker-compose up -d` |
+| Tests failing | Run `./mvnw test` in backend directory |
 
 ### Quick Fixes
 ```bash
 # Restart all services
 docker-compose restart
 
-# View logs
-docker-compose logs -f backend
-
-# Reset database (WARNING: deletes all data)
+# Full reset (deletes data)
 docker-compose down -v
-docker-compose up -d postgres redis
-cd backend && ./mvnw flyway:migrate
+docker-compose up -d
+
+# Check service health
+docker-compose ps
+curl http://localhost:8080/api/actuator/health
 ```
 
-## Archived Code
+---
 
-The previous microservices architecture has been archived in `.archive/pre-refactoring-YYYYMMDD/`:
-- `listing-api/` - Old listing microservice (port 8100)
-- `communication/` - Old communication microservice (port 8200)  
-- `sql_files/` - Old manual SQL schemas (replaced by Flyway)
+## Contributing
 
-These are kept for reference but are no longer used in development.
+1. Create feature branch from `main`
+2. Make changes and add tests
+3. Run `./mvnw test` to ensure all tests pass
+4. Submit pull request
 
-## Link to Project Journal
+---
 
-## Team Google Sheet or Project Board : (Product Backlog and Sprint Backlog for each Sprint)
+## Links
 
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/kvgvOCnV)
+- **GitHub Classroom**: [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/kvgvOCnV)
