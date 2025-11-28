@@ -235,7 +235,7 @@ export const adminApi = {
     return realAdmin.getReports(status);
   },
 
-  async updateReport(reportId: number, data: any) {
+  async updateReport(reportId: string, data: any) {
     if (API_CONFIG.USE_MOCK_API) {
       return mockAdminApi.updateReport(reportId, data);
     }
@@ -265,7 +265,7 @@ export const chatApi = {
     return realChat.createConversation(data);
   },
 
-  async getMessages(conversationId: number) {
+  async getMessages(conversationId: string) {
     if (API_CONFIG.USE_MOCK_API) {
       return mockChatApi.getMessages(conversationId);
     }
@@ -279,7 +279,7 @@ export const chatApi = {
     return realChat.sendMessage(data);
   },
 
-  async markAsRead(conversationId: number) {
+  async markAsRead(conversationId: string) {
     if (API_CONFIG.USE_MOCK_API) {
       return mockChatApi.markAsRead(conversationId);
     }

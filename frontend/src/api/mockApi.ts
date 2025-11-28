@@ -434,9 +434,10 @@ export const mockAdminApi = {
     return { reports: filtered };
   },
 
-  async updateReport(reportId: number, data: any) {
+  async updateReport(reportId: string | number, data: any) {
     await delay(300);
-    const index = reports.findIndex(r => r.reportId === reportId);
+    const numId = typeof reportId === 'string' ? parseInt(reportId) : reportId;
+    const index = reports.findIndex(r => r.reportId === numId);
     if (index === -1) {
       throw { response: { status: 404, data: { message: 'Report not found' } } };
     }
@@ -524,11 +525,12 @@ export const mockChatApi = {
     return { conversationId: newConversation.conversationId, message: 'Conversation created successfully' };
   },
 
-  async getMessages(conversationId: number) {
+  async getMessages(conversationId: string | number) {
     await delay(200);
+    const numId = typeof conversationId === 'string' ? parseInt(conversationId) : conversationId;
     return {
       conversationId,
-      messages: messages[conversationId] || [],
+      messages: messages[numId] || [],
     };
   },
 
@@ -561,15 +563,16 @@ export const mockChatApi = {
     return { messageId: newMessage.messageId, conversationId: data.conversationId, createdAt: newMessage.createdAt };
   },
 
-  async markAsRead(conversationId: number) {
+  async markAsRead(conversationId: string | number) {
     await delay(200);
-    const conversationMessages = messages[conversationId] || [];
+    const numId = typeof conversationId === 'string' ? parseInt(conversationId) : conversationId;
+    const conversationMessages = messages[numId] || [];
     conversationMessages.forEach(m => {
       if (m.senderId !== currentUser?.userId) {
         m.isRead = true;
       }
     });
-    const conv = conversations.find(c => c.conversationId === conversationId);
+    const conv = conversations.find(c => c.conversationId === numId);
     if (conv) {
       conv.unreadCount = 0;
     }

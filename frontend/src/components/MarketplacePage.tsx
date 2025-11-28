@@ -131,7 +131,8 @@ export function MarketplacePage() {
   async function loadTrending() {
     try {
       const response = await discoveryApi.getTrending(4);
-      setTrendingListings(response.products || []);
+      // Backend returns { trending: [...] }
+      setTrendingListings(response.trending || response.products || []);
     } catch (err) {
       console.error('Failed to load trending:', err);
     }

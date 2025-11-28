@@ -3,7 +3,7 @@ import { chatApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 
 interface Conversation {
-  conversationId: number;
+  conversationId: string;  // UUID from backend
   listingId: string;
   listing: {
     title: string;
@@ -35,8 +35,8 @@ interface Conversation {
 }
 
 interface Message {
-  messageId: number;
-  conversationId: number;
+  messageId: string;  // UUID from backend
+  conversationId: string;  // UUID from backend
   senderId: string;
   senderName: string;
   content: string;
@@ -77,7 +77,8 @@ export function MessagesPage({ onBack }: Props) {
     try {
       setLoading(true);
       const response = await chatApi.getConversations();
-      setConversations(response.conversations || []);
+      // Backend returns array directly, not wrapped in { conversations: [] }
+      setConversations(Array.isArray(response) ? response : response.conversations || []);
     } catch (err) {
       console.error('Failed to load conversations:', err);
     } finally {
@@ -85,16 +86,17 @@ export function MessagesPage({ onBack }: Props) {
     }
   }
 
-  async function loadMessages(conversationId: number) {
+  async function loadMessages(conversationId: string) {
     try {
       const response = await chatApi.getMessages(conversationId);
-      setMessages(response.messages || []);
+      // Backend returns array directly, not wrapped in { messages: [] }
+      setMessages(Array.isArray(response) ? response : response.messages || []);
     } catch (err) {
       console.error('Failed to load messages:', err);
     }
   }
 
-  async function markAsRead(conversationId: number) {
+  async function markAsRead(conversationId: string) {
     try {
       await chatApi.markAsRead(conversationId);
       setConversations(prev =>

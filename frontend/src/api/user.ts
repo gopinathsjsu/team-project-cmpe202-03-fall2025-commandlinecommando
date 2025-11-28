@@ -24,6 +24,11 @@ export async function updateProfile(data: Partial<UserProfile>) {
 }
 
 export async function changePassword(currentPassword: string, newPassword: string) {
-  const res = await api.post('/users/change-password', { currentPassword, newPassword })
+  // Backend expects currentPassword, newPassword, and confirmPassword
+  const res = await api.post('/users/change-password', { 
+    currentPassword, 
+    newPassword,
+    confirmPassword: newPassword  // Auto-confirm since frontend doesn't have confirm field
+  })
   return res.data
 }

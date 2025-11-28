@@ -54,10 +54,11 @@ export async function searchListings(params: {
   size?: number
 }) {
   // Backend uses POST /search with SearchRequest body
+  // Backend expects categories (array) and conditions (array), not singular values
   const res = await api.post('/search', {
     query: params.keyword || '',
-    category: params.category,
-    condition: params.condition,
+    categories: params.category ? [params.category] : undefined,
+    conditions: params.condition ? [params.condition] : undefined,
     minPrice: params.minPrice,
     maxPrice: params.maxPrice,
     location: params.location,

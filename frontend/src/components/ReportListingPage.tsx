@@ -4,14 +4,17 @@ import { adminApi } from '../api';
 import { useAuth } from '../context/AuthContext';
 
 interface Report {
-  reportId: number;
+  reportId: string;  // UUID from backend
   reportType: string;
   description: string;
-  listingId: string;
+  listingId?: string;
+  targetId?: string;
   listing?: any;
   reporter?: any;
+  reportedProduct?: any;
   status: string;
-  severity: string;
+  severity?: string;
+  priority?: string;
   createdAt: string;
 }
 
@@ -94,7 +97,8 @@ export function ReportListingPage() {
     try {
       setLoading(true);
       const data = await adminApi.getReports();
-      setReports(data.reports || []);
+      // Backend returns { content: [], ... } for paginated responses
+      setReports(data.content || data.reports || []);
     } catch (err) {
       console.error('Failed to load reports:', err);
     } finally {
@@ -102,7 +106,7 @@ export function ReportListingPage() {
     }
   }
 
-  async function handleUpdateReport(reportId: number, status: string) {
+  async function handleUpdateReport(reportId: string, status: string) {
     try {
       await adminApi.updateReport(reportId, { status });
       loadReports();
@@ -113,12 +117,16 @@ export function ReportListingPage() {
   }
 
   const filteredReports = reports.filter(report => {
+    // Backend may use reportedProduct instead of listing
+    const productTitle = report.listing?.title || report.reportedProduct?.title || '';
     const matchesSearch = 
-      report.listing?.title?.toLowerCase().includes(search.toLowerCase()) || 
+      productTitle.toLowerCase().includes(search.toLowerCase()) || 
       report.description?.toLowerCase().includes(search.toLowerCase()) ||
       report.reporter?.username?.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === 'all' || report.status === statusFilter;
-    const matchesSeverity = severityFilter === 'all' || report.severity === severityFilter;
+    // Backend uses priority instead of severity
+    const reportSeverity = report.severity || report.priority || 'LOW';
+    const matchesSeverity = severityFilter === 'all' || reportSeverity.toUpperCase() === severityFilter.toUpperCase();
     return matchesSearch && matchesStatus && matchesSeverity;
   });
 
