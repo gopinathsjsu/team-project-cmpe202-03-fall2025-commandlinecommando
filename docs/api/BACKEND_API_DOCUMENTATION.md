@@ -1,8 +1,14 @@
 # Campus Marketplace Backend API Documentation
 
-**Version:** 1.0.0  
+**Version:** 1.1.0  
 **Base URL:** `http://localhost:8080/api`  
-**Last Updated:** November 27, 2025
+**Last Updated:** December 2025
+
+> ⚠️ **Important Changes in v1.1.0:**
+> - Discovery endpoints return specific field names (`trending`, `recommended`, `recentlyViewed`, `similar`)
+> - Chat endpoints return arrays directly, not wrapped objects
+> - Search endpoint uses `results` field in response
+> - All IDs are UUID strings
 
 ---
 
@@ -589,8 +595,20 @@ Full-text search with filters.
 **Success Response (200):**
 ```json
 {
-  "results": [ ... ],
+  "results": [
+    {
+      "id": "uuid",
+      "title": "MacBook Pro",
+      "price": 1200.00,
+      "category": "ELECTRONICS",
+      "condition": "LIKE_NEW",
+      "images": ["https://..."],
+      "seller": { ... },
+      "score": 0.95
+    }
+  ],
   "totalResults": 50,
+  "totalPages": 3,
   "page": 0,
   "size": 20,
   "query": "laptop",
@@ -598,6 +616,9 @@ Full-text search with filters.
     "category": "ELECTRONICS"
   }
 }
+```
+
+> ⚠️ **Note:** Search results are in `results` array, not `products`
 ```
 
 ---
@@ -637,6 +658,26 @@ Get user's recent search queries.
 
 Get trending products based on views and engagement.
 
+**Success Response (200):**
+```json
+{
+  "trending": [
+    {
+      "id": "uuid",
+      "title": "MacBook Pro 2023",
+      "price": 1200.00,
+      "category": "ELECTRONICS",
+      "condition": "LIKE_NEW",
+      "images": ["https://..."],
+      "seller": { ... },
+      "viewCount": 150
+    }
+  ]
+}
+```
+
+> ⚠️ **Note:** Response uses `trending` field, not `products`
+
 ---
 
 ### 4.5 Recommended Products
@@ -645,6 +686,22 @@ Get trending products based on views and engagement.
 🔒 **Requires Authentication**
 
 Get personalized product recommendations.
+
+**Success Response (200):**
+```json
+{
+  "recommended": [
+    {
+      "id": "uuid",
+      "title": "iPhone 15",
+      "price": 899.00,
+      ...
+    }
+  ]
+}
+```
+
+> ⚠️ **Note:** Response uses `recommended` field, not `recommendations`
 
 ---
 
@@ -655,6 +712,22 @@ Get personalized product recommendations.
 
 Get products similar to the specified product.
 
+**Path Parameters:**
+- `productId` (UUID): The product ID to find similar products for
+
+**Success Response (200):**
+```json
+{
+  "similar": [
+    {
+      "id": "uuid",
+      "title": "MacBook Air",
+      ...
+    }
+  ]
+}
+```
+
 ---
 
 ### 4.7 Recently Viewed
@@ -663,6 +736,21 @@ Get products similar to the specified product.
 🔒 **Requires Authentication**
 
 Get user's recently viewed products.
+
+**Success Response (200):**
+```json
+{
+  "recentlyViewed": [
+    {
+      "id": "uuid",
+      "title": "Desk Lamp",
+      ...
+    }
+  ]
+}
+```
+
+> ⚠️ **Note:** Response uses `recentlyViewed` field, not `products`
 
 ---
 
@@ -756,6 +844,8 @@ Remove a product from favorites.
 
 ## 6. Chat & Messaging
 
+> ⚠️ **Important:** Chat endpoints return arrays directly, NOT wrapped in objects.
+
 ### 6.1 Send Message to Listing
 **POST** `/api/chat/messages`
 
@@ -805,7 +895,7 @@ Start a conversation or send a message about a listing.
 
 🔒 **Requires Authentication**
 
-**Success Response (200):**
+**Success Response (200):** Returns array directly
 ```json
 [
   {
@@ -824,6 +914,8 @@ Start a conversation or send a message about a listing.
 ]
 ```
 
+> ⚠️ **Note:** Returns `List<ConversationResponse>` directly, NOT `{ conversations: [...] }`
+
 ---
 
 ### 6.4 Get Conversation
@@ -837,6 +929,22 @@ Start a conversation or send a message about a listing.
 **GET** `/api/chat/conversations/{conversationId}/messages`
 
 🔒 **Requires Authentication**
+
+**Success Response (200):** Returns array directly
+```json
+[
+  {
+    "id": "uuid",
+    "content": "Message text",
+    "senderId": "uuid",
+    "senderName": "John",
+    "createdAt": "2025-11-27T10:00:00Z",
+    "read": true
+  }
+]
+```
+
+> ⚠️ **Note:** Returns `List<MessageResponse>` directly, NOT `{ messages: [...] }`
 
 ---
 
@@ -874,6 +982,17 @@ Start a conversation or send a message about a listing.
 🔒 **Requires Authentication**
 
 Get existing conversation or create a new one for the listing.
+
+---
+
+### 6.9 Mark Single Message as Read
+**PUT** `/api/chat/messages/{messageId}/read`
+
+🔒 **Requires Authentication**
+
+Mark a specific message as read.
+
+**Success Response (200):** Empty body
 
 ---
 
@@ -1098,6 +1217,21 @@ Get orders where the current user is the seller.
 - `WRONG_CATEGORY`
 - `OTHER`
 
+**Success Response (201):**
+```json
+{
+  "reportId": "uuid-string",
+  "reportType": "LISTING",
+  "targetId": "uuid",
+  "reason": "INAPPROPRIATE",
+  "description": "...",
+  "status": "PENDING",
+  "createdAt": "2025-11-27T10:00:00Z"
+}
+```
+
+> ⚠️ **Note:** `reportId` is a UUID string, not a number
+
 ---
 
 ### 9.2 Get Report by ID
@@ -1111,6 +1245,36 @@ Get orders where the current user is the seller.
 **GET** `/api/reports/my-reports`
 
 🔒 **Requires Authentication**
+
+Get reports submitted by the current user. Paginated response.
+
+**Query Parameters:**
+- `page` (int, default: 0)
+- `size` (int, default: 10)
+
+**Success Response (200):**
+```json
+{
+  "content": [
+    {
+      "reportId": "uuid-string",
+      "reportType": "LISTING",
+      "targetId": "uuid",
+      "reason": "SPAM",
+      "description": "This is spam",
+      "status": "PENDING",
+      "createdAt": "2025-11-27T10:00:00Z",
+      "updatedAt": "2025-11-27T10:00:00Z"
+    }
+  ],
+  "totalElements": 5,
+  "totalPages": 1,
+  "number": 0,
+  "size": 10
+}
+```
+
+> ⚠️ **Note:** Uses paginated format with `content` array
 
 ---
 
@@ -1436,10 +1600,57 @@ curl -X POST http://localhost:8080/api/auth/logout \
 1. **Token Storage**: Store `accessToken` in memory or sessionStorage, `refreshToken` in localStorage
 2. **Token Refresh**: Implement automatic token refresh when receiving 401 response
 3. **API Base URL**: Use environment variable `VITE_API_BASE_URL` or default to `http://localhost:8080/api`
-4. **CORS**: Backend allows origins `localhost:3000`, `localhost:3001`, `localhost:3002`
+4. **CORS**: Backend allows origins `localhost:3000`, `localhost:3001`, `localhost:3002`, `localhost:5173`
 5. **Date Format**: All dates are in ISO-8601 format (e.g., `2025-11-27T10:00:00Z`)
 6. **UUIDs**: All entity IDs are UUIDs (e.g., `550e8400-e29b-41d4-a716-446655440000`)
 
 ---
 
-*Generated for Campus Marketplace v1.0.0*
+## ⚠️ Critical API Response Format Notes
+
+### Discovery Endpoints - Field Naming
+| Endpoint | Response Field | NOT |
+|----------|---------------|-----|
+| `GET /discovery/trending` | `{ "trending": [...] }` | ~~`{ "products": [...] }`~~ |
+| `GET /discovery/recommended` | `{ "recommended": [...] }` | ~~`{ "recommendations": [...] }`~~ |
+| `GET /discovery/recently-viewed` | `{ "recentlyViewed": [...] }` | ~~`{ "products": [...] }`~~ |
+| `GET /discovery/similar/{id}` | `{ "similar": [...] }` | ~~`{ "products": [...] }`~~ |
+
+### Chat Endpoints - Array vs Object
+| Endpoint | Response Format |
+|----------|----------------|
+| `GET /chat/conversations` | Returns `ConversationResponse[]` directly |
+| `GET /chat/conversations/{id}/messages` | Returns `MessageResponse[]` directly |
+
+**Correct:**
+```javascript
+const conversations = await api.get('/chat/conversations'); // Array
+conversations.forEach(conv => console.log(conv.id));
+```
+
+**Incorrect:**
+```javascript
+// DON'T DO THIS - no "conversations" wrapper
+const { conversations } = await api.get('/chat/conversations'); // Wrong!
+```
+
+### Search Response
+```javascript
+const response = await api.post('/search', { query: 'laptop' });
+// Use response.results, not response.products
+const products = response.results;
+```
+
+### Report IDs
+Report IDs are UUID strings, not numbers:
+```javascript
+// Correct
+const reportId = "550e8400-e29b-41d4-a716-446655440000";
+
+// Incorrect
+const reportId = 12345; // Wrong!
+```
+
+---
+
+*Generated for Campus Marketplace v1.1.0*
