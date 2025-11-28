@@ -55,7 +55,7 @@ public class DataInitializationService implements CommandLineRunner {
                 user.setPassword("$2a$10$rOIHQnPyoJBSAcQWJYJSJe5Vx8eHOKYvOoYRNKZdNjZdNjZdNjZdN"); // password123
                 user.setFirstName("Test");
                 user.setLastName("Student");
-                user.setRole(UserRole.STUDENT);
+                user.setRole(UserRole.BUYER); // Changed from STUDENT to BUYER
                 user.setActive(true);
                 // University can be null for H2
                 return userRepository.save(user);

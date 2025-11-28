@@ -53,9 +53,12 @@ public class AdminAnalyticsController {
             // Suspended users (verification status SUSPENDED)
             overview.put("suspendedUsers", (long) userRepository.findByVerificationStatus(VerificationStatus.SUSPENDED).size());
             
-            // Students count
-            overview.put("studentsCount", userRepository.countByRole(UserRole.STUDENT));
-            
+            // Sellers count
+            overview.put("sellersCount", userRepository.countByRole(UserRole.SELLER));
+
+            // Buyers count
+            overview.put("buyersCount", userRepository.countByRole(UserRole.BUYER));
+
             // Admins count
             overview.put("adminsCount", userRepository.countByRole(UserRole.ADMIN));
             
@@ -95,7 +98,8 @@ public class AdminAnalyticsController {
             
             // Users by role
             Map<String, Long> usersByRole = new HashMap<>();
-            usersByRole.put("STUDENT", userRepository.countByRole(UserRole.STUDENT));
+            usersByRole.put("SELLER", userRepository.countByRole(UserRole.SELLER));
+            usersByRole.put("BUYER", userRepository.countByRole(UserRole.BUYER));
             usersByRole.put("ADMIN", userRepository.countByRole(UserRole.ADMIN));
             stats.put("usersByRole", usersByRole);
             

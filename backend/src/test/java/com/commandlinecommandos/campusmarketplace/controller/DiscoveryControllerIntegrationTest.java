@@ -79,7 +79,7 @@ public class DiscoveryControllerIntegrationTest {
         testUser.setFirstName("Test");
         testUser.setLastName("User");
         testUser.setUniversity(testUniversity);
-        testUser.setRole(UserRole.STUDENT);
+        testUser.setRole(UserRole.BUYER);
         testUser.setActive(true);
         testUser = userRepository.save(testUser);
 

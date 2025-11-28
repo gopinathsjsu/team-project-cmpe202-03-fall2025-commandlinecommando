@@ -2,12 +2,14 @@ package com.commandlinecommandos.campusmarketplace.model;
 
 /**
  * User roles for Campus Marketplace
- * STUDENT - Students who can both buy and sell items
- * ADMIN - Platform administrators
- * 
- * Note: Students have a single role but can perform both buying and selling activities
+ * SELLER - Users who can create and manage listings
+ * BUYER - Users who can search items and chat with sellers
+ * ADMIN - Platform administrators for moderation
+ *
+ * Note: Per professor's requirements, these are distinct roles
  */
 public enum UserRole {
-    STUDENT,  // Students who can both buy and sell items
-    ADMIN     // Platform administrator
+    SELLER,  // Can create and manage listings
+    BUYER,   // Can search items and chat with sellers
+    ADMIN    // Platform administrator for moderation
 }

@@ -90,9 +90,9 @@ public class WebSecurityConfig {
                 // Debug endpoints (admin only, development use)
                 .requestMatchers("/debug/**").hasRole("ADMIN")
                 
-                // Student and Admin endpoints (context path /api is already applied)
-                .requestMatchers("/listings/**").hasAnyRole("STUDENT", "ADMIN")
-                .requestMatchers("/user/**").hasAnyRole("STUDENT", "ADMIN")
+                // Buyer, Seller, and Admin endpoints (context path /api is already applied)
+                .requestMatchers("/listings/**").hasAnyRole("BUYER", "SELLER", "ADMIN")
+                .requestMatchers("/user/**").hasAnyRole("BUYER", "SELLER", "ADMIN")
 
                 .requestMatchers("/actuator/prometheus").permitAll()
                 .requestMatchers("/actuator/metrics").permitAll()

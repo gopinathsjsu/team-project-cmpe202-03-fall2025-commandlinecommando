@@ -16,6 +16,16 @@ spring:
   h2:
     console:
       enabled: false
+  flyway:
+    enabled: false  # Disable Flyway for tests - use JPA ddl-auto instead
+  cache:
+    type: none  # Disable caching in tests
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration
+  mail:
+    host: localhost
+    port: 1025
 
 # Disable security auto-configuration for tests
 logging:

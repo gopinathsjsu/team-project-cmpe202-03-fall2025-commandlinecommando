@@ -213,10 +213,14 @@ public class User implements UserDetails {
         return this.verificationStatus == VerificationStatus.VERIFIED;
     }
     
-    public boolean isStudent() {
-        return this.role == UserRole.STUDENT;
+    public boolean isSeller() {
+        return this.role == UserRole.SELLER;
     }
-    
+
+    public boolean isBuyer() {
+        return this.role == UserRole.BUYER;
+    }
+
     public boolean isAdmin() {
         return this.role == UserRole.ADMIN;
     }

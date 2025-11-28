@@ -56,7 +56,7 @@ class AuthControllerTest {
         authResponse.setRefreshToken("refresh-token");
         authResponse.setTokenType("Bearer");
         authResponse.setExpiresIn(3600L);
-        authResponse.setRole(UserRole.STUDENT);
+        authResponse.setRole(UserRole.BUYER);
         authResponse.setUsername("testuser");
         authResponse.setUserId(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         
@@ -79,7 +79,7 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.refreshToken").value("refresh-token"))
                 .andExpect(jsonPath("$.tokenType").value("Bearer"))
                 .andExpect(jsonPath("$.expiresIn").value(3600))
-                .andExpect(jsonPath("$.role").value("STUDENT"))
+                .andExpect(jsonPath("$.role").value("BUYER"))
                 .andExpect(jsonPath("$.username").value("testuser"))
                 .andExpect(jsonPath("$.userId").value("00000000-0000-0000-0000-000000000001"));
         

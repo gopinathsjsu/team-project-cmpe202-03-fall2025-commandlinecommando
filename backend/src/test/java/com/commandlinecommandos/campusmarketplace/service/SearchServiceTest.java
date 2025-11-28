@@ -60,7 +60,7 @@ class SearchServiceTest {
         testUser.setFirstName("Test");
         testUser.setLastName("User");
         testUser.setUniversity(testUniversity);
-        testUser.setRole(UserRole.STUDENT);
+        testUser.setRole(UserRole.BUYER);
         testUser = userRepository.save(testUser);
         
         // Create test products

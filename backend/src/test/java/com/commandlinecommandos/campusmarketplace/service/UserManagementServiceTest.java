@@ -68,7 +68,7 @@ class UserManagementServiceTest {
         testUser.setPassword("encodedPassword");
         testUser.setFirstName("Test");
         testUser.setLastName("User");
-        testUser.setRole(UserRole.STUDENT);
+        testUser.setRole(UserRole.BUYER);
         testUser.setUniversity(testUniversity);
         testUser.setActive(true);
         testUser.setVerificationStatus(VerificationStatus.VERIFIED);
