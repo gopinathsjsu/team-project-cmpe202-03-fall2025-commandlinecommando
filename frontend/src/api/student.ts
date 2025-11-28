@@ -14,6 +14,7 @@ export async function getStudentDashboard(): Promise<StudentDashboard> {
 
 export async function getMyListings() {
   const res = await api.get('/student/my-listings')
-  return res.data
+  // Backend returns {listings: [], message: "..."} - extract the listings array
+  return res.data.listings || res.data || []
 }
 
