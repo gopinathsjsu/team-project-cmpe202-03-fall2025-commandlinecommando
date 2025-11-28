@@ -229,13 +229,20 @@ export const mockListingsApi = {
     const size = params.size || 20;
     const start = page * size;
     const end = start + size;
+    const paginatedResults = results.slice(start, end).map(l => ({ ...l, favorite: favorites.includes(l.id) }));
+    const totalPages = Math.ceil(results.length / size);
 
+    // Backend SearchResponse uses 'results' field, but we also include 'content' for compatibility
     return {
-      content: results.slice(start, end).map(l => ({ ...l, favorite: favorites.includes(l.id) })),
+      results: paginatedResults,
+      content: paginatedResults,  // For backwards compatibility with getListings-style responses
+      totalResults: results.length,
       totalElements: results.length,
-      totalPages: Math.ceil(results.length / size),
-      number: page,
-      size,
+      totalPages,
+      currentPage: page,
+      pageSize: size,
+      hasNext: page < totalPages - 1,
+      hasPrevious: page > 0,
     };
   },
 
@@ -266,9 +273,12 @@ export const mockListingsApi = {
     if (!listing) {
       throw { response: { status: 404, data: { message: 'Listing not found' } } };
     }
+    // Backend uses UUID for reportId
+    const reportId = crypto.randomUUID();
     const newReport = {
-      reportId: reports.length + 1,
+      reportId,
       reportType: data.reportType,
+      reason: data.reportType,  // Backend expects 'reason' field
       description: data.description,
       listingId: id,
       listing,
@@ -276,6 +286,7 @@ export const mockListingsApi = {
       reporter: currentUser,
       status: 'PENDING',
       severity: 'medium',
+      priority: 'MEDIUM',  // Backend uses priority
       createdAt: new Date().toISOString(),
     };
     reports.unshift(newReport);
@@ -290,7 +301,8 @@ export const mockDiscoveryApi = {
       .filter(l => l.status === 'ACTIVE')
       .sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0))
       .slice(0, limit);
-    return { products: sorted.map(l => ({ ...l, favorite: favorites.includes(l.id) })) };
+    // Backend returns { trending: [...] } per TrendingResponse.java
+    return { trending: sorted.map(l => ({ ...l, favorite: favorites.includes(l.id) })) };
   },
 
   async getRecommended(limit = 10) {
@@ -311,8 +323,9 @@ export const mockDiscoveryApi = {
       recommendations = [...recommendations, ...others].slice(0, limit);
     }
 
+    // Backend returns { recommended: [...] } per RecommendedResponse.java
     return {
-      recommendations: recommendations.slice(0, limit).map((l, i) => ({
+      recommended: recommendations.slice(0, limit).map((l, i) => ({
         ...l,
         favorite: favorites.includes(l.id),
         reason: 'Based on your browsing history',
@@ -340,7 +353,8 @@ export const mockDiscoveryApi = {
       .map(id => listings.find(l => l.id === id))
       .filter(Boolean)
       .map(l => ({ ...l!, favorite: favorites.includes(l!.id), viewedAt: new Date().toISOString() }));
-    return { products: viewed };
+    // Backend returns { recentlyViewed: [...] } per RecentlyViewedResponse.java
+    return { recentlyViewed: viewed };
   },
 };
 
@@ -431,13 +445,14 @@ export const mockAdminApi = {
     if (status && status !== 'all') {
       filtered = filtered.filter(r => r.status === status);
     }
-    return { reports: filtered };
+    // Backend returns paginated response with 'content' field
+    return { content: filtered, reports: filtered, totalElements: filtered.length, totalPages: 1 };
   },
 
-  async updateReport(reportId: string | number, data: any) {
+  async updateReport(reportId: string, data: any) {
     await delay(300);
-    const numId = typeof reportId === 'string' ? parseInt(reportId) : reportId;
-    const index = reports.findIndex(r => r.reportId === numId);
+    // Find by string reportId (UUID)
+    const index = reports.findIndex(r => r.reportId === reportId || r.reportId?.toString() === reportId);
     if (index === -1) {
       throw { response: { status: 404, data: { message: 'Report not found' } } };
     }
@@ -465,11 +480,10 @@ export const mockAdminApi = {
 export const mockChatApi = {
   async getConversations() {
     await delay(300);
-    return {
-      conversations: conversations.filter(
-        c => c.buyer.userId === currentUser?.userId || c.seller.userId === currentUser?.userId
-      ),
-    };
+    // Backend returns List<ConversationResponse> (array directly, not wrapped)
+    return conversations.filter(
+      c => c.buyer.userId === currentUser?.userId || c.seller.userId === currentUser?.userId
+    );
   },
 
   async createConversation(data: any) {
@@ -528,10 +542,8 @@ export const mockChatApi = {
   async getMessages(conversationId: string | number) {
     await delay(200);
     const numId = typeof conversationId === 'string' ? parseInt(conversationId) : conversationId;
-    return {
-      conversationId,
-      messages: messages[numId] || [],
-    };
+    // Backend returns List<MessageResponse> (array directly, not wrapped)
+    return messages[numId] || [];
   },
 
   async sendMessage(data: any) {

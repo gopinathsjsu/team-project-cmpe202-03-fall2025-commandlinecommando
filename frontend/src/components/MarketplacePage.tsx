@@ -165,7 +165,10 @@ export function MarketplacePage() {
         size: 20,
       });
       let listingsArray: Listing[] = [];
-      if (Array.isArray(response.content)) {
+      // Backend SearchResponse uses 'results', but also check 'content' for compatibility
+      if (Array.isArray(response.results)) {
+        listingsArray = response.results;
+      } else if (Array.isArray(response.content)) {
         listingsArray = response.content;
       } else if (Array.isArray(response)) {
         listingsArray = response;
