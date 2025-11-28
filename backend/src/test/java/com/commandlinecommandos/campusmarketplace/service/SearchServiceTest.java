@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -60,7 +61,7 @@ class SearchServiceTest {
         testUser.setFirstName("Test");
         testUser.setLastName("User");
         testUser.setUniversity(testUniversity);
-        testUser.setRole(UserRole.STUDENT);
+        testUser.setRoles(Set.of(UserRole.BUYER, UserRole.SELLER));
         testUser = userRepository.save(testUser);
         
         // Create test products

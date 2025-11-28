@@ -295,7 +295,7 @@ export function MarketplacePage() {
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium">{user.firstName || user.username}</p>
-                  <p className="text-xs text-muted">{user.role}</p>
+                  <p className="text-xs text-muted">{user.roles?.join(', ') || 'Student'}</p>
                 </div>
               </div>
             )}

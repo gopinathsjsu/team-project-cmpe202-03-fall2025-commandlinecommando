@@ -11,7 +11,16 @@ import com.commandlinecommandos.campusmarketplace.model.User;
 import com.commandlinecommandos.campusmarketplace.model.UserRole;
 
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+/**
+ * AOP Aspect for role-based authorization.
+ * 
+ * Supports many-to-many user-role relationship. A user can have multiple roles,
+ * and authorization passes if the user has ANY of the required roles.
+ */
 @Aspect
 @Component
 public class RoleAuthorizationAspect {
@@ -24,43 +33,47 @@ public class RoleAuthorizationAspect {
             throw new AccessDeniedException("Access denied: User not authenticated");
         }
         
-        UserRole userRole = null;
+        Set<UserRole> userRoles = new HashSet<>();
         
         // Handle different types of principals (real User vs test UserDetails)
         Object principal = authentication.getPrincipal();
         if (principal instanceof User) {
             // Real authentication with our custom User
             User user = (User) principal;
-            userRole = user.getRole();
+            userRoles = user.getRoles();
         } else {
-            // Test authentication with @WithMockUser - extract role from authorities
-            String roleString = authentication.getAuthorities().stream()
+            // Test authentication with @WithMockUser - extract roles from authorities
+            userRoles = authentication.getAuthorities().stream()
                 .map(authority -> authority.getAuthority())
                 .filter(auth -> auth.startsWith("ROLE_"))
                 .map(auth -> auth.substring(5)) // Remove "ROLE_" prefix
-                .findFirst()
-                .orElse(null);
-                
-            if (roleString != null) {
-                try {
-                    userRole = UserRole.valueOf(roleString);
-                } catch (IllegalArgumentException e) {
-                    throw new AccessDeniedException("Access denied: Invalid role '" + roleString + "'");
-                }
-            }
+                .map(roleString -> {
+                    try {
+                        return UserRole.valueOf(roleString);
+                    } catch (IllegalArgumentException e) {
+                        return null;
+                    }
+                })
+                .filter(role -> role != null)
+                .collect(Collectors.toSet());
         }
         
-        if (userRole == null) {
-            throw new AccessDeniedException("Access denied: No valid role found");
+        if (userRoles == null || userRoles.isEmpty()) {
+            throw new AccessDeniedException("Access denied: No valid roles found");
         }
         
         UserRole[] requiredRoles = requireRole.value();
-        boolean hasRequiredRole = Arrays.asList(requiredRoles).contains(userRole);
+        Set<UserRole> requiredRoleSet = new HashSet<>(Arrays.asList(requiredRoles));
+        
+        // Check if user has ANY of the required roles (intersection)
+        boolean hasRequiredRole = userRoles.stream()
+            .anyMatch(requiredRoleSet::contains);
         
         if (!hasRequiredRole) {
             throw new AccessDeniedException(
-                String.format("Access denied: User role '%s' is not authorized. Required roles: %s", 
-                    userRole, Arrays.toString(requiredRoles))
+                String.format("Access denied: User roles '%s' are not authorized. Required roles: %s", 
+                    userRoles.stream().map(UserRole::name).collect(Collectors.joining(", ")), 
+                    Arrays.toString(requiredRoles))
             );
         }
     }

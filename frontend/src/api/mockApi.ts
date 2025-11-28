@@ -36,7 +36,7 @@ export const mockAuthApi = {
       expiresIn: 3600,
       userId: user.userId,
       username: user.username,
-      role: user.role,
+      roles: user.roles || ['BUYER', 'SELLER'],  // Updated to roles array
     };
   },
 
@@ -53,7 +53,7 @@ export const mockAuthApi = {
       firstName: payload.firstName,
       lastName: payload.lastName,
       phone: '',
-      role: payload.role || 'STUDENT',
+      roles: ['BUYER', 'SELLER'],  // Students get both roles by default
       verificationStatus: 'PENDING',
       universityId: '00000000-0000-0000-0000-000000000001',
       isActive: true,
@@ -69,7 +69,7 @@ export const mockAuthApi = {
       expiresIn: 3600,
       userId: newUser.userId,
       username: newUser.username,
-      role: newUser.role,
+      roles: newUser.roles,  // Updated to roles array
     };
   },
 
@@ -83,7 +83,7 @@ export const mockAuthApi = {
 
   async validateToken() {
     await delay(200);
-    return { valid: !!currentUser, username: currentUser?.username, role: currentUser?.role };
+    return { valid: !!currentUser, username: currentUser?.username, roles: currentUser?.roles };
   },
 
   async refresh() {

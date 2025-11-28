@@ -1,11 +1,24 @@
 package com.commandlinecommandos.campusmarketplace.dto;
 
+import com.commandlinecommandos.campusmarketplace.model.UserRole;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+import java.util.Set;
+
 /**
- * DTO for updating user profile information
+ * DTO for updating user profile information.
+ * 
+ * Students can update their roles to be:
+ * - BUYER only (can only purchase items)
+ * - SELLER only (can only sell items)
+ * - Both BUYER and SELLER (default, full marketplace access)
+ * 
+ * Validation rules:
+ * - Students cannot add ADMIN role
+ * - At least one role (BUYER or SELLER) must remain
+ * - Admins cannot modify their roles via profile update
  */
 public class ProfileUpdateRequest {
     
@@ -22,6 +35,9 @@ public class ProfileUpdateRequest {
     private String phone;
     
     private String avatarUrl;
+    
+    // Role management - students can toggle between BUYER, SELLER, or both
+    private Set<UserRole> roles;
     
     // Student-specific fields
     private String studentId;
@@ -77,6 +93,14 @@ public class ProfileUpdateRequest {
 
     public void setAvatarUrl(String avatarUrl) {
         this.avatarUrl = avatarUrl;
+    }
+    
+    public Set<UserRole> getRoles() {
+        return roles;
+    }
+    
+    public void setRoles(Set<UserRole> roles) {
+        this.roles = roles;
     }
 
     public String getStudentId() {

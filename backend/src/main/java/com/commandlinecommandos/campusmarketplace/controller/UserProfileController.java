@@ -79,8 +79,10 @@ public class UserProfileController {
             return ResponseEntity.ok(updatedProfile);
         } catch (Exception e) {
             logger.error("Error updating profile", e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("error", "Profile update failed", "message", e.getMessage()));
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Profile update failed");
+            errorResponse.put("message", e.getMessage() != null ? e.getMessage() : "Unknown error");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
     }
     
@@ -95,8 +97,10 @@ public class UserProfileController {
             return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
         } catch (Exception e) {
             logger.error("Error changing password", e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("error", "Password change failed", "message", e.getMessage()));
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Password change failed");
+            errorResponse.put("message", e.getMessage() != null ? e.getMessage() : "Unknown error");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
     }
     
@@ -114,8 +118,10 @@ public class UserProfileController {
             ));
         } catch (Exception e) {
             logger.error("Error deactivating account", e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", "Account deactivation failed", "message", e.getMessage()));
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Account deactivation failed");
+            errorResponse.put("message", e.getMessage() != null ? e.getMessage() : "Unknown error");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
     

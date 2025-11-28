@@ -1,3 +1,8 @@
+// User roles - many-to-many relationship
+// Students can have BUYER, SELLER, or both
+// ADMIN is exclusive (cannot have BUYER/SELLER)
+export type UserRole = 'BUYER' | 'SELLER' | 'ADMIN';
+
 export interface User {
   userId: string;
   username: string;
@@ -5,7 +10,7 @@ export interface User {
   firstName: string;
   lastName: string;
   phone?: string;
-  role: 'STUDENT' | 'ADMIN';
+  roles: UserRole[];  // Changed from single role to array of roles
   verificationStatus: 'PENDING' | 'VERIFIED' | 'REJECTED';
   universityId?: string;
   studentId?: string;
@@ -15,6 +20,31 @@ export interface User {
   avatarUrl?: string;
   createdAt: string;
   lastLoginAt?: string;
+}
+
+// Helper functions for role checking
+export function hasRole(user: User | null, role: UserRole): boolean {
+  return user?.roles?.includes(role) ?? false;
+}
+
+export function hasAnyRole(user: User | null, roles: UserRole[]): boolean {
+  return roles.some(role => hasRole(user, role));
+}
+
+export function isAdmin(user: User | null): boolean {
+  return hasRole(user, 'ADMIN');
+}
+
+export function isBuyer(user: User | null): boolean {
+  return hasRole(user, 'BUYER');
+}
+
+export function isSeller(user: User | null): boolean {
+  return hasRole(user, 'SELLER');
+}
+
+export function isStudent(user: User | null): boolean {
+  return hasAnyRole(user, ['BUYER', 'SELLER']);
 }
 
 export interface Seller {
@@ -144,7 +174,7 @@ export interface AuthResponse {
   expiresIn: number;
   userId: string;
   username: string;
-  role: string;
+  roles: string[];  // Changed from single role to array of roles
 }
 
 export interface PaginatedResponse<T> {

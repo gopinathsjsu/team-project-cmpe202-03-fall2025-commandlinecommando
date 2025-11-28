@@ -99,7 +99,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     /**
      * Full-text search with PostgreSQL ts_rank (falls back gracefully for H2)
      */
-    @Query(value = "SELECT p.* FROM products p " +
+    @Query(value = "SELECT p.* FROM listings p " +
            "WHERE p.university_id = :universityId " +
            "AND p.is_active = true " +
            "AND p.moderation_status = 'APPROVED' " +
@@ -115,7 +115,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     /**
      * Fuzzy search using PostgreSQL similarity() function
      */
-    @Query(value = "SELECT p.* FROM products p " +
+    @Query(value = "SELECT p.* FROM listings p " +
            "WHERE p.university_id = :universityId " +
            "AND p.is_active = true " +
            "AND p.moderation_status = 'APPROVED' " +
@@ -131,7 +131,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
     /**
      * Find title suggestions for autocomplete using PostgreSQL similarity()
      */
-    @Query(value = "SELECT DISTINCT p.title FROM products p " +
+    @Query(value = "SELECT DISTINCT p.title FROM listings p " +
            "WHERE p.university_id = :universityId " +
            "AND p.is_active = true " +
            "AND similarity(p.title, :query) > 0.3 " +
@@ -177,5 +177,10 @@ public interface ProductRepository extends JpaRepository<Product, UUID>, JpaSpec
         ModerationStatus moderationStatus,
         Pageable pageable
     );
+
+    /**
+     * Find active products by seller ID
+     */
+    Page<Product> findBySellerUserIdAndIsActiveTrue(UUID sellerId, Pageable pageable);
 }
 

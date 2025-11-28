@@ -1,5 +1,8 @@
 package com.commandlinecommandos.campusmarketplace.service;
 
+import com.commandlinecommandos.campusmarketplace.dto.ListingDetailResponse;
+import com.commandlinecommandos.campusmarketplace.dto.SellerSummary;
+import com.commandlinecommandos.campusmarketplace.dto.ListingImage;
 import com.commandlinecommandos.campusmarketplace.model.*;
 import com.commandlinecommandos.campusmarketplace.repository.ProductRepository;
 import com.commandlinecommandos.campusmarketplace.repository.UserRepository;
@@ -143,6 +146,90 @@ public class ListingsService {
     }
     
     /**
+     * Get listings by seller
+     */
+    public Page<Product> getListingsBySeller(UUID sellerId, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        return productRepository.findBySellerUserIdAndIsActiveTrue(sellerId, pageable);
+    }
+
+    /**
+     * Update an existing listing
+     */
+    public Product updateListing(UUID listingId, Map<String, Object> updates, String username) {
+        Product product = productRepository.findById(listingId)
+            .orElseThrow(() -> new RuntimeException("Listing not found with id: " + listingId));
+
+        // Verify ownership (unless admin)
+        if (!product.getSeller().getUsername().equals(username)) {
+            throw new RuntimeException("Unauthorized: You can only update your own listings");
+        }
+
+        // Update fields if provided
+        if (updates.containsKey("title")) {
+            product.setTitle((String) updates.get("title"));
+        }
+        if (updates.containsKey("description")) {
+            product.setDescription((String) updates.get("description"));
+        }
+        if (updates.containsKey("price")) {
+            Object priceObj = updates.get("price");
+            if (priceObj instanceof Number) {
+                product.setPrice(BigDecimal.valueOf(((Number) priceObj).doubleValue()));
+            } else if (priceObj instanceof String) {
+                product.setPrice(new BigDecimal((String) priceObj));
+            }
+        }
+        if (updates.containsKey("category")) {
+            String categoryStr = (String) updates.get("category");
+            try {
+                product.setCategory(ProductCategory.valueOf(categoryStr));
+            } catch (IllegalArgumentException e) {
+                // Keep existing category if invalid
+            }
+        }
+        if (updates.containsKey("condition")) {
+            String conditionStr = (String) updates.get("condition");
+            try {
+                product.setCondition(ProductCondition.valueOf(conditionStr));
+            } catch (IllegalArgumentException e) {
+                // Keep existing condition if invalid
+            }
+        }
+        if (updates.containsKey("location")) {
+            product.setPickupLocation((String) updates.get("location"));
+        }
+        if (updates.containsKey("negotiable")) {
+            product.setNegotiable((Boolean) updates.get("negotiable"));
+        }
+        if (updates.containsKey("quantity")) {
+            Object quantityObj = updates.get("quantity");
+            if (quantityObj instanceof Number) {
+                product.setQuantity(((Number) quantityObj).intValue());
+            }
+        }
+
+        return productRepository.save(product);
+    }
+
+    /**
+     * Delete a listing (soft delete by setting isActive to false)
+     */
+    public void deleteListing(UUID listingId, String username) {
+        Product product = productRepository.findById(listingId)
+            .orElseThrow(() -> new RuntimeException("Listing not found with id: " + listingId));
+
+        // Verify ownership (unless admin)
+        if (!product.getSeller().getUsername().equals(username)) {
+            throw new RuntimeException("Unauthorized: You can only delete your own listings");
+        }
+
+        // Soft delete
+        product.setActive(false);
+        productRepository.save(product);
+    }
+
+    /**
      * Convert Product to DTO format for API response
      */
     public Map<String, Object> productToDto(Product product) {
@@ -157,10 +244,10 @@ public class ListingsService {
         dto.put("date", product.getPublishedAt() != null ? product.getPublishedAt().toString() : product.getCreatedAt().toString());
         dto.put("createdAt", product.getCreatedAt() != null ? product.getCreatedAt().toString() : "");
         String sellerId = product.getSeller().getUserId() != null ? product.getSeller().getUserId().toString() : "";
-        String sellerName = (product.getSeller().getFirstName() != null ? product.getSeller().getFirstName() : "") + 
+        String sellerName = (product.getSeller().getFirstName() != null ? product.getSeller().getFirstName() : "") +
                            " " + (product.getSeller().getLastName() != null ? product.getSeller().getLastName() : "");
         sellerName = sellerName.trim().isEmpty() ? product.getSeller().getUsername() : sellerName;
-        
+
         dto.put("sellerId", sellerId);
         Map<String, Object> sellerInfo = new HashMap<>();
         sellerInfo.put("id", sellerId);
@@ -173,6 +260,63 @@ public class ListingsService {
         dto.put("negotiable", product.isNegotiable());
         dto.put("quantity", product.getQuantity());
         return dto;
+    }
+
+    /**
+     * Convert Product to ListingDetailResponse DTO (new format matching frontend mockdata)
+     */
+    public ListingDetailResponse toListingDetailResponse(Product product) {
+        return toListingDetailResponse(product, false);
+    }
+
+    /**
+     * Convert Product to ListingDetailResponse DTO with favorite flag
+     */
+    public ListingDetailResponse toListingDetailResponse(Product product, boolean isFavorite) {
+        ListingDetailResponse response = new ListingDetailResponse();
+        
+        // Basic fields
+        response.setId(product.getProductId().toString());
+        response.setTitle(product.getTitle());
+        response.setDescription(product.getDescription());
+        response.setCategory(product.getCategory().name());
+        response.setCondition(product.getCondition().name());
+        response.setPrice(product.getPrice().doubleValue());
+        response.setLocation(product.getPickupLocation() != null ? product.getPickupLocation() : "Campus");
+        
+        // Seller information
+        User seller = product.getSeller();
+        SellerSummary sellerSummary = new SellerSummary();
+        sellerSummary.setId(seller.getUserId().toString());
+        sellerSummary.setUsername(seller.getUsername());
+        String sellerName = (seller.getFirstName() != null ? seller.getFirstName() : "") +
+                           " " + (seller.getLastName() != null ? seller.getLastName() : "");
+        sellerSummary.setName(sellerName.trim().isEmpty() ? seller.getUsername() : sellerName.trim());
+        sellerSummary.setAvatarUrl(seller.getAvatarUrl());
+        response.setSeller(sellerSummary);
+        response.setSellerId(seller.getUserId().toString());
+        
+        // Images - for now set main image URL and empty images array
+        // TODO: Populate from ProductImage entity when available
+        response.setImageUrl(null);
+        response.setImages(new java.util.ArrayList<>());
+        
+        // Status mapping - convert isActive to status string
+        response.setStatus(product.isActive() ? "ACTIVE" : "INACTIVE");
+        
+        // Metrics
+        response.setViewCount(product.getViewCount() != null ? product.getViewCount() : 0);
+        response.setFavoriteCount(product.getFavoriteCount() != null ? product.getFavoriteCount() : 0);
+        response.setFavorite(isFavorite);
+        
+        // Additional fields
+        response.setNegotiable(product.isNegotiable());
+        
+        // Timestamps
+        response.setCreatedAt(product.getCreatedAt() != null ? product.getCreatedAt().toString() : "");
+        response.setUpdatedAt(product.getUpdatedAt() != null ? product.getUpdatedAt().toString() : "");
+        
+        return response;
     }
 }
 

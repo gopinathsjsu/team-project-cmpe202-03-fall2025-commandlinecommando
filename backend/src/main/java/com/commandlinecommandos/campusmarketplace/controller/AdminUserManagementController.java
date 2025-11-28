@@ -16,15 +16,18 @@ import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 /**
  * Admin controller for comprehensive user management
  * Includes search, create, update, suspend, reactivate, delete, bulk operations
+ * 
+ * Note: Frontend expects endpoints at /admin/users, so we'll add those as well
  */
 @RestController
-@RequestMapping("/admin/user-management")
+@RequestMapping({"/admin/user-management", "/admin/users"})
 @Validated
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:3001"}, maxAge = 3600)
 public class AdminUserManagementController {
@@ -33,6 +36,39 @@ public class AdminUserManagementController {
     
     @Autowired
     private UserManagementService userManagementService;
+    
+    /**
+     * Get all users (frontend expects GET /admin/users)
+     */
+    @GetMapping
+    @RequireRole(UserRole.ADMIN)
+    public ResponseEntity<?> getAllUsers(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        try {
+            UserSearchRequest request = new UserSearchRequest();
+            request.setPage(page);
+            request.setSize(size);
+            request.setSortBy("createdAt");
+            request.setSortDirection("DESC");
+            
+            PagedResponse<UserResponse> users = userManagementService.searchUsers(request);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Users retrieved successfully");
+            response.put("userCount", users.getTotalElements());
+            response.put("users", users.getContent());
+            response.put("totalElements", users.getTotalElements());
+            response.put("totalPages", users.getTotalPages());
+            response.put("currentPage", users.getPage());
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("Error getting all users", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(Map.of("error", "Failed to retrieve users", "message", e.getMessage()));
+        }
+    }
     
     /**
      * Search and filter users with pagination (GET version with query params)

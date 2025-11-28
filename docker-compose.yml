@@ -1,7 +1,11 @@
 # ==============================================
 # Campus Marketplace Docker Compose Configuration
 # ==============================================
-# This configuration runs the backend and PostgreSQL as separate containers
+# UNIFIED ARCHITECTURE: Single backend service with all modules
+# - User management, authentication, and authorization
+# - Listing and reporting functionality
+# - Communication and messaging features
+# - Admin operations
 
 version: '3.8'
 
@@ -21,9 +25,7 @@ services:
     volumes:
       # Persistent data storage
       - postgres_data:/var/lib/postgresql/data
-      # Optional: Mount initialization scripts
-      - ./sql_files/schema_postgres.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
-      - ./sql_files/seed_data.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+      # Flyway migrations are now managed by the unified backend
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_APP_USER:-cm_app_user} -d campus_marketplace"]
       interval: 10s
@@ -33,7 +35,8 @@ services:
     networks:
       - campus-marketplace-network
 
-  # Spring Boot Backend Service
+  # Unified Spring Boot Backend Service
+  # Combines all functionality: user management, listings, communication
   backend:
     build:
       context: ./backend
@@ -61,13 +64,27 @@ services:
       JWT_ACCESS_TOKEN_EXPIRATION: ${JWT_ACCESS_TOKEN_EXPIRATION:-3600000}
       JWT_REFRESH_TOKEN_EXPIRATION: ${JWT_REFRESH_TOKEN_EXPIRATION:-604800000}
 
-      # Logging
-      LOG_LEVEL: ${LOG_LEVEL:-INFO}
-      SQL_LOG_LEVEL: ${SQL_LOG_LEVEL:-WARN}
-
       # Redis Configuration
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+
+      # Email Notification Configuration
+      EMAIL_NOTIFICATIONS_ENABLED: ${EMAIL_NOTIFICATIONS_ENABLED:-true}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@campusmarketplace.com}
+
+      # File Upload Configuration
+      FILE_UPLOAD_MAX_SIZE: ${FILE_UPLOAD_MAX_SIZE:-10485760}
+      FILE_UPLOAD_DIR: ${FILE_UPLOAD_DIR:-./uploads}
+
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      SQL_LOG_LEVEL: ${SQL_LOG_LEVEL:-WARN}
 
       # Server Configuration
       PORT: 8080
@@ -76,6 +93,8 @@ services:
     volumes:
       # Mount logs directory for persistence
       - backend_logs:/app/logs
+      # Mount uploads directory for file storage
+      - file_uploads:/app/uploads
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/actuator/health"]
       interval: 30s
@@ -103,105 +122,7 @@ services:
     networks:
       - campus-marketplace-network
 
-  # Listing API Service
-  listing-api:
-    build:
-      context: ./listing-api
-      dockerfile: Dockerfile
-    container_name: campus-marketplace-listing-api
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      # Spring Profile
-      SPRING_PROFILES_ACTIVE: prod
-
-      # Database Configuration (shared with backend)
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: campus_marketplace
-      DB_APP_USER: ${DB_APP_USER:-cm_app_user}
-      DB_APP_PASSWORD: ${DB_APP_PASSWORD:-changeme}
-
-      # Backend URL for proxy
-      BACKEND_URL: ${BACKEND_URL:-http://backend:8080/api}
-
-      # Logging
-      LOG_LEVEL: ${LOG_LEVEL:-INFO}
-
-      # Server Configuration
-      PORT: 8100
-    ports:
-      - "${LISTING_API_PORT:-8100}:8100"
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8100/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    networks:
-      - campus-marketplace-network
-
-  # Communication Service
-  communication:
-    build:
-      context: ./communication
-      dockerfile: Dockerfile
-    container_name: campus-marketplace-communication
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-      backend:
-        condition: service_healthy
-      listing-api:
-        condition: service_healthy
-    environment:
-      # Spring Profile
-      SPRING_PROFILES_ACTIVE: prod
-
-      # Database Configuration (shared with backend)
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: campus_marketplace
-      DB_APP_USER: ${DB_APP_USER:-cm_app_user}
-      DB_APP_PASSWORD: ${DB_APP_PASSWORD:-changeme}
-
-      # JWT Configuration (must match backend)
-      JWT_SECRET: ${JWT_SECRET:-myVerySecureSecretKeyForJWTTokensThatShouldBeAtLeast256BitsLongForHS256AlgorithmUpdated2024}
-
-      # Backend URL for user management
-      BACKEND_URL: ${BACKEND_URL:-http://backend:8080/api}
-
-      # Listing API URL for listing verification
-      LISTING_API_URL: ${LISTING_API_URL:-http://listing-api:8100/api}
-
-      # Email Notification Configuration
-      EMAIL_NOTIFICATIONS_ENABLED: ${EMAIL_NOTIFICATIONS_ENABLED:-true}
-      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
-      SMTP_PORT: ${SMTP_PORT:-587}
-      SMTP_USERNAME: ${SMTP_USERNAME:-}
-      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
-      EMAIL_FROM: ${EMAIL_FROM:-noreply@campusmarketplace.com}
-
-      # Logging
-      LOG_LEVEL: ${LOG_LEVEL:-INFO}
-
-      # Server Configuration
-      PORT: 8200
-    ports:
-      - "${COMMUNICATION_PORT:-8200}:8200"
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8200/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    networks:
-      - campus-marketplace-network
-
-  # AI Integration Service
+  # AI Integration Service (optional - for AI-powered features)
   ai-integration-server:
     build:
       context: ./ai-integration-server
@@ -227,6 +148,8 @@ services:
       start_period: 40s
     networks:
       - campus-marketplace-network
+    profiles:
+      - ai  # Only start with: docker-compose --profile ai up
 
 # Named volumes for data persistence
 volumes:
@@ -236,6 +159,8 @@ volumes:
     name: campus-marketplace-backend-logs
   redis_data:
     name: campus-marketplace-redis-data
+  file_uploads:
+    name: campus-marketplace-file-uploads
 
 # Custom network
 networks:

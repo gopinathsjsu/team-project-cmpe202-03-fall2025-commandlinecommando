@@ -6,6 +6,8 @@ import jakarta.validation.constraints.DecimalMin;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.Type;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 
 import java.math.BigDecimal;
@@ -18,22 +20,23 @@ import java.util.UUID;
 
 /**
  * Product entity for Campus Marketplace listings
- * Supports full-text search and flexible attributes
+ * Maps to "listings" table for domain consistency
+ * Note: Java class name remains "Product" but database table is "listings"
  */
 @Entity
-@Table(name = "products", indexes = {
-    @Index(name = "idx_products_seller", columnList = "seller_id"),
-    @Index(name = "idx_products_university", columnList = "university_id"),
-    @Index(name = "idx_products_category", columnList = "category"),
-    @Index(name = "idx_products_status", columnList = "moderation_status"),
-    @Index(name = "idx_products_price", columnList = "price"),
-    @Index(name = "idx_products_search", columnList = "university_id,category,is_active,price")
+@Table(name = "listings", indexes = {
+    @Index(name = "idx_listings_seller", columnList = "seller_id"),
+    @Index(name = "idx_listings_university", columnList = "university_id"),
+    @Index(name = "idx_listings_category", columnList = "category"),
+    @Index(name = "idx_listings_status", columnList = "moderation_status"),
+    @Index(name = "idx_listings_price", columnList = "price"),
+    @Index(name = "idx_listings_search", columnList = "university_id,category,is_active,price")
 })
 public class Product {
-    
+
     @Id
     @GeneratedValue(generator = "UUID")
-    @Column(name = "product_id", updatable = false, nullable = false)
+    @Column(name = "listing_id", updatable = false, nullable = false)
     private UUID productId;
     
     @NotNull
@@ -56,11 +59,13 @@ public class Product {
     
     @NotNull
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(nullable = false)
     private ProductCategory category;
-    
+
     @NotNull
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "condition", nullable = false)
     private ProductCondition condition;
     
@@ -98,6 +103,7 @@ public class Product {
     private boolean isFeatured = false;
     
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "moderation_status")
     private ModerationStatus moderationStatus = ModerationStatus.PENDING;
     

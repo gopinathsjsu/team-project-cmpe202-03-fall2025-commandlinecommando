@@ -1,83 +1,79 @@
 package com.commandlinecommandos.campusmarketplace.controller;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import com.commandlinecommandos.campusmarketplace.model.Product;
-import com.commandlinecommandos.campusmarketplace.model.ProductCategory;
-import com.commandlinecommandos.campusmarketplace.service.ListingsService;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
+/**
+ * REST Controller for User-specific dashboard and operations
+ * Accessible by BUYER and SELLER roles (previously STUDENT)
+ * Note: Listing management has been moved to ListingController at /api/listings
+ */
 @RestController
 @RequestMapping("/student")
 @CrossOrigin(origins = "*", maxAge = 3600)
 public class StudentController {
-    
-    @Autowired
-    private ListingsService listingsService;
-    
+
+    /**
+     * Get user dashboard with stats and quick info
+     */
     @GetMapping("/dashboard")
-    @PreAuthorize("hasRole('STUDENT')")
-    public ResponseEntity<?> getStudentDashboard() {
+    @PreAuthorize("hasAnyRole('BUYER', 'SELLER', 'ADMIN')")
+    public ResponseEntity<?> getStudentDashboard(Authentication authentication) {
         Map<String, Object> dashboard = new HashMap<>();
         dashboard.put("message", "Welcome to Student Dashboard");
-        dashboard.put("myListings", 5);
-        dashboard.put("watchlist", 12);
-        dashboard.put("messages", 3);
+        dashboard.put("username", authentication.getName());
+
+        // Get actual stats
+        // Note: These can be expanded with real data from services
+        dashboard.put("myListings", 0); // Can query listingsService
+        dashboard.put("watchlist", 0);
+        dashboard.put("messages", 0);
+
         return ResponseEntity.ok(dashboard);
     }
 
-    @GetMapping("/listings")
-    @PreAuthorize("hasAnyRole('STUDENT', 'ADMIN')")
-    public ResponseEntity<?> getListings(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        try {
-            Page<Product> productsPage = listingsService.getAllListings(page, size);
-            
-            // Convert to DTO format
-            List<Map<String, Object>> listings = productsPage.getContent().stream()
-                .map(listingsService::productToDto)
-                .collect(Collectors.toList());
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("content", listings);
-            response.put("totalElements", productsPage.getTotalElements());
-            response.put("totalPages", productsPage.getTotalPages());
-            response.put("number", productsPage.getNumber());
-            response.put("size", productsPage.getSize());
-            response.put("first", productsPage.isFirst());
-            response.put("last", productsPage.isLast());
-            
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "Failed to fetch listings");
-            error.put("message", e.getMessage());
-            return ResponseEntity.status(500).body(error);
-        }
+    /**
+     * Get user profile information
+     */
+    @GetMapping("/profile")
+    @PreAuthorize("hasAnyRole('BUYER', 'SELLER', 'ADMIN')")
+    public ResponseEntity<?> getStudentProfile(Authentication authentication) {
+        Map<String, Object> profile = new HashMap<>();
+        profile.put("userId", authentication.getName());
+        profile.put("message", "Student profile endpoint");
+        return ResponseEntity.ok(profile);
     }
 
+    /**
+     * Get user listings
+     * Note: This is a test endpoint. Real listing management is at /api/listings
+     */
+    @GetMapping({"/listings", "/my-listings"})
+    @PreAuthorize("hasAnyRole('BUYER', 'SELLER', 'ADMIN')")
+    public ResponseEntity<?> getStudentListings(Authentication authentication) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Student listings endpoint");
+        response.put("username", authentication.getName());
+        response.put("listings", java.util.Collections.emptyList()); // Return empty list for now
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Create user listing
+     * Note: This is a test endpoint. Real listing creation is at /api/listings
+     */
     @PostMapping("/listings")
-    @PreAuthorize("hasRole('STUDENT')")
-    public ResponseEntity<?> createListing(@RequestBody Map<String, Object> listing) {
-        try {
-            Product product = listingsService.createListing(listing);
-            Map<String, Object> response = new HashMap<>();
-            response.put("message", "Listing created successfully");
-            response.put("listing", listingsService.productToDto(product));
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, Object> error = new HashMap<>();
-            error.put("error", "Failed to create listing");
-            error.put("message", e.getMessage());
-            return ResponseEntity.status(500).body(error);
-        }
+    @PreAuthorize("hasAnyRole('BUYER', 'SELLER', 'ADMIN')")
+    public ResponseEntity<?> createStudentListing(Authentication authentication, @RequestBody Map<String, Object> listing) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("message", "Listing created successfully");
+        response.put("username", authentication.getName());
+        response.put("listing", listing);
+        return ResponseEntity.ok(response);
     }
 }

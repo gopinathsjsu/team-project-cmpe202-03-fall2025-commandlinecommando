@@ -7,19 +7,21 @@ spring:
   application:
     name: campusmarketplace
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE:dev}  # Changed default to dev for testing with H2 Database (PostgreSQL)
+    active: ${SPRING_PROFILES_ACTIVE:postgres}  # Use PostgreSQL for development (Flyway migrations require it)
   servlet:
     multipart:
       max-file-size: 10MB
-      max-request-size: 10MB
+      max-request-size: 50MB
   session:
     store-type: jdbc
     timeout: 1800s
     jdbc:
       cleanup-cron: "0 0 4 * * *"
   redis:
-    host: ${REDIS_HOST:localhost}
-    port: ${REDIS_PORT:6379}
+    # Redis configuration - will be overridden by profile-specific configs
+    # Spring Boot automatically binds SPRING_REDIS_HOST env var to spring.redis.host
+    # For Docker: set SPRING_REDIS_HOST=redis in environment
+    # For local dev: set SPRING_REDIS_HOST=localhost or omit (defaults to localhost)
     timeout: 2000ms
     connect-timeout: 2000ms
   cache:
@@ -29,6 +31,31 @@ spring:
       cache-null-values: false
     caffeine:
       spec: maximumSize=1000,expireAfterWrite=600s  # Fallback if Redis unavailable
+  
+  # Flyway Configuration
+  flyway:
+    enabled: true
+    locations: classpath:db/migrations
+    baseline-on-migrate: true
+    baseline-version: 0
+    mixed: true  # Allow mixing transactional and non-transactional statements
+  
+  # Mail Configuration
+  mail:
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+    from: ${EMAIL_FROM:noreply@campusmarketplace.com}
 
 server:
   port: ${PORT:8080}
@@ -63,6 +90,9 @@ management:
   endpoint:
     health:
       show-details: when-authorized
+  health:
+    mail:
+      enabled: false  # Disable mail health check (configure email later)
   metrics:
     export:
       prometheus:
@@ -76,6 +106,12 @@ app:
     autocomplete-min-length: 2
     fuzzy-match-threshold: 0.3
     trending-cache-ttl: 900000  # 15 minutes
+  email-notifications:
+    enabled: ${EMAIL_NOTIFICATIONS_ENABLED:true}
+
+# File Upload Configuration
+file:
+  upload-dir: ${FILE_UPLOAD_DIR:./uploads}
 
 ---
 # ==============================================
@@ -115,6 +151,60 @@ logging:
 
 ---
 # ==============================================
+# POSTGRES PROFILE (Local PostgreSQL Development)
+# ==============================================
+spring:
+  config:
+    activate:
+      on-profile: postgres
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:campus_marketplace}?sslmode=disable&serverTimezone=UTC
+    username: ${DB_APP_USER:cm_app_user}
+    password: ${DB_APP_PASSWORD:changeme}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      auto-commit: false
+      minimum-idle: 2
+      maximum-pool-size: 10
+      idle-timeout: 300000
+      pool-name: CampusMarketplacePool
+      max-lifetime: 600000
+      connection-timeout: 20000
+      validation-timeout: 5000
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate  # Flyway handles schema management
+    show-sql: true
+    format-sql: true
+    properties:
+      hibernate:
+        default_schema: public
+        jdbc:
+          time_zone: UTC
+        dialect:
+          postgres:
+            use_jdbc_metadata_defaults: false
+  redis:
+    # Redis host for local development - uses SPRING_REDIS_HOST env var if set, else 'localhost'
+    # Spring Boot automatically binds SPRING_REDIS_HOST environment variable
+    host: ${SPRING_REDIS_HOST:localhost}
+    port: ${SPRING_REDIS_PORT:6379}
+
+# Development Logging
+logging:
+  level:
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    com.commandlinecommandos.campusmarketplace: DEBUG
+
+# Disable rate limiting for local postgres profile to allow automated test runs
+rate:
+  limiting:
+    enabled: false
+
+---
+# ==============================================
 # PRODUCTION PROFILE (PostgreSQL Database)
 # ==============================================
 spring:
@@ -136,10 +226,15 @@ spring:
       connection-timeout: 20000
       validation-timeout: 5000
       leak-detection-threshold: 60000
+  redis:
+    # Redis host for production (Docker) - uses SPRING_REDIS_HOST env var if set, else 'redis'
+    # Spring Boot automatically binds SPRING_REDIS_HOST environment variable
+    host: ${SPRING_REDIS_HOST:redis}
+    port: ${SPRING_REDIS_PORT:6379}
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: validate  # Use Flyway for schema management
+      ddl-auto: none  # Flyway handles all schema management
     show-sql: true  # Enable for debugging
     format-sql: true
     properties:
@@ -148,6 +243,9 @@ spring:
         jdbc:
           time_zone: UTC
           batch_size: 20
+        dialect:
+          postgres:
+            use_jdbc_metadata_defaults: false
         connection:
           provider_disables_autocommit: true
         cache:
@@ -176,6 +274,11 @@ logging:
     rollingpolicy:
       max-file-size: 100MB
       total-size-cap: 1GB
+
+# Disable rate limiting for automated testing (can be enabled via environment variable)
+rate:
+  limiting:
+    enabled: ${RATE_LIMITING_ENABLED:false}
 
 ---
 # ==============================================

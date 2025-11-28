@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -86,7 +87,7 @@ public class SearchControllerIntegrationTest {
         testUser.setFirstName("Test");
         testUser.setLastName("User");
         testUser.setUniversity(testUniversity);
-        testUser.setRole(UserRole.STUDENT);
+        testUser.setRoles(Set.of(UserRole.BUYER, UserRole.SELLER));
         testUser.setActive(true);
         testUser = userRepository.save(testUser);
 

@@ -47,6 +47,7 @@ target/
 # IDEs
 # ===========================================
 .vscode/
+.claude/
 .idea/
 pom.xml.tag
 pom.xml.releaseBackup
@@ -238,9 +239,20 @@ id_ed25519*
 # PROJECT SPECIFIC
 # ===========================================
 
+# Archived pre-refactoring code (optional - can be committed if desired)
+.archive/
+
 # Uploaded files directory (if created)
 uploads/
 files/
+
+# Test results and logs
+test-results/
+*.log
+postman-test-*.txt
+postman-test-*.json
+dockerlog.log
+newman/
 images/
 
 # Logs directory

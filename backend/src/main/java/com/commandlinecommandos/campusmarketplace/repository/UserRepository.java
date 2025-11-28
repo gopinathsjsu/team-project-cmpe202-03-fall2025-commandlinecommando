@@ -6,6 +6,8 @@ import com.commandlinecommandos.campusmarketplace.model.University;
 import com.commandlinecommandos.campusmarketplace.model.VerificationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -50,14 +52,16 @@ public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificat
     List<User> findByUniversity(University university);
     
     /**
-     * Find users by role
+     * Find users by role (queries the roles collection)
      */
-    List<User> findByRole(UserRole role);
+    @Query("SELECT u FROM User u JOIN u.roles r WHERE r = :role")
+    List<User> findByRole(@Param("role") UserRole role);
     
     /**
      * Find users by university and role
      */
-    List<User> findByUniversityAndRole(University university, UserRole role);
+    @Query("SELECT u FROM User u JOIN u.roles r WHERE u.university = :university AND r = :role")
+    List<User> findByUniversityAndRole(@Param("university") University university, @Param("role") UserRole role);
     
     /**
      * Find users by verification status
@@ -75,9 +79,10 @@ public interface UserRepository extends JpaRepository<User, UUID>, JpaSpecificat
     Optional<User> findByStudentId(String studentId);
     
     /**
-     * Count users by role
+     * Count users by role (queries the roles collection)
      */
-    long countByRole(UserRole role);
+    @Query("SELECT COUNT(u) FROM User u JOIN u.roles r WHERE r = :role")
+    long countByRole(@Param("role") UserRole role);
     
     /**
      * Count users by university

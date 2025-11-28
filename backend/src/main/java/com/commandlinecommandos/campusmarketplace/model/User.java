@@ -7,30 +7,40 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.Type;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.hibernate.validator.constraints.Length;
 import io.hypersistence.utils.hibernate.type.json.JsonType;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Email;
 
 /**
- * User entity for Campus Marketplace
- * Supports STUDENT and ADMIN roles
- * Students can both buy and sell items with a single role
- * Aligned with PostgreSQL schema using UUID primary keys
+ * User entity for Campus Marketplace.
+ * Supports many-to-many relationship with roles through a junction table.
+ * 
+ * Role assignment rules:
+ * - Students can have BUYER, SELLER, or both roles
+ * - Students are created with both BUYER and SELLER by default
+ * - ADMIN role is exclusive (cannot be combined with BUYER/SELLER)
+ * 
+ * Aligned with PostgreSQL schema using UUID primary keys.
  */
 @Entity
 @Table(name = "users", indexes = {
     @Index(name = "idx_users_email", columnList = "email"),
     @Index(name = "idx_users_username", columnList = "username"),
     @Index(name = "idx_users_university", columnList = "university_id"),
-    @Index(name = "idx_users_role", columnList = "role"),
     @Index(name = "idx_users_verification", columnList = "verification_status")
 })
 public class User implements UserDetails {
@@ -74,13 +84,18 @@ public class User implements UserDetails {
     @Column(name = "avatar_url")
     private String avatarUrl;
     
-    // Role & Status
-    @NotNull
+    // Roles - Many-to-Many relationship through junction table
+    @ElementCollection(targetClass = UserRole.class, fetch = FetchType.EAGER)
+    @CollectionTable(
+        name = "user_roles",
+        joinColumns = @JoinColumn(name = "user_id")
+    )
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private UserRole role;
-    
+    @Column(name = "role", nullable = false)
+    private Set<UserRole> roles = new HashSet<>();
+
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "verification_status")
     private VerificationStatus verificationStatus = VerificationStatus.PENDING;
     
@@ -126,11 +141,11 @@ public class User implements UserDetails {
         initializeDefaultPreferences();
     }
     
-    public User(String username, String email, String password, UserRole role, University university) {
+    public User(String username, String email, String password, Set<UserRole> roles, University university) {
         this.username = username;
         this.email = email;
         this.password = password;
-        this.role = role;
+        this.roles = roles != null ? roles : new HashSet<>();
         this.university = university;
         this.isActive = true;
         initializeDefaultPreferences();
@@ -150,7 +165,12 @@ public class User implements UserDetails {
     // Spring Security UserDetails implementation
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
+        if (roles == null || roles.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return roles.stream()
+            .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
+            .collect(Collectors.toList());
     }
     
     @Override
@@ -183,6 +203,73 @@ public class User implements UserDetails {
         return isActive;
     }
     
+    // Role management methods
+    
+    /**
+     * Check if user has a specific role
+     */
+    public boolean hasRole(UserRole role) {
+        return roles.contains(role);
+    }
+    
+    /**
+     * Add a role to the user
+     */
+    public void addRole(UserRole role) {
+        if (roles == null) {
+            roles = new HashSet<>();
+        }
+        roles.add(role);
+    }
+    
+    /**
+     * Remove a role from the user
+     */
+    public void removeRole(UserRole role) {
+        if (roles != null) {
+            roles.remove(role);
+        }
+    }
+    
+    /**
+     * Check if user is a buyer (has BUYER role)
+     */
+    public boolean isBuyer() {
+        return hasRole(UserRole.BUYER);
+    }
+    
+    /**
+     * Check if user is a seller (has SELLER role)
+     */
+    public boolean isSeller() {
+        return hasRole(UserRole.SELLER);
+    }
+    
+    /**
+     * Check if user is an admin (has ADMIN role)
+     */
+    public boolean isAdmin() {
+        return hasRole(UserRole.ADMIN);
+    }
+    
+    /**
+     * Check if user is a student (has BUYER or SELLER role, but not ADMIN)
+     */
+    public boolean isStudent() {
+        return (isBuyer() || isSeller()) && !isAdmin();
+    }
+    
+    /**
+     * Get the primary role for display purposes.
+     * Priority: ADMIN > SELLER > BUYER
+     */
+    public UserRole getPrimaryRole() {
+        if (isAdmin()) return UserRole.ADMIN;
+        if (isSeller()) return UserRole.SELLER;
+        if (isBuyer()) return UserRole.BUYER;
+        return null;
+    }
+    
     // Business methods
     public boolean authenticate(String rawPassword) {
         // Implementation delegated to AuthenticationManager
@@ -211,14 +298,6 @@ public class User implements UserDetails {
     
     public boolean isVerified() {
         return this.verificationStatus == VerificationStatus.VERIFIED;
-    }
-    
-    public boolean isStudent() {
-        return this.role == UserRole.STUDENT;
-    }
-    
-    public boolean isAdmin() {
-        return this.role == UserRole.ADMIN;
     }
     
     public String getFullName() {
@@ -290,12 +369,15 @@ public class User implements UserDetails {
         this.avatarUrl = avatarUrl;
     }
     
-    public UserRole getRole() {
-        return role;
+    public Set<UserRole> getRoles() {
+        if (roles == null) {
+            roles = new HashSet<>();
+        }
+        return roles;
     }
     
-    public void setRole(UserRole role) {
-        this.role = role;
+    public void setRoles(Set<UserRole> roles) {
+        this.roles = roles != null ? roles : new HashSet<>();
     }
     
     public VerificationStatus getVerificationStatus() {

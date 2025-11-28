@@ -9,11 +9,15 @@ import com.commandlinecommandos.campusmarketplace.model.User;
 import com.commandlinecommandos.campusmarketplace.model.UserRole;
 
 import javax.crypto.SecretKey;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtUtil {
@@ -39,8 +43,38 @@ public class JwtUtil {
         return extractClaim(token, Claims::getExpiration);
     }
     
+    /**
+     * Extract all roles from the JWT token.
+     * @return Set of UserRole from the token
+     */
+    @SuppressWarnings("unchecked")
+    public Set<UserRole> extractRoles(String token) {
+        Object rolesObj = extractClaim(token, claims -> claims.get("roles"));
+        if (rolesObj instanceof List) {
+            return ((List<String>) rolesObj).stream()
+                .map(UserRole::valueOf)
+                .collect(Collectors.toSet());
+        }
+        // Handle legacy single role format
+        if (rolesObj instanceof String) {
+            return Set.of(UserRole.valueOf((String) rolesObj));
+        }
+        return Set.of();
+    }
+    
+    /**
+     * Extract the primary role from the JWT token.
+     * For backward compatibility, returns the first role found.
+     * @deprecated Use extractRoles() instead for many-to-many role support
+     */
+    @Deprecated
     public UserRole extractRole(String token) {
-        return UserRole.valueOf(extractClaim(token, claims -> claims.get("role", String.class)));
+        Set<UserRole> roles = extractRoles(token);
+        // Return ADMIN if present, otherwise first role
+        if (roles.contains(UserRole.ADMIN)) {
+            return UserRole.ADMIN;
+        }
+        return roles.stream().findFirst().orElse(null);
     }
     
     public UUID extractUserId(String token) {
@@ -67,7 +101,10 @@ public class JwtUtil {
     
     public String generateAccessToken(User user) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("role", user.getRole().name());
+        // Store roles as array for many-to-many support
+        claims.put("roles", user.getRoles().stream()
+            .map(role -> role.name())
+            .toArray(String[]::new));
         claims.put("userId", user.getUserId() != null ? user.getUserId().toString() : null);
         claims.put("email", user.getEmail());
         return createToken(claims, user.getUsername(), accessTokenExpiration);

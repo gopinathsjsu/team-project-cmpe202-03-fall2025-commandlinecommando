@@ -33,12 +33,12 @@ export interface ListingResponse {
 }
 
 export async function getListings(page = 0, size = 20) {
-  const res = await api.get(`/student/listings?page=${page}&size=${size}`)
+  const res = await api.get(`/listings?page=${page}&size=${size}`)
   return res.data
 }
 
 export async function createListing(listing: Omit<Listing, 'id' | 'sellerId' | 'date'>) {
-  const res = await api.post('/student/listings', listing)
+  const res = await api.post('/listings', listing)
   return res.data
 }
 
@@ -53,44 +53,53 @@ export async function searchListings(params: {
   page?: number
   size?: number
 }) {
-  const queryParams = new URLSearchParams()
-  Object.entries(params).forEach(([key, value]) => {
-    if (value !== undefined) {
-      queryParams.append(key, String(value))
-    }
+  // Backend uses POST /search with SearchRequest body
+  const res = await api.post('/search', {
+    query: params.keyword || '',
+    category: params.category,
+    condition: params.condition,
+    minPrice: params.minPrice,
+    maxPrice: params.maxPrice,
+    location: params.location,
+    page: params.page || 0,
+    size: params.size || 20,
+    sortBy: 'relevance'
   })
-  
-  const res = await api.get(`/student/listings/search?${queryParams.toString()}`)
   return res.data
 }
 
 export async function getListing(id: string) {
-  const res = await api.get(`/student/listings/${id}`)
+  const res = await api.get(`/listings/${id}`)
   return res.data
 }
 
 export async function updateListing(id: string, data: Partial<Listing>) {
-  const res = await api.put(`/student/listings/${id}`, data)
+  const res = await api.put(`/listings/${id}`, data)
   return res.data
 }
 
 export async function deleteListing(id: string) {
-  const res = await api.delete(`/student/listings/${id}`)
+  const res = await api.delete(`/listings/${id}`)
   return res.data
 }
 
 export async function toggleFavorite(id: string) {
-  const res = await api.post(`/student/listings/${id}/favorite`)
+  const res = await api.post(`/favorites/${id}`)
   return res.data
 }
 
 export async function getFavorites() {
-  const res = await api.get('/student/favorites')
+  const res = await api.get('/favorites')
   return res.data
 }
 
 export async function reportListing(id: string, data: { reportType: string; description: string }) {
-  const res = await api.post(`/student/listings/${id}/report`, data)
+  const res = await api.post('/reports', {
+    targetId: id,
+    reportType: data.reportType || 'PRODUCT',
+    reason: 'INAPPROPRIATE_CONTENT',
+    description: data.description
+  })
   return res.data
 }
 

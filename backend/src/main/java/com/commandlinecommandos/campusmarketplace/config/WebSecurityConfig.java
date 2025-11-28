@@ -90,9 +90,14 @@ public class WebSecurityConfig {
                 // Debug endpoints (admin only, development use)
                 .requestMatchers("/debug/**").hasRole("ADMIN")
                 
-                // Student and Admin endpoints (context path /api is already applied)
-                .requestMatchers("/listings/**").hasAnyRole("STUDENT", "ADMIN")
-                .requestMatchers("/user/**").hasAnyRole("STUDENT", "ADMIN")
+                // Listings endpoints (context path /api is already applied)
+                // Public read access for GET requests
+                .requestMatchers("/listings", "/listings/{id}", "/listings/seller/{sellerId}").permitAll()
+                // Protected write operations require SELLER role (students have both BUYER and SELLER by default)
+                .requestMatchers("/listings/**").hasAnyRole("SELLER", "ADMIN")
+
+                // User endpoints - BUYER and SELLER can access user features
+                .requestMatchers("/user/**").hasAnyRole("BUYER", "SELLER", "ADMIN")
 
                 .requestMatchers("/actuator/prometheus").permitAll()
                 .requestMatchers("/actuator/metrics").permitAll()
@@ -131,9 +136,17 @@ public class WebSecurityConfig {
             "http://localhost:3000",           // React development server
             "http://localhost:3001",           // Alternative React port
             "http://localhost:3002",           // Alternative React port
+            "http://localhost:5000",           // Vite development server
+            "http://localhost:5001",           // Alternative Vite port
+            "http://localhost:5002",           // Alternative Vite port
+            "http://localhost:5173",           // Vite default port
             "http://127.0.0.1:3000",          // Localhost alternative
             "http://127.0.0.1:3001",          // Localhost alternative
             "http://127.0.0.1:3002",          // Localhost alternative
+            "http://127.0.0.1:5000",          // Vite localhost alternative
+            "http://127.0.0.1:5001",          // Vite localhost alternative
+            "http://127.0.0.1:5002",          // Vite localhost alternative
+            "http://127.0.0.1:5173",          // Vite default localhost alternative
             "https://campus-marketplace.sjsu.edu",  // Production domain
             "https://*.sjsu.edu"              // SJSU subdomains
         ));

@@ -12,8 +12,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Service to initialize dummy data for development
@@ -55,7 +57,8 @@ public class DataInitializationService implements CommandLineRunner {
                 user.setPassword("$2a$10$rOIHQnPyoJBSAcQWJYJSJe5Vx8eHOKYvOoYRNKZdNjZdNjZdNjZdN"); // password123
                 user.setFirstName("Test");
                 user.setLastName("Student");
-                user.setRole(UserRole.STUDENT);
+                // Students get both BUYER and SELLER roles (many-to-many)
+                user.setRoles(new HashSet<>(Set.of(UserRole.BUYER, UserRole.SELLER)));
                 user.setActive(true);
                 // University can be null for H2
                 return userRepository.save(user);

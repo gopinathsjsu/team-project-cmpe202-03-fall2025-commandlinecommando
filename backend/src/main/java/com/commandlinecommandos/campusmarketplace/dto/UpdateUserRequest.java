@@ -3,8 +3,16 @@ package com.commandlinecommandos.campusmarketplace.dto;
 import com.commandlinecommandos.campusmarketplace.model.UserRole;
 import com.commandlinecommandos.campusmarketplace.model.VerificationStatus;
 
+import java.util.Set;
+
 /**
- * DTO for admin to update user accounts
+ * DTO for admin to update user accounts.
+ * Supports the many-to-many user-role relationship.
+ * 
+ * Validation rules enforced by service layer:
+ * - ADMIN role cannot be combined with BUYER or SELLER roles
+ * - Student accounts must have at least one of BUYER or SELLER roles
+ * - Cannot change a student to admin or vice versa (must deactivate and create new)
  */
 public class UpdateUserRequest {
     
@@ -12,7 +20,7 @@ public class UpdateUserRequest {
     private String lastName;
     private String email;
     private String phone;
-    private UserRole role;
+    private Set<UserRole> roles;
     private VerificationStatus verificationStatus;
     private Boolean isActive;
     private String studentId;
@@ -56,12 +64,12 @@ public class UpdateUserRequest {
         this.phone = phone;
     }
 
-    public UserRole getRole() {
-        return role;
+    public Set<UserRole> getRoles() {
+        return roles;
     }
 
-    public void setRole(UserRole role) {
-        this.role = role;
+    public void setRoles(Set<UserRole> roles) {
+        this.roles = roles;
     }
 
     public VerificationStatus getVerificationStatus() {

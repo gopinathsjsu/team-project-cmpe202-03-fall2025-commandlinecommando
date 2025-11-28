@@ -63,10 +63,10 @@ public class AuthController {
     
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest registerRequest) {
-        logger.info("Registration attempt for username: {} with role: {}", registerRequest.getUsername(), registerRequest.getRole());
+        logger.info("Registration attempt for username: {}", registerRequest.getUsername());
         try {
             AuthResponse authResponse = authService.register(registerRequest);
-            logger.info("Successful registration for username: {} with role: {}", registerRequest.getUsername(), registerRequest.getRole());
+            logger.info("Successful registration for username: {} with roles: BUYER, SELLER", registerRequest.getUsername());
             return ResponseEntity.ok(authResponse);
         } catch (BadCredentialsException e) {
             logger.warn("Registration failed for username: {} - {}", registerRequest.getUsername(), e.getMessage());
@@ -163,7 +163,7 @@ public class AuthController {
             }
 
             String username = authentication.getName();
-            
+
             // Try to get User object from principal, fallback to username lookup for tests
             User user = null;
             if (authentication.getPrincipal() instanceof User) {
@@ -173,25 +173,16 @@ public class AuthController {
                 user = userRepository.findByUsername(username)
                         .orElse(null);
             }
-            
+
             if (user != null) {
-                Map<String, Object> userInfo = new HashMap<>();
-                userInfo.put("id", user.getId());
-                userInfo.put("username", user.getUsername());
-                userInfo.put("email", user.getEmail());
-                userInfo.put("role", user.getRole());
-                userInfo.put("firstName", user.getFirstName());
-                userInfo.put("lastName", user.getLastName());
-                userInfo.put("phone", user.getPhone());
-                userInfo.put("isActive", user.isActive());
-                
-                return ResponseEntity.ok(userInfo);
+                // Return full UserResponse DTO instead of Map
+                return ResponseEntity.ok(authService.toUserResponse(user));
             } else {
                 // For test scenarios where no real user exists, return basic info
                 Map<String, Object> userInfo = new HashMap<>();
                 userInfo.put("username", username);
                 userInfo.put("authorities", authentication.getAuthorities());
-                
+
                 return ResponseEntity.ok(userInfo);
             }
         } catch (Exception e) {

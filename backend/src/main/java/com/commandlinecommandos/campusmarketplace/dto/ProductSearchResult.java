@@ -2,6 +2,7 @@ package com.commandlinecommandos.campusmarketplace.dto;
 
 import com.commandlinecommandos.campusmarketplace.model.ProductCategory;
 import com.commandlinecommandos.campusmarketplace.model.ProductCondition;
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -26,6 +27,7 @@ public class ProductSearchResult {
     private String location;
     private Integer viewCount;
     private Integer favoriteCount;
+    @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime createdAt;
     private List<String> imageUrls;
     private Float relevanceScore;

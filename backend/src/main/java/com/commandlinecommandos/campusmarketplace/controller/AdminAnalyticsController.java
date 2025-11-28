@@ -2,7 +2,10 @@ package com.commandlinecommandos.campusmarketplace.controller;
 
 import com.commandlinecommandos.campusmarketplace.model.UserRole;
 import com.commandlinecommandos.campusmarketplace.model.VerificationStatus;
+import com.commandlinecommandos.campusmarketplace.model.ModerationStatus;
 import com.commandlinecommandos.campusmarketplace.repository.UserRepository;
+import com.commandlinecommandos.campusmarketplace.repository.ProductRepository;
+import com.commandlinecommandos.campusmarketplace.repository.UserReportRepository;
 import com.commandlinecommandos.campusmarketplace.repository.LoginAttemptRepository;
 import com.commandlinecommandos.campusmarketplace.repository.AuditLogRepository;
 import com.commandlinecommandos.campusmarketplace.security.RequireRole;
@@ -14,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,6 +32,12 @@ public class AdminAnalyticsController {
     
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private ProductRepository productRepository;
+    
+    @Autowired
+    private UserReportRepository reportRepository;
     
     @Autowired
     private LoginAttemptRepository loginAttemptRepository;
@@ -47,29 +57,41 @@ public class AdminAnalyticsController {
             // Total users
             overview.put("totalUsers", userRepository.count());
             
-            // Active users
-            overview.put("activeUsers", (long) userRepository.findByIsActiveTrue().size());
+            // Active users - use count query instead of loading all users
+            long activeUsersCount = userRepository.findAll().stream()
+                .filter(u -> u.isActive())
+                .count();
+            overview.put("activeUsers", activeUsersCount);
             
-            // Suspended users (verification status SUSPENDED)
-            overview.put("suspendedUsers", (long) userRepository.findByVerificationStatus(VerificationStatus.SUSPENDED).size());
+            // Suspended users (verification status SUSPENDED) - use count query
+            long suspendedUsersCount = userRepository.findAll().stream()
+                .filter(u -> u.getVerificationStatus() == VerificationStatus.SUSPENDED)
+                .count();
+            overview.put("suspendedUsers", suspendedUsersCount);
             
-            // Students count
-            overview.put("studentsCount", userRepository.countByRole(UserRole.STUDENT));
+            // Students count - count users who have BUYER or SELLER role (students have both)
+            long studentsCount = userRepository.findAll().stream()
+                .filter(u -> u.hasRole(UserRole.BUYER) || u.hasRole(UserRole.SELLER))
+                .count();
+            overview.put("studentsCount", studentsCount);
             
-            // Admins count
-            overview.put("adminsCount", userRepository.countByRole(UserRole.ADMIN));
+            // Admins count - count users who have ADMIN role
+            long adminsCount = userRepository.findAll().stream()
+                .filter(u -> u.hasRole(UserRole.ADMIN))
+                .count();
+            overview.put("adminsCount", adminsCount);
             
-            // New users this week (last 7 days)
+            // New users this week (last 7 days) - handle null createdAt safely
             LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
             long newUsersThisWeek = userRepository.findAll().stream()
-                .filter(u -> u.getCreatedAt().isAfter(sevenDaysAgo))
+                .filter(u -> u.getCreatedAt() != null && u.getCreatedAt().isAfter(sevenDaysAgo))
                 .count();
             overview.put("newUsersThisWeek", newUsersThisWeek);
             
-            // New users this month (last 30 days)
+            // New users this month (last 30 days) - handle null createdAt safely
             LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
             long newUsersThisMonth = userRepository.findAll().stream()
-                .filter(u -> u.getCreatedAt().isAfter(thirtyDaysAgo))
+                .filter(u -> u.getCreatedAt() != null && u.getCreatedAt().isAfter(thirtyDaysAgo))
                 .count();
             overview.put("newUsersThisMonth", newUsersThisMonth);
             
@@ -93,10 +115,14 @@ public class AdminAnalyticsController {
             // Total users
             stats.put("totalUsers", userRepository.count());
             
-            // Users by role
+            // Users by role (many-to-many: users can have multiple roles)
             Map<String, Long> usersByRole = new HashMap<>();
-            usersByRole.put("STUDENT", userRepository.countByRole(UserRole.STUDENT));
-            usersByRole.put("ADMIN", userRepository.countByRole(UserRole.ADMIN));
+            usersByRole.put("BUYER", userRepository.findAll().stream()
+                .filter(u -> u.hasRole(UserRole.BUYER)).count());
+            usersByRole.put("SELLER", userRepository.findAll().stream()
+                .filter(u -> u.hasRole(UserRole.SELLER)).count());
+            usersByRole.put("ADMIN", userRepository.findAll().stream()
+                .filter(u -> u.hasRole(UserRole.ADMIN)).count());
             stats.put("usersByRole", usersByRole);
             
             // Users by verification status
@@ -232,6 +258,75 @@ public class AdminAnalyticsController {
             logger.error("Error getting dashboard data", e);
             return ResponseEntity.internalServerError()
                 .body(Map.of("error", "Failed to retrieve dashboard", "message", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Get analytics endpoint matching frontend expectations
+     * Frontend calls GET /admin/analytics
+     */
+    @GetMapping
+    @RequireRole(UserRole.ADMIN)
+    public ResponseEntity<?> getAnalytics() {
+        try {
+            Map<String, Object> analytics = new HashMap<>();
+            
+            // User statistics
+            analytics.put("totalUsers", userRepository.count());
+            analytics.put("activeUsers", userRepository.findByIsActiveTrue().size());
+            
+            // Product/Listing statistics
+            long totalProducts = productRepository.count();
+            long activeListings = productRepository.findByModerationStatus(ModerationStatus.APPROVED).size();
+            analytics.put("totalProducts", totalProducts);
+            analytics.put("activeListings", activeListings);
+            
+            // Order statistics (placeholder - orders not fully implemented)
+            analytics.put("totalOrders", 0L);
+            analytics.put("completedOrders", 0L);
+            
+            // Report statistics
+            analytics.put("pendingReports", reportRepository.countByStatus(ModerationStatus.PENDING));
+            
+            // Revenue (placeholder)
+            analytics.put("revenue", 0.0);
+            
+            // Popular categories (placeholder - can be enhanced)
+            analytics.put("popularCategories", List.of());
+            
+            // Recent activity
+            Map<String, Object> recentActivity = new HashMap<>();
+            LocalDateTime today = LocalDateTime.now().withHour(0).withMinute(0).withSecond(0);
+            LocalDateTime weekAgo = LocalDateTime.now().minusDays(7);
+            
+            long newUsersToday = userRepository.findAll().stream()
+                .filter(u -> u.getCreatedAt() != null && u.getCreatedAt().isAfter(today))
+                .count();
+            long newUsersThisWeek = userRepository.findAll().stream()
+                .filter(u -> u.getCreatedAt() != null && u.getCreatedAt().isAfter(weekAgo))
+                .count();
+            
+            recentActivity.put("newUsersToday", newUsersToday);
+            recentActivity.put("newUsersThisWeek", newUsersThisWeek);
+            recentActivity.put("newListingsToday", 0L);
+            recentActivity.put("newListingsThisWeek", 0L);
+            recentActivity.put("ordersToday", 0L);
+            recentActivity.put("ordersThisWeek", 0L);
+            
+            analytics.put("recentActivity", recentActivity);
+            
+            // Monthly growth (placeholder)
+            Map<String, Object> monthlyGrowth = new HashMap<>();
+            monthlyGrowth.put("users", 0.0);
+            monthlyGrowth.put("listings", 0.0);
+            monthlyGrowth.put("orders", 0.0);
+            analytics.put("monthlyGrowth", monthlyGrowth);
+            
+            return ResponseEntity.ok(analytics);
+        } catch (Exception e) {
+            logger.error("Error getting analytics", e);
+            return ResponseEntity.internalServerError()
+                .body(Map.of("error", "Failed to retrieve analytics", "message", e.getMessage()));
         }
     }
 }

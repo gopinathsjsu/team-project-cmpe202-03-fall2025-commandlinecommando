@@ -24,6 +24,7 @@ import com.commandlinecommandos.campusmarketplace.security.JwtUtil;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -62,7 +63,8 @@ class AuthServiceTest {
         testUser.setUserId(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         testUser.setUsername("testuser");
         testUser.setEmail("test@example.com");
-        testUser.setRole(UserRole.STUDENT);
+        // Students get both BUYER and SELLER roles
+        testUser.setRoles(Set.of(UserRole.BUYER, UserRole.SELLER));
         testUser.setActive(true);
         
         authRequest = new AuthRequest();
@@ -94,7 +96,9 @@ class AuthServiceTest {
         assertEquals("refresh-token", response.getRefreshToken());
         assertEquals("Bearer", response.getTokenType());
         assertEquals(3600L, response.getExpiresIn());
-        assertEquals(UserRole.STUDENT, response.getRole());
+        // Verify user has both BUYER and SELLER roles (student)
+        assertTrue(response.getRoles().contains(UserRole.BUYER));
+        assertTrue(response.getRoles().contains(UserRole.SELLER));
         assertEquals("testuser", response.getUsername());
         assertEquals(UUID.fromString("00000000-0000-0000-0000-000000000001"), response.getUserId());
         
@@ -154,7 +158,9 @@ class AuthServiceTest {
         assertNotNull(response);
         assertEquals("new-access-token", response.getAccessToken());
         assertEquals("valid-refresh-token", response.getRefreshToken());
-        assertEquals(UserRole.STUDENT, response.getRole());
+        // Verify user has both BUYER and SELLER roles
+        assertTrue(response.getRoles().contains(UserRole.BUYER));
+        assertTrue(response.getRoles().contains(UserRole.SELLER));
     }
     
     @Test

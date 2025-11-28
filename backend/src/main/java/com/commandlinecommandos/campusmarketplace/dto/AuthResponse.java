@@ -2,15 +2,20 @@ package com.commandlinecommandos.campusmarketplace.dto;
 
 // Removed Lombok dependencies - using manual getters/setters
 import com.commandlinecommandos.campusmarketplace.model.UserRole;
+import java.util.Set;
 import java.util.UUID;
 
+/**
+ * Authentication response DTO.
+ * Supports many-to-many user-role relationship.
+ */
 public class AuthResponse {
-    
+
     private String accessToken;
     private String refreshToken;
     private String tokenType = "Bearer";
     private Long expiresIn; // in seconds
-    private UserRole role;
+    private Set<UserRole> roles;
     private String username;
     private UUID userId;
     private String email;
@@ -18,18 +23,28 @@ public class AuthResponse {
     private String lastName;
     private String phone;
     private boolean active;
+
+    // Additional fields for frontend mockdata compatibility
+    private String verificationStatus;
+    private String universityId;
+    private String studentId;
+    private String major;
+    private Integer graduationYear;
+    private String avatarUrl;
+    private String createdAt;  // ISO-8601 formatted
+    private String lastLoginAt;  // ISO-8601 formatted
     
     // Constructors
     public AuthResponse() {
     }
     
     public AuthResponse(String accessToken, String refreshToken, String tokenType, Long expiresIn, 
-                       UserRole role, String username, UUID userId) {
+                       Set<UserRole> roles, String username, UUID userId) {
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
         this.tokenType = tokenType;
         this.expiresIn = expiresIn;
-        this.role = role;
+        this.roles = roles;
         this.username = username;
         this.userId = userId;
     }
@@ -67,12 +82,12 @@ public class AuthResponse {
         this.expiresIn = expiresIn;
     }
     
-    public UserRole getRole() {
-        return role;
+    public Set<UserRole> getRoles() {
+        return roles;
     }
     
-    public void setRole(UserRole role) {
-        this.role = role;
+    public void setRoles(Set<UserRole> roles) {
+        this.roles = roles;
     }
     
     public String getUsername() {
@@ -129,5 +144,69 @@ public class AuthResponse {
     
     public void setActive(boolean active) {
         this.active = active;
+    }
+
+    public String getVerificationStatus() {
+        return verificationStatus;
+    }
+
+    public void setVerificationStatus(String verificationStatus) {
+        this.verificationStatus = verificationStatus;
+    }
+
+    public String getUniversityId() {
+        return universityId;
+    }
+
+    public void setUniversityId(String universityId) {
+        this.universityId = universityId;
+    }
+
+    public String getStudentId() {
+        return studentId;
+    }
+
+    public void setStudentId(String studentId) {
+        this.studentId = studentId;
+    }
+
+    public String getMajor() {
+        return major;
+    }
+
+    public void setMajor(String major) {
+        this.major = major;
+    }
+
+    public Integer getGraduationYear() {
+        return graduationYear;
+    }
+
+    public void setGraduationYear(Integer graduationYear) {
+        this.graduationYear = graduationYear;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
+    }
+
+    public String getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(String createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public String getLastLoginAt() {
+        return lastLoginAt;
+    }
+
+    public void setLastLoginAt(String lastLoginAt) {
+        this.lastLoginAt = lastLoginAt;
     }
 }

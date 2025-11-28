@@ -1,7 +1,7 @@
 import api from './client'
 
 export interface Conversation {
-  conversationId: number
+  conversationId: string  // Changed from number to string (UUID)
   listingId: string
   listing: {
     title: string
@@ -33,8 +33,8 @@ export interface Conversation {
 }
 
 export interface Message {
-  messageId: number
-  conversationId: number
+  messageId: string  // Changed from number to string (UUID)
+  conversationId: string  // Changed from number to string (UUID)
   senderId: string
   senderName: string
   content: string
@@ -52,19 +52,21 @@ export async function createConversation(data: { listingId: string; initialMessa
   return res.data
 }
 
-export async function getMessages(conversationId: number) {
+export async function getMessages(conversationId: string) {
   const res = await api.get(`/chat/conversations/${conversationId}/messages`)
   return res.data
 }
 
-export async function sendMessage(data: { conversationId: number; content: string }) {
+export async function sendMessage(data: { conversationId: string; content: string }) {
   const res = await api.post(`/chat/conversations/${data.conversationId}/messages`, {
     content: data.content,
   })
   return res.data
 }
 
-export async function markAsRead(conversationId: number) {
+export async function markAsRead(conversationId: string) {
+  // Backend uses PUT /chat/messages/{messageId}/read, but we'll use conversation endpoint if available
+  // For now, mark all messages in conversation as read
   const res = await api.put(`/chat/conversations/${conversationId}/read`)
   return res.data
 }

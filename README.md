@@ -1,6 +1,8 @@
-# Campus Marketplace
+# Campus Marketplace - Unified Backend
 
 A secure and scalable marketplace platform for university students to buy and sell items within their campus community.
+
+**🎉 Recently Refactored**: Consolidated 3 microservices into a unified backend architecture for improved maintainability and performance.
 
 ## Team Name
 **Commandline Commandos**
@@ -13,214 +15,239 @@ A secure and scalable marketplace platform for university students to buy and se
 
 ## Quick Start
 
-### Database Setup
+### Option 1: Docker Compose (Recommended)
 ```bash
-# Quick database setup (PostgreSQL + pgAdmin)
-./setup-database.sh
+# Start all services (PostgreSQL, Redis, Backend)
+docker-compose up --build
 
-# Or manual setup
-cp .env.template .env  # Edit with your passwords
-docker-compose up -d
+# Backend will be available at http://localhost:8080
+# Flyway migrations run automatically
 ```
 
-### Run Application
+### Option 2: Local Development
 ```bash
-# Development mode (H2 database)
+# 1. Start database services
+docker-compose up -d postgres redis
+
+# 2. Run database migrations (first time only)
 cd backend
+./mvnw flyway:migrate
+
+# 3. Start unified backend
 ./mvnw spring-boot:run
 
-# Production mode (PostgreSQL)
-./mvnw spring-boot:run -Dspring.profiles.active=prod
-
-# Listing API microservice
-cd listing-api
-./mvnw spring-boot:run
+# Backend runs on: http://localhost:8080
 ```
 
 ### Access Services
-- **Main Application**: http://localhost:8080/api
-- **Listing API**: http://localhost:8100/api
-- **pgAdmin**: http://localhost:8080 (database management)
-- **H2 Console**: http://localhost:8080/api/h2-console (development only)
+- **Unified Backend API**: http://localhost:8080/api
+  - Authentication: `/api/auth/*`
+  - Users: `/api/users/*`
+  - Listings: `/api/listings/*`
+  - Reports: `/api/reports/*`
+  - Communication: `/api/conversations/*`, `/api/messages/*`
+  - Orders: `/api/orders/*`
+  - Admin: `/api/admin/*`
+- **Health Check**: http://localhost:8080/api/actuator/health
+- **PostgreSQL**: localhost:5432 (database: `campus_marketplace`)
+- **Redis**: localhost:6379
 
 ## Project Structure
 
 ```
-├── backend/                 # Main Spring Boot application
-│   ├── src/main/java/      # Application source code
-│   ├── src/main/resources/ # Configuration files
-│   └── pom.xml            # Maven dependencies
-├── listing-api/            # Listing Management microservice
-│   ├── src/main/java/      # Listing API source code
-│   ├── src/main/resources/ # Configuration files
-│   └── pom.xml            # Maven dependencies
+├── backend/                 # Unified Spring Boot application (Port 8080)
+│   ├── src/main/java/com/commandlinecommandos/campusmarketplace/
+│   │   ├── auth/           # Authentication & JWT
+│   │   ├── user/           # User management
+│   │   ├── listing/        # Listing management (merged from listing-api)
+│   │   ├── communication/  # Chat & messaging (merged from communication)
+│   │   ├── order/          # Order processing
+│   │   ├── admin/          # Admin operations
+│   │   ├── security/       # Security configuration
+│   │   ├── config/         # Application configuration
+│   │   ├── exception/      # Unified exception handling
+│   │   └── dto/            # Data transfer objects
+│   ├── src/main/resources/
+│   │   └── application.yml # Unified configuration
+│   └── pom.xml            # Consolidated dependencies (Java 21)
 ├── frontend/               # React/Vite frontend
 ├── db/                    # Database infrastructure
-│   ├── scripts/           # Backup, monitoring, and utility scripts
-│   ├── docs/             # Database documentation
-│   └── migrations/       # Database schema changes
-├── documentation/         # Project documentation
-├── docker-compose.yml    # PostgreSQL, pgAdmin, Redis services
-├── setup-database.sh     # Database quick start script
-└── .env.template        # Environment variables template
+│   ├── migrations/        # Flyway migrations (V1-V8)
+│   ├── scripts/           # Backup & monitoring utilities
+│   └── docs/             # Database documentation
+├── docker-compose.yml    # Unified deployment (3 services: postgres, redis, backend)
+├── .archive/             # Archived pre-refactoring code
+│   └── pre-refactoring-YYYYMMDD/
+│       ├── listing-api/   # Old listing microservice (archived)
+│       ├── communication/ # Old communication microservice (archived)
+│       └── sql_files/     # Old manual SQL schemas (archived)
+├── DEPLOYMENT_GUIDE.md   # Deployment instructions
+├── REFACTORING_SUMMARY.md # Refactoring documentation
+└── refactor_plan.md      # Original refactoring plan
 ```
+
+## Architecture
+
+### Unified Backend (Single Service)
+The application has been refactored from 3 separate microservices into a single, modular monolith:
+
+**Before (3 Services)**:
+- Backend (8080): User management, authentication, orders
+- Listing API (8100): Listings, reports, search
+- Communication (8200): Chat, messages, notifications
+
+**After (1 Service)**:
+- Unified Backend (8080): All functionality in modular packages
+
+**Benefits**:
+- ✅ Eliminated ~734 lines of duplicate code
+- ✅ Single database with proper foreign key constraints
+- ✅ UUID-based IDs throughout (no lossy conversions)
+- ✅ Unified exception handling and security
+- ✅ Simplified deployment (1 service instead of 3)
+- ✅ No inter-service HTTP calls
+- ✅ Single configuration file
 
 ## Features
 
+### 🏗️ Unified Architecture
+- **Single Codebase**: All functionality in one application
+- **Modular Design**: Organized into domain packages (auth, user, listing, communication, order, admin)
+- **Flyway Migrations**: Automated database schema management (V1-V8)
+- **UUID-Based IDs**: Consistent UUID usage across all tables
+- **Foreign Key Constraints**: Proper referential integrity
+
 ### 🗄️ Database Infrastructure
-- **PostgreSQL 15+** with connection pooling (HikariCP)
-- **Multi-environment support** (dev: H2, prod: PostgreSQL)
+- **PostgreSQL 16** with connection pooling (HikariCP)
+- **Flyway Migrations**: V8 migration consolidates schemas with UUID conversion
+- **Foreign Keys**: 6 constraints ensure data integrity
 - **Automated backups** with retention policies
 - **Real-time monitoring** and health checks
-- **Security hardened** with SSL/TLS and audit logging
 
-### 🔧 Development Tools
-- **pgAdmin** for database management
-- **Health monitoring** scripts with status indicators
-- **Automated backup/restore** capabilities
-- **Performance monitoring** and optimization
+### 🔐 Security Features
+- **JWT Authentication**: Token-based with refresh tokens
+- **Role-based Access Control**: Student and Admin roles
+- **UUID-based Authorization**: Proper owner verification
+- **Session Management**: Redis-backed sessions
+- **Unified Exception Handling**: 20+ exception handlers
 
-### 🚀 Application Features
-- **JWT-based authentication and authorization**
-- **Role-based access control** (Student, Admin)
-- **File upload support** for product images
-- **RESTful API** with comprehensive error handling
-- **Session management** with Redis support
-- **Advanced Listing Management** with search and filtering
-- **Report Management System** for content moderation
-- **Image Management** with multiple upload support
-- **Admin Dashboard** with report analytics
+### 📦 Core Features
+- **User Management**: Registration, login, profile management
+- **Listing Management**: CRUD operations with search and filtering
+- **Communication**: Real-time chat between buyers and sellers
+- **Report System**: Content moderation with admin dashboard
+- **Order Processing**: Order creation and tracking
+- **File Upload**: Image upload for listings
+- **Email Notifications**: SMTP-based notifications
 
 ## Database Management
 
 ### Quick Commands
 ```bash
-# Health check
+# Run Flyway migrations
+cd backend
+./mvnw flyway:migrate
+
+# Check migration status
+./mvnw flyway:info
+
+# Health check (if using provided scripts)
 ./db/scripts/monitor.sh --health
 
-# Create backup
+# Create backup (if using provided scripts)
 ./db/scripts/backup.sh
-
-# Restore from backup
-./db/scripts/restore.sh --latest
-
-# Performance monitoring
-./db/scripts/monitor.sh --performance
 ```
 
-### Database Users
-| User | Purpose | Permissions |
-|------|---------|-------------|
-| `cm_app_user` | Application operations | Full read/write access |
-| `cm_readonly` | Analytics/reporting | Read-only access |
-
-### Environment Profiles
-- **Development**: H2 in-memory database with auto-schema creation
-- **Production**: PostgreSQL with connection pooling and SSL
-- **Testing**: Isolated H2 database with security disabled
+### Database Schema
+- **Managed by**: Flyway migrations in `db/migrations/`
+- **Latest Version**: V8 (Schema unification with UUID conversion)
+- **Tables**: users, listings, conversations, messages, orders, reports, etc.
+- **All IDs**: UUID (no BIGINT)
 
 ## Documentation
 
+📚 **See [docs/DOCUMENTATION_INDEX.md](docs/DOCUMENTATION_INDEX.md) for complete documentation guide**
+
+### Quick Links
+- **[🚀 Deployment Guide](docs/DEPLOYMENT_GUIDE.md)** - Complete deployment instructions
+- **[📋 Refactoring Summary](docs/REFACTORING_SUMMARY.md)** - Details of the consolidation effort
+- **[📖 API Quick Reference](docs/API_QUICK_REFERENCE.md)** - All API endpoints with examples
+- **[🧪 Postman Testing](docs/POSTMAN_QUICK_START.md)** - Postman collection usage guide
+- **[✅ Test Results](docs/POSTMAN_TEST_VERIFICATION.md)** - Latest test results (All passing ✅)
+
 ### Database Documentation
-- **[📚 Complete Team Setup Guide](db/docs/TEAM_SETUP_GUIDE.md)** - Comprehensive guide for teams to set up and use the database
-- **[⚡ Quick Reference Card](db/docs/QUICK_REFERENCE.md)** - Daily commands and quick troubleshooting
-- **[✅ New Team Member Onboarding](db/docs/ONBOARDING_CHECKLIST.md)** - Step-by-step checklist for new developers
-- **[🔧 Database Setup Guide](db/docs/DATABASE_SETUP.md)** - Complete setup instructions
-- **[🚨 Troubleshooting Guide](db/docs/TROUBLESHOOTING.md)** - Common issues and solutions
-- **[🔐 Security Guide](db/docs/SECURITY.md)** - Security best practices
+- **[📚 Team Setup Guide](db/docs/TEAM_SETUP_GUIDE.md)** - Comprehensive setup guide
+- **[⚡ Quick Reference](db/docs/QUICK_REFERENCE.md)** - Daily commands
+- **[✅ Onboarding Checklist](db/docs/ONBOARDING_CHECKLIST.md)** - New developer checklist
+- **[🔧 Database Setup](db/docs/DATABASE_SETUP.md)** - Setup instructions
+- **[🚨 Troubleshooting](db/docs/TROUBLESHOOTING.md)** - Common issues
 
-### API Documentation
-- **Authentication**: JWT-based with refresh tokens
-- **Authorization**: Role-based access control
-- **File Upload**: Multi-part file upload support
-- **Error Handling**: Comprehensive error responses
-- **Listing Management**: Full CRUD operations with advanced search
-- **Report Management**: Complete moderation system with admin tools
-- **Image Management**: Multiple image upload and organization
+### AWS Deployment
+- **[☁️ EC2 Deployment Guide](docs/deployment/AWS_EC2_DEPLOYMENT.md)** - Complete AWS EC2 deployment guide
+- **[✅ EC2 Readiness Assessment](docs/deployment/EC2_DEPLOYMENT_READINESS.md)** - Deployment readiness checklist
 
-## Security Features
+### Scripts
+- **[📜 Scripts README](scripts/README.md)** - Utility scripts documentation
+- **create-db-user.sh** - Create PostgreSQL user
+- **setup-database.sh** - Complete database setup
+- **start-dev-db.sh** - Quick development database start
 
-### Database Security
-- 🔐 **Strong password policies** and user isolation
-- 🔒 **SSL/TLS encryption** for all connections
-- 📊 **Audit logging** for all database changes
-- 💾 **Encrypted backups** with integrity verification
-- 🚨 **Real-time monitoring** and alerting
+### API Endpoints
+All endpoints available at `http://localhost:8080/api`:
+- **Authentication**: `/auth/*` - Login, register, refresh tokens
+- **Users**: `/users/*` - Profile management
+- **Listings**: `/listings/*` - Product listings with search
+- **Reports**: `/reports/*` - Content moderation
+- **Communication**: `/chat/*` - Buyer-seller chat and notifications
+- **Orders**: `/orders/*` - Order processing
+- **Admin**: `/admin/*` - Admin operations
 
-### Application Security
-- JWT token-based authentication
-- Role-based authorization with method-level security
-- Input validation and sanitization
-- CORS configuration for frontend integration
-- Session management with Redis
+## Testing
 
-## Monitoring & Maintenance
+### Postman Collection
+- **Collection File**: `Campus_Marketplace_Complete_API_Collection.postman_collection.json`
+- **Test Results**: ✅ All 30 tests passing (see [POSTMAN_TEST_VERIFICATION.md](POSTMAN_TEST_VERIFICATION.md))
+- **Quick Start**: See [POSTMAN_QUICK_START.md](POSTMAN_QUICK_START.md)
 
-### Health Monitoring
+### Running Tests
 ```bash
-# Quick health check
-./setup-database.sh status
+# Using Newman (Postman CLI)
+npx newman run docs/postman/Campus_Marketplace_Complete_API_Collection.postman_collection.json
 
-# Detailed monitoring
-./db/scripts/monitor.sh --full
-
-# Connection monitoring
-./db/scripts/monitor.sh --connections
+# Or import collection into Postman app
+# File: docs/postman/Campus_Marketplace_Complete_API_Collection.postman_collection.json
 ```
-
-### Automated Backups
-- **Daily backups** at 2:00 AM
-- **7 days** local retention
-- **30 days** remote retention
-- **Integrity verification** with checksums
-- **Point-in-time recovery** capability
-
-## Development Workflow
-
-1. **Setup Environment**
-   ```bash
-   ./setup-database.sh
-   cp .env.template .env  # Update with your values
-   ```
-
-2. **Start Development**
-   ```bash
-   cd backend
-   ./mvnw spring-boot:run  # Uses H2 database
-   ```
-
-3. **Test with Production Database**
-   ```bash
-   ./mvnw spring-boot:run -Dspring.profiles.active=prod
-   ```
-
-4. **Monitor and Maintain**
-   ```bash
-   ./db/scripts/monitor.sh --health
-   ./db/scripts/backup.sh
-   ```
 
 ## Troubleshooting
 
 ### Common Issues
-1. **Database Connection Failed**: Check if Docker containers are running
-2. **Authentication Error**: Verify credentials in `.env` file
-3. **Port Conflicts**: Ensure ports 5432 and 8080 are available
+1. **Port 8080 already in use**: Stop other services or change port in `application.yml`
+2. **Database connection failed**: Ensure PostgreSQL is running: `docker-compose ps`
+3. **Migration failed**: Check Flyway status: `./mvnw flyway:info`
+4. **PostgreSQL role doesn't exist**: Run `./create-db-user.sh` to create `cm_app_user`
 
 ### Quick Fixes
 ```bash
-# Restart database services
-./setup-database.sh restart
+# Restart all services
+docker-compose restart
 
-# Check service logs
-./setup-database.sh logs
+# View logs
+docker-compose logs -f backend
 
-# Clean and restart (WARNING: deletes data)
-./setup-database.sh cleanup
-./setup-database.sh setup
+# Reset database (WARNING: deletes all data)
+docker-compose down -v
+docker-compose up -d postgres redis
+cd backend && ./mvnw flyway:migrate
 ```
 
-## Summary of areas of contributions : (Per Member)
+## Archived Code
+
+The previous microservices architecture has been archived in `.archive/pre-refactoring-YYYYMMDD/`:
+- `listing-api/` - Old listing microservice (port 8100)
+- `communication/` - Old communication microservice (port 8200)  
+- `sql_files/` - Old manual SQL schemas (replaced by Flyway)
+
+These are kept for reference but are no longer used in development.
 
 ## Link to Project Journal
 

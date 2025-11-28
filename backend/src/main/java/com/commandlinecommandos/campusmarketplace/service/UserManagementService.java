@@ -292,7 +292,7 @@ public class UserManagementService {
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setPhone(request.getPhone());
-        user.setRole(request.getRole());
+        user.setRoles(request.getRoles());
         user.setUniversity(university);
         user.setStudentId(request.getStudentId());
         user.setGraduationYear(request.getGraduationYear());
@@ -308,7 +308,7 @@ public class UserManagementService {
         
         // Audit log
         auditService.logAuditEvent(admin, "USER", user.getUserId(), "CREATE", 
-            null, Map.of("username", user.getUsername(), "role", user.getRole()), 
+            null, Map.of("username", user.getUsername(), "roles", user.getRoles().toString()), 
             "Admin created new user account");
         
         return mapToUserResponse(user);
@@ -352,15 +352,15 @@ public class UserManagementService {
             newValues.put("phone", request.getPhone());
         }
         
-        if (request.getRole() != null && request.getRole() != user.getRole()) {
-            oldValues.put("role", user.getRole().name());
-            user.setRole(request.getRole());
-            newValues.put("role", request.getRole().name());
+        if (request.getRoles() != null && !request.getRoles().equals(user.getRoles())) {
+            oldValues.put("roles", user.getRoles().toString());
+            user.setRoles(request.getRoles());
+            newValues.put("roles", request.getRoles().toString());
             
             // Log role change separately
             auditService.logRoleChange(user, admin, 
-                (String) oldValues.get("role"), 
-                (String) newValues.get("role"));
+                (String) oldValues.get("roles"), 
+                (String) newValues.get("roles"));
         }
         
         if (request.getVerificationStatus() != null) {
@@ -487,10 +487,10 @@ public class UserManagementService {
                         
                     case UPDATE_ROLE:
                         if (request.getNewRole() != null) {
-                            UserRole oldRole = user.getRole();
-                            user.setRole(request.getNewRole());
+                            Set<UserRole> oldRoles = user.getRoles();
+                            user.setRoles(new HashSet<>(Set.of(request.getNewRole())));
                             userRepository.save(user);
-                            auditService.logRoleChange(user, admin, oldRole.name(), request.getNewRole().name());
+                            auditService.logRoleChange(user, admin, oldRoles.toString(), request.getNewRole().name());
                         }
                         break;
                         
@@ -547,9 +547,9 @@ public class UserManagementService {
                 predicates.add(searchPredicate);
             }
             
-            // Role filter
+            // Role filter (uses join on roles collection)
             if (request.getRole() != null) {
-                predicates.add(cb.equal(root.get("role"), request.getRole()));
+                predicates.add(cb.isMember(request.getRole(), root.get("roles")));
             }
             
             // Verification status filter
@@ -586,7 +586,7 @@ public class UserManagementService {
             .lastName(user.getLastName())
             .phone(user.getPhone())
             .avatarUrl(user.getAvatarUrl())
-            .role(user.getRole())
+            .roles(user.getRoles())
             .verificationStatus(user.getVerificationStatus())
             .isActive(user.isActive())
             .lastLoginAt(user.getLastLoginAt())

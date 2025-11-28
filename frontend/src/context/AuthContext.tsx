@@ -1,13 +1,44 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { authApi } from '../api';
 
+// User roles - many-to-many relationship
+type UserRole = 'BUYER' | 'SELLER' | 'ADMIN';
+
 interface User {
   id: string;
   username: string;
   email: string;
-  role: string;
+  roles: UserRole[];  // Changed from single role to array
   firstName?: string;
   lastName?: string;
+}
+
+// Helper functions for role checking
+function hasRole(user: User | null, role: UserRole): boolean {
+  return user?.roles?.includes(role) ?? false;
+}
+
+function hasAnyRole(user: User | null, roles: UserRole[]): boolean {
+  return roles.some(role => hasRole(user, role));
+}
+
+// Normalize roles from backend - handles both array and single role (legacy)
+function normalizeRoles(rolesInput: any): UserRole[] {
+  if (!rolesInput) {
+    return ['BUYER', 'SELLER']; // Default for students
+  }
+  if (Array.isArray(rolesInput)) {
+    return rolesInput as UserRole[];
+  }
+  // Handle legacy single role string
+  if (typeof rolesInput === 'string') {
+    // Map legacy STUDENT role to BUYER + SELLER
+    if (rolesInput === 'STUDENT') {
+      return ['BUYER', 'SELLER'];
+    }
+    return [rolesInput as UserRole];
+  }
+  return ['BUYER', 'SELLER'];
 }
 
 interface AuthContextType {
@@ -18,6 +49,13 @@ interface AuthContextType {
   logout: () => Promise<void>;
   refreshAuth: () => Promise<void>;
   setAuthFromResponse: (response: any) => void;
+  // Helper methods for role checking
+  isAdmin: () => boolean;
+  isBuyer: () => boolean;
+  isSeller: () => boolean;
+  isStudent: () => boolean;
+  hasRole: (role: UserRole) => boolean;
+  hasAnyRole: (roles: UserRole[]) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -125,7 +163,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               id: userInfo?.id || userInfo?.userId,
               username: userInfo?.username || '',
               email: userInfo?.email || '',
-              role: userInfo?.role || 'STUDENT',
+              // Handle both array and single role from backend
+              roles: normalizeRoles(userInfo?.roles || userInfo?.role),
               firstName: userInfo?.firstName,
               lastName: userInfo?.lastName,
             });
@@ -142,13 +181,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               console.warn('Network error fetching user info, but keeping auth state');
               // Try to use localStorage data if available
               const storedUsername = localStorage.getItem('username');
-              const storedRole = localStorage.getItem('role');
-              if (storedUsername && storedRole) {
+              const storedRoles = localStorage.getItem('roles');
+              if (storedUsername && storedRoles) {
                 setUser({
                   id: token.substring(0, 10), // Use a simple ID from token
                   username: storedUsername,
                   email: '',
-                  role: storedRole,
+                  roles: JSON.parse(storedRoles) as UserRole[],
                 });
                 setIsAuthenticated(true);
               }
@@ -184,14 +223,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           // For network errors, try to use stored data
           const storedUsername = localStorage.getItem('username');
-          const storedRole = localStorage.getItem('role');
-          if (storedUsername && storedRole && token) {
+          const storedRoles = localStorage.getItem('roles');
+          if (storedUsername && storedRoles && token) {
             console.warn('Network error validating token, but keeping auth state from localStorage');
             setUser({
               id: token.substring(0, 10),
               username: storedUsername,
               email: '',
-              role: storedRole,
+              roles: JSON.parse(storedRoles) as UserRole[],
             });
             setIsAuthenticated(true);
           }
@@ -209,29 +248,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const response = await authApi.login(username, password);
       
-      // Store tokens
+      // Normalize roles from response (handles both array and single role)
+      const roles = normalizeRoles(response.roles || response.role);
+      
+      // Store tokens and user info
       localStorage.setItem('accessToken', response.accessToken);
       localStorage.setItem('refreshToken', response.refreshToken);
       localStorage.setItem('username', response.username);
-      localStorage.setItem('role', response.role);
+      localStorage.setItem('roles', JSON.stringify(roles));
       
       // Set user state
       setUser({
         id: response.userId,
         username: response.username,
         email: '',
-        role: response.role,
+        roles: roles,
       });
       setIsAuthenticated(true);
 
       // Fetch complete user info
       try {
         const userInfo = await authApi.me();
+        const userRoles = normalizeRoles(userInfo.roles || userInfo.role);
         setUser({
           id: userInfo.id || userInfo.userId || response.userId,
           username: userInfo.username,
           email: userInfo.email || '',
-          role: userInfo.role,
+          roles: userRoles,
           firstName: userInfo.firstName,
           lastName: userInfo.lastName,
         });
@@ -251,11 +294,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const accessToken = response.accessToken
       const refreshToken = response.refreshToken
+      
+      // Normalize roles from response
+      const roles = normalizeRoles(response.roles || response.role);
 
       if (accessToken) localStorage.setItem('accessToken', accessToken)
       if (refreshToken) localStorage.setItem('refreshToken', refreshToken)
       if (response.username) localStorage.setItem('username', response.username)
-      if (response.role) localStorage.setItem('role', response.role)
+      localStorage.setItem('roles', JSON.stringify(roles))
       
       // Set a flag to skip checkAuth for a short period after registration
       localStorage.setItem('_justAuthenticated', Date.now().toString())
@@ -264,7 +310,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: response.userId,
         username: response.username,
         email: response.email || '',
-        role: response.role || 'STUDENT',
+        roles: roles,
         firstName: response.firstName,
         lastName: response.lastName,
       })
@@ -295,13 +341,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('username');
-    localStorage.removeItem('role');
+    localStorage.removeItem('roles');
+    localStorage.removeItem('role'); // Clean up legacy single role
     setUser(null);
     setIsAuthenticated(false);
   }
+  
+  // Role helper methods
+  const isAdminFn = () => hasRole(user, 'ADMIN');
+  const isBuyerFn = () => hasRole(user, 'BUYER');
+  const isSellerFn = () => hasRole(user, 'SELLER');
+  const isStudentFn = () => hasAnyRole(user, ['BUYER', 'SELLER']);
+  const hasRoleFn = (role: UserRole) => hasRole(user, role);
+  const hasAnyRoleFn = (roles: UserRole[]) => hasAnyRole(user, roles);
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, logout, refreshAuth, setAuthFromResponse }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      isAuthenticated, 
+      isLoading, 
+      login, 
+      logout, 
+      refreshAuth, 
+      setAuthFromResponse,
+      isAdmin: isAdminFn,
+      isBuyer: isBuyerFn,
+      isSeller: isSellerFn,
+      isStudent: isStudentFn,
+      hasRole: hasRoleFn,
+      hasAnyRole: hasAnyRoleFn,
+    }}>
       {children}
     </AuthContext.Provider>
   );

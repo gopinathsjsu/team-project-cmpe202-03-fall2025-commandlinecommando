@@ -13,6 +13,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -68,7 +69,8 @@ class UserManagementServiceTest {
         testUser.setPassword("encodedPassword");
         testUser.setFirstName("Test");
         testUser.setLastName("User");
-        testUser.setRole(UserRole.STUDENT);
+        // Students get both BUYER and SELLER roles
+        testUser.setRoles(Set.of(UserRole.BUYER, UserRole.SELLER));
         testUser.setUniversity(testUniversity);
         testUser.setActive(true);
         testUser.setVerificationStatus(VerificationStatus.VERIFIED);
@@ -208,7 +210,7 @@ class UserManagementServiceTest {
         User admin = new User();
         admin.setUserId(UUID.randomUUID());
         admin.setUsername("admin");
-        admin.setRole(UserRole.ADMIN);
+        admin.setRoles(Set.of(UserRole.ADMIN));
         
         String reason = "Violation of terms";
         
@@ -233,7 +235,7 @@ class UserManagementServiceTest {
         User admin = new User();
         admin.setUserId(UUID.randomUUID());
         admin.setUsername("admin");
-        admin.setRole(UserRole.ADMIN);
+        admin.setRoles(Set.of(UserRole.ADMIN));
         
         testUser.setActive(false);
         testUser.setVerificationStatus(VerificationStatus.SUSPENDED);

@@ -19,6 +19,7 @@ import com.commandlinecommandos.campusmarketplace.model.UserRole;
 import com.commandlinecommandos.campusmarketplace.service.AuthService;
 import com.commandlinecommandos.campusmarketplace.config.WebSecurityConfig;
 
+import java.util.Set;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -56,7 +57,7 @@ class AuthControllerTest {
         authResponse.setRefreshToken("refresh-token");
         authResponse.setTokenType("Bearer");
         authResponse.setExpiresIn(3600L);
-        authResponse.setRole(UserRole.STUDENT);
+        authResponse.setRoles(Set.of(UserRole.BUYER, UserRole.SELLER));
         authResponse.setUsername("testuser");
         authResponse.setUserId(UUID.fromString("00000000-0000-0000-0000-000000000001"));
         
@@ -79,7 +80,7 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.refreshToken").value("refresh-token"))
                 .andExpect(jsonPath("$.tokenType").value("Bearer"))
                 .andExpect(jsonPath("$.expiresIn").value(3600))
-                .andExpect(jsonPath("$.role").value("STUDENT"))
+                .andExpect(jsonPath("$.roles").isArray())
                 .andExpect(jsonPath("$.username").value("testuser"))
                 .andExpect(jsonPath("$.userId").value("00000000-0000-0000-0000-000000000001"));
         
@@ -169,7 +170,7 @@ class AuthControllerTest {
     }
     
     @Test
-    @WithMockUser(username = "testuser", roles = {"STUDENT"})
+    @WithMockUser(username = "testuser", roles = {"BUYER"})
     void testLogoutAllDevices() throws Exception {
         // Given
         doNothing().when(authService).logoutAllDevices(anyString());
@@ -194,7 +195,7 @@ class AuthControllerTest {
     }
     
     @Test
-    @WithMockUser(username = "testuser", roles = {"STUDENT"})
+    @WithMockUser(username = "testuser", roles = {"BUYER"})
     void testGetCurrentUser() throws Exception {
         // When & Then
         mockMvc.perform(get("/auth/me"))
@@ -210,7 +211,7 @@ class AuthControllerTest {
     }
     
     @Test
-    @WithMockUser(username = "testuser", roles = {"STUDENT"})
+    @WithMockUser(username = "testuser", roles = {"BUYER"})
     void testValidateToken() throws Exception {
         // When & Then
         mockMvc.perform(get("/auth/validate"))

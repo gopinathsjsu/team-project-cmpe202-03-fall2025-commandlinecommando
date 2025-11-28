@@ -2,16 +2,20 @@ package com.commandlinecommandos.campusmarketplace.dto;
 
 import com.commandlinecommandos.campusmarketplace.model.UserRole;
 import com.commandlinecommandos.campusmarketplace.model.VerificationStatus;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
- * DTO for user response (without sensitive information)
+ * DTO for user response (without sensitive information).
+ * Supports many-to-many user-role relationship.
  */
 public class UserResponse {
     
+    @JsonProperty("id") // expose as `id` in JSON while keeping existing `userId` field name
     private UUID userId;
     private String username;
     private String email;
@@ -19,8 +23,9 @@ public class UserResponse {
     private String lastName;
     private String phone;
     private String avatarUrl;
-    private UserRole role;
+    private Set<UserRole> roles;
     private VerificationStatus verificationStatus;
+    @JsonProperty("isActive")
     private boolean isActive;
     private LocalDateTime lastLoginAt;
     private LocalDateTime emailVerifiedAt;
@@ -87,8 +92,8 @@ public class UserResponse {
             return this;
         }
 
-        public UserResponseBuilder role(UserRole role) {
-            response.role = role;
+        public UserResponseBuilder roles(Set<UserRole> roles) {
+            response.roles = roles;
             return this;
         }
 
@@ -219,12 +224,12 @@ public class UserResponse {
         this.avatarUrl = avatarUrl;
     }
 
-    public UserRole getRole() {
-        return role;
+    public Set<UserRole> getRoles() {
+        return roles;
     }
 
-    public void setRole(UserRole role) {
-        this.role = role;
+    public void setRoles(Set<UserRole> roles) {
+        this.roles = roles;
     }
 
     public VerificationStatus getVerificationStatus() {

@@ -46,7 +46,7 @@ interface User {
   email: string;
   firstName?: string;
   lastName?: string;
-  role: string;
+  roles: string[];  // Changed from single role to array
   verificationStatus?: string;
   isActive?: boolean;
   createdAt?: string;
@@ -332,7 +332,7 @@ export function AdminDashboard() {
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase">User</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase">Email</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase">Role</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase">Roles</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase">Status</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase">Joined</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-muted uppercase">Actions</th>
@@ -349,9 +349,20 @@ export function AdminDashboard() {
                         </td>
                         <td className="px-6 py-4 text-sm">{user.email}</td>
                         <td className="px-6 py-4">
-                          <span className={`badge ${user.role === 'ADMIN' ? 'badge-primary' : 'badge-success'}`}>
-                            {user.role}
-                          </span>
+                          <div className="flex flex-wrap gap-1">
+                            {(user.roles || []).map(role => (
+                              <span 
+                                key={role} 
+                                className={`badge ${
+                                  role === 'ADMIN' ? 'badge-primary' : 
+                                  role === 'SELLER' ? 'badge-warning' : 
+                                  'badge-success'
+                                }`}
+                              >
+                                {role}
+                              </span>
+                            ))}
+                          </div>
                         </td>
                         <td className="px-6 py-4">
                           <span className={`badge ${user.isActive ? 'badge-success' : 'badge-danger'}`}>

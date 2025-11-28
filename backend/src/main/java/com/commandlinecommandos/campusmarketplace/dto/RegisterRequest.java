@@ -3,11 +3,18 @@ package com.commandlinecommandos.campusmarketplace.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
-import com.commandlinecommandos.campusmarketplace.model.UserRole;
 
-public class RegisterRequest {
+/**
+ * DTO for student self-registration.
+ * 
+ * Students registering through the public /auth/register endpoint 
+ * automatically receive both BUYER and SELLER roles (many-to-many).
+ * 
+ * Admin accounts can only be created by existing admins through
+ * the protected /admin/users/admin endpoint.
+ */
+public class RegisterRequest implements BaseUserFields {
     
     @NotBlank(message = "Username is required")
     @Size(min = 3, max = 50, message = "Username must be between 3 and 50 characters")
@@ -31,32 +38,26 @@ public class RegisterRequest {
     
     private String phone;
     
-    @NotNull(message = "Role is required")
-    private UserRole role;
-    
     // Student-specific fields
     private String studentId;
     private String major;
     private Integer graduationYear;
     private String campusLocation;
     
-    // Admin-specific fields
-    private String adminLevel;
-    
     // Constructors
     public RegisterRequest() {
     }
     
-    public RegisterRequest(String username, String email, String password, String firstName, String lastName, UserRole role) {
+    public RegisterRequest(String username, String email, String password, String firstName, String lastName) {
         this.username = username;
         this.email = email;
         this.password = password;
         this.firstName = firstName;
         this.lastName = lastName;
-        this.role = role;
     }
     
     // Getters and Setters
+    @Override
     public String getUsername() {
         return username;
     }
@@ -65,6 +66,7 @@ public class RegisterRequest {
         this.username = username;
     }
     
+    @Override
     public String getEmail() {
         return email;
     }
@@ -81,6 +83,7 @@ public class RegisterRequest {
         this.password = password;
     }
     
+    @Override
     public String getFirstName() {
         return firstName;
     }
@@ -89,6 +92,7 @@ public class RegisterRequest {
         this.firstName = firstName;
     }
     
+    @Override
     public String getLastName() {
         return lastName;
     }
@@ -97,20 +101,13 @@ public class RegisterRequest {
         this.lastName = lastName;
     }
     
+    @Override
     public String getPhone() {
         return phone;
     }
     
     public void setPhone(String phone) {
         this.phone = phone;
-    }
-    
-    public UserRole getRole() {
-        return role;
-    }
-    
-    public void setRole(UserRole role) {
-        this.role = role;
     }
     
     public String getStudentId() {
@@ -143,13 +140,5 @@ public class RegisterRequest {
     
     public void setCampusLocation(String campusLocation) {
         this.campusLocation = campusLocation;
-    }
-    
-    public String getAdminLevel() {
-        return adminLevel;
-    }
-    
-    public void setAdminLevel(String adminLevel) {
-        this.adminLevel = adminLevel;
     }
 }
