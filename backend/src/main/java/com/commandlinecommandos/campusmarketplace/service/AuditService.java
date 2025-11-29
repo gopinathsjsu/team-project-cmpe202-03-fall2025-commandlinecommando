@@ -83,8 +83,15 @@ public class AuditService {
      * Log user logout
      */
     @Async
-    public void logLogout(User user) {
-        logAuditEvent(user, "AUTH", "LOGOUT", "User logged out");
+    public void logLogout(UUID userId, String username) {
+        AuditLog auditLog = new AuditLog();
+        auditLog.setUsername(username);
+        auditLog.setTableName("AUTH");
+        auditLog.setAction("LOGOUT");
+        auditLog.setDescription("User logged out");
+        auditLog.setSeverity(AuditLog.Severity.INFO);
+        enrichWithRequestInfo(auditLog);
+        auditLogRepository.save(auditLog);
     }
     
     /**
