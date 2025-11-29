@@ -143,11 +143,21 @@ public class ReportService {
     }
     
     /**
-     * Reject report (no action needed)
+     * Reject report and remove the listing
+     * When admin rejects a listing, it should be removed from marketplace
      */
     public UserReport rejectReport(UUID reportId, User admin, String resolutionNotes) {
         UserReport report = getReport(reportId);
         report.reject(admin, resolutionNotes);
+
+        // Take action to remove the listing from marketplace
+        if (report.getReportedProduct() != null) {
+            Product product = report.getReportedProduct();
+            product.setActive(false);  // Hide from marketplace
+            product.setModerationStatus(ModerationStatus.REJECTED);  // Mark as rejected by admin
+            productRepository.save(product);
+        }
+
         return reportRepository.save(report);
     }
     
