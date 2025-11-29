@@ -13,8 +13,8 @@ export async function getStudentDashboard(): Promise<StudentDashboard> {
 }
 
 export async function getMyListings() {
-  const res = await api.get('/student/my-listings')
-  // Backend returns {listings: [], message: "..."} - extract the listings array
-  return res.data.listings || res.data || []
+  const res = await api.get('/listings/my-listings')
+  // Backend returns paginated response with content array
+  return res.data.content || res.data.listings || res.data || []
 }
 
