@@ -26,7 +26,7 @@ docker-compose up --build
 # Flyway migrations run automatically
 ```
 
-### Option 2: Local Development
+### Option 2: Local Development (with Docker databases)
 ```bash
 # 1. Start database services
 docker-compose up -d postgres redis
@@ -38,14 +38,22 @@ cd backend
 # Backend runs on: http://localhost:8080
 ```
 
+### Option 3: Manual Setup (No Docker)
+For complete manual setup without Docker, see **[MANUAL_SETUP.md](MANUAL_SETUP.md)**
+
+This includes:
+- Setting up PostgreSQL locally
+- Running database migrations manually
+- Configuring environment variables
+- Starting backend and frontend
+
 ### Test Credentials
 | Username | Password | Roles |
 |----------|----------|-------|
-| `alice_buyer` | `password123` | BUYER, SELLER |
-| `bob_buyer` | `password123` | BUYER, SELLER |
-| `carol_seller` | `password123` | BUYER, SELLER |
-| `david_techseller` | `password123` | BUYER, SELLER |
-| `sjsu_admin` | `password123` | ADMIN |
+| `test_buyer` | `password123` | BUYER, SELLER |
+| `test_admin` | `password123` | ADMIN |
+
+**Note:** Demo accounts (`alice_buyer`, `bob_buyer`, etc.) are for display purposes only and cannot be used for login.
 
 ### Quick Test
 ```bash
