@@ -174,7 +174,7 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: validate  # Flyway handles schema management
+      ddl-auto: none  # Flyway handles schema management
     show-sql: true
     format-sql: true
     properties:
