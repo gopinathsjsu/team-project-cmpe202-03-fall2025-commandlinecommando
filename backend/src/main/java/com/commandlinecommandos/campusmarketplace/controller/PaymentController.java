@@ -64,8 +64,7 @@ public class PaymentController {
             request.getCardBrand(),
             request.getExpiryMonth(),
             request.getExpiryYear(),
-            request.getBillingName(),
-            request.getBillingZip()
+            request.getBillingAddressId()
         );
         return ResponseEntity.ok(method);
     }
