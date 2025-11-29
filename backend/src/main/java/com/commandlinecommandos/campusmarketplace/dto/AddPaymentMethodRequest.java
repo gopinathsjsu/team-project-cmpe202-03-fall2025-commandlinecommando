@@ -3,20 +3,21 @@ package com.commandlinecommandos.campusmarketplace.dto;
 import com.commandlinecommandos.campusmarketplace.model.PaymentMethodType;
 import jakarta.validation.constraints.NotNull;
 
+import java.util.UUID;
+
 public class AddPaymentMethodRequest {
-    
+
     @NotNull(message = "Payment method type is required")
     private PaymentMethodType methodType;
-    
+
     @NotNull(message = "Token is required")
     private String token;
-    
+
     private String lastFour;
     private String cardBrand;
     private Integer expiryMonth;
     private Integer expiryYear;
-    private String billingName;
-    private String billingZip;
+    private UUID billingAddressId;
     
     public PaymentMethodType getMethodType() {
         return methodType;
@@ -66,19 +67,11 @@ public class AddPaymentMethodRequest {
         this.expiryYear = expiryYear;
     }
     
-    public String getBillingName() {
-        return billingName;
+    public UUID getBillingAddressId() {
+        return billingAddressId;
     }
-    
-    public void setBillingName(String billingName) {
-        this.billingName = billingName;
-    }
-    
-    public String getBillingZip() {
-        return billingZip;
-    }
-    
-    public void setBillingZip(String billingZip) {
-        this.billingZip = billingZip;
+
+    public void setBillingAddressId(UUID billingAddressId) {
+        this.billingAddressId = billingAddressId;
     }
 }
