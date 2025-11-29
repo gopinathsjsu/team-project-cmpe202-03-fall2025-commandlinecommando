@@ -63,13 +63,10 @@ cd backend
 
 ## Test Credentials
 
-| Username | Password | Roles |
-|----------|----------|-------|
-| alice_buyer | password123 | BUYER, SELLER |
-| bob_buyer | password123 | BUYER, SELLER |
-| carol_seller | password123 | BUYER, SELLER |
-| david_techseller | password123 | BUYER, SELLER |
-| sjsu_admin | password123 | ADMIN |
+| Username | Password | Roles | Use Case |
+|----------|----------|-------|----------|
+| `test_buyer` | `password123` | BUYER, SELLER | General user testing |
+| `test_admin` | `password123` | ADMIN | Admin functionality testing |
 
 ---
 
