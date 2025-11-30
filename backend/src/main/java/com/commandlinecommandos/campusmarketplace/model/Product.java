@@ -123,6 +123,16 @@ public class Product {
     @Column(name = "pickup_location")
     private String pickupLocation;
     
+    // Image URLs (stored as JSON array for S3 URLs)
+    @Lob
+    @Type(JsonType.class)
+    @Column(name = "image_urls", columnDefinition = "TEXT")
+    private List<String> imageUrls = new ArrayList<>();
+    
+    // Primary image URL for display
+    @Column(name = "primary_image_url")
+    private String primaryImageUrl;
+    
     // SEO & Search (search_vector handled by PostgreSQL trigger)
     
     // Timestamps
@@ -364,6 +374,22 @@ public class Product {
     
     public void setPickupLocation(String pickupLocation) {
         this.pickupLocation = pickupLocation;
+    }
+    
+    public List<String> getImageUrls() {
+        return imageUrls;
+    }
+    
+    public void setImageUrls(List<String> imageUrls) {
+        this.imageUrls = imageUrls;
+    }
+    
+    public String getPrimaryImageUrl() {
+        return primaryImageUrl;
+    }
+    
+    public void setPrimaryImageUrl(String primaryImageUrl) {
+        this.primaryImageUrl = primaryImageUrl;
     }
     
     public LocalDateTime getPublishedAt() {
