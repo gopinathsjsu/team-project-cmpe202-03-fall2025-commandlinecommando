@@ -1,6 +1,9 @@
-# Multi-stage build for AI Integration Server
-# Stage 1: Build the application
-FROM maven:3.9-eclipse-temurin-17-alpine AS build
+# ==============================================
+# Multi-Stage Dockerfile for AI Integration Server
+# ==============================================
+
+# Stage 1: Build Stage
+FROM maven:3.9-eclipse-temurin-17 AS build
 
 WORKDIR /app
 
@@ -12,13 +15,21 @@ RUN mvn dependency:go-offline -B
 COPY src ./src
 RUN mvn clean package -DskipTests -B
 
-# Stage 2: Run the application
-FROM eclipse-temurin:17-jre-alpine
+# Stage 2: Runtime Stage
+FROM eclipse-temurin:17-jre
+
+# Add metadata
+LABEL maintainer="Campus Marketplace Team"
+LABEL description="Campus Marketplace AI Integration Service"
+
+# Install wget for health checks
+RUN apt-get update && apt-get install -y --no-install-recommends wget && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 # Create non-root user for security
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN groupadd -r appgroup && useradd -r -g appgroup appuser
 
 # Copy the built JAR from build stage
 COPY --from=build /app/target/ai-integration-server-*.jar app.jar
@@ -36,5 +47,8 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=40s \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3001/api/health || exit 1
 
-# Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# Default JVM options (can be overridden via JAVA_OPTS environment variable)
+ENV JAVA_OPTS="-Xms256m -Xmx512m -XX:+UseG1GC"
+
+# Run the application with JAVA_OPTS support
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
