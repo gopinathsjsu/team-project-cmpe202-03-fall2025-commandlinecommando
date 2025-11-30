@@ -43,6 +43,7 @@ export interface Listing {
   condition: string;
   location?: string;
   imageUrl?: string;
+  imageUrls?: string[];
   createdAt: string;
   seller: {
     id: string;
@@ -83,7 +84,11 @@ export function MarketplacePage() {
     condition: 'NEW',
     location: '',
     negotiable: false,
+    imageUrls: [] as string[],
   });
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   useEffect(() => {
     if (viewMode === 'marketplace') {
@@ -186,7 +191,28 @@ export function MarketplacePage() {
 
   async function handleCreateListing() {
     try {
-      await listingsApi.createListing(newListing);
+      let imageUrls: string[] = [];
+      
+      // Upload images first if any selected
+      if (selectedFiles.length > 0) {
+        setUploadingImages(true);
+        try {
+          const uploadResult = await listingsApi.uploadImages(selectedFiles);
+          imageUrls = uploadResult.imageUrls;
+        } catch (uploadErr: any) {
+          alert('Failed to upload images: ' + (uploadErr?.response?.data?.error || uploadErr.message));
+          setUploadingImages(false);
+          return;
+        }
+        setUploadingImages(false);
+      }
+      
+      // Create listing with image URLs
+      await listingsApi.createListing({
+        ...newListing,
+        imageUrls,
+      });
+      
       alert('Listing created successfully!');
       setShowCreateModal(false);
       setNewListing({
@@ -197,11 +223,53 @@ export function MarketplacePage() {
         condition: 'NEW',
         location: '',
         negotiable: false,
+        imageUrls: [],
       });
+      setSelectedFiles([]);
+      setImagePreviews([]);
       await loadListings();
     } catch (err: any) {
       alert(err?.response?.data?.message || err?.response?.data?.error || 'Failed to create listing');
     }
+  }
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files) return;
+    
+    const fileArray = Array.from(files);
+    
+    // Validate file types and sizes
+    const validFiles = fileArray.filter(file => {
+      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        alert(`Invalid file type: ${file.name}. Allowed types: JPEG, PNG, GIF, WebP`);
+        return false;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert(`File too large: ${file.name}. Maximum size is 5MB`);
+        return false;
+      }
+      return true;
+    });
+    
+    // Limit to 5 images total
+    const totalFiles = [...selectedFiles, ...validFiles].slice(0, 5);
+    setSelectedFiles(totalFiles);
+    
+    // Create previews
+    const previews = totalFiles.map(file => URL.createObjectURL(file));
+    setImagePreviews(previews);
+  }
+
+  function removeImage(index: number) {
+    const newFiles = selectedFiles.filter((_, i) => i !== index);
+    setSelectedFiles(newFiles);
+    
+    // Revoke the old preview URL to prevent memory leaks
+    URL.revokeObjectURL(imagePreviews[index]);
+    const newPreviews = imagePreviews.filter((_, i) => i !== index);
+    setImagePreviews(newPreviews);
   }
 
   async function handleToggleFavorite(listingId: string, e: React.MouseEvent) {
@@ -667,7 +735,11 @@ export function MarketplacePage() {
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Create New Listing</h2>
               </div>
               <button
-                onClick={() => setShowCreateModal(false)}
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setSelectedFiles([]);
+                  setImagePreviews([]);
+                }}
                 className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl transition-colors"
               >
                 ×
@@ -767,19 +839,95 @@ export function MarketplacePage() {
                 />
                 <label htmlFor="negotiable" className="text-sm text-gray-700 dark:text-gray-300">Price is negotiable</label>
               </div>
+              
+              {/* Image Upload Section */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Product Images
+                  <span className="text-gray-400 dark:text-gray-500 font-normal ml-2">(Max 5 images, up to 5MB each)</span>
+                </label>
+                
+                {/* Image Previews */}
+                {imagePreviews.length > 0 && (
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-3">
+                    {imagePreviews.map((preview, index) => (
+                      <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-slate-600 group">
+                        <img
+                          src={preview}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                        {index === 0 && (
+                          <span className="absolute bottom-1 left-1 px-2 py-0.5 bg-indigo-500 text-white text-xs rounded-full">
+                            Primary
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Upload Button */}
+                {imagePreviews.length < 5 && (
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-xl cursor-pointer hover:border-indigo-500 dark:hover:border-indigo-500 transition-colors bg-gray-50 dark:bg-slate-700/50">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <svg className="w-8 h-8 text-gray-400 dark:text-gray-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <span className="font-semibold text-indigo-500">Click to upload</span> or drag and drop
+                      </p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                        PNG, JPG, GIF, WebP (max 5MB)
+                      </p>
+                    </div>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/jpeg,image/png,image/gif,image/webp"
+                      multiple
+                      onChange={handleFileSelect}
+                    />
+                  </label>
+                )}
+              </div>
+              
               <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700">
                 <button
-                  onClick={() => setShowCreateModal(false)}
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setSelectedFiles([]);
+                    setImagePreviews([]);
+                  }}
                   className="px-6 py-2.5 border border-gray-200 dark:border-slate-600 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleCreateListing}
-                  disabled={!newListing.title || !newListing.description || !newListing.price}
-                  className="px-6 py-2.5 gradient-primary text-white rounded-xl hover:opacity-90 disabled:opacity-50 transition-all font-medium shadow-lg shadow-indigo-500/30"
+                  disabled={!newListing.title || !newListing.description || !newListing.price || uploadingImages}
+                  className="px-6 py-2.5 gradient-primary text-white rounded-xl hover:opacity-90 disabled:opacity-50 transition-all font-medium shadow-lg shadow-indigo-500/30 flex items-center gap-2"
                 >
-                  Create Listing
+                  {uploadingImages ? (
+                    <>
+                      <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Uploading...
+                    </>
+                  ) : (
+                    'Create Listing'
+                  )}
                 </button>
               </div>
             </div>
