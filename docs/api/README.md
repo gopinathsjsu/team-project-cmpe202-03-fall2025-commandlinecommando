@@ -479,4 +479,3 @@ Available product conditions:
 - GOOD
 - FAIR
 - POOR
-

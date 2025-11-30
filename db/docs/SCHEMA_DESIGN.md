@@ -631,7 +631,5 @@ public class Product {
 ---
 
 **Document Version:** 1.0.0  
-**Last Updated:** January 7, 2025  
 **Team:** Commandline Commandos  
 **Project:** CMPE 202 Campus Marketplace
-

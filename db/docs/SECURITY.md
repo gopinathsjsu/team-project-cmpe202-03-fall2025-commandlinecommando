@@ -760,6 +760,5 @@ SELECT cron.schedule('cleanup-old-data', '0 2 * * 0', 'SELECT cleanup_old_data()
 
 **Important**: This security guide should be reviewed and updated regularly. Security is an ongoing process, not a one-time setup.
 
-**Last Updated**: December 2024  
 **Next Review**: March 2025  
-**Maintainer**: Campus Marketplace Security Team
+**Maintainer**: Campus Marketplace Security Team\

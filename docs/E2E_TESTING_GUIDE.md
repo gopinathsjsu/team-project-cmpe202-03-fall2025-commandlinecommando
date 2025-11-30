@@ -1,7 +1,6 @@
 # End-to-End Testing Guide
 
-**Version:** 1.0.0  
-**Last Updated:** November 27, 2025
+**Version:** 1.0.0
 
 ---
 
@@ -507,5 +506,3 @@ chmod +x e2e-test.sh
 ```
 
 ---
-
-*Generated for Campus Marketplace v1.0.0*
