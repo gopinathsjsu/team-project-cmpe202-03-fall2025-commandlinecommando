@@ -137,6 +137,23 @@ export const listingsApi = {
     }
     return realListings.reportListing(id, data);
   },
+
+  async uploadImages(files: File[]) {
+    // No mock for image upload - always use real API
+    return realListings.uploadImages(files);
+  },
+
+  async uploadListingImages(listingId: string, files: File[]) {
+    return realListings.uploadListingImages(listingId, files);
+  },
+
+  async deleteListingImage(listingId: string, imageUrl: string) {
+    return realListings.deleteListingImage(listingId, imageUrl);
+  },
+
+  async setPrimaryImage(listingId: string, imageUrl: string) {
+    return realListings.setPrimaryImage(listingId, imageUrl);
+  },
 };
 
 export const discoveryApi = {
