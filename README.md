@@ -104,7 +104,7 @@ npm run dev
 
 ## Architecture
 
-### Production Deployment (AWS EC2 + ALB)
+### Production Deployment (AWS Scaled EC2 + ALB)
 
 ![AWS Architecture Diagram](aws-deployment-images/aws-architecture.png)
 
