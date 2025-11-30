@@ -1,4 +1,4 @@
-# Campus Marketplace – Unified Backend
+# Campus Marketplace
 
 A campus-exclusive marketplace for SJSU students to buy and sell items such as textbooks, electronics, gadgets, and essentials.  
 Our team built a unified backend system by combining multiple services into one clean and modular architecture.
