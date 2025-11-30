@@ -308,7 +308,7 @@ cp env.example .env
 | `AWS_S3_BUCKET_NAME` | `webapp-s3-bucket-2025` | S3 bucket for images |
 | `AWS_ACCESS_KEY_ID` | `your-aws-access-key-id` | AWS access key |
 | `AWS_SECRET_ACCESS_KEY` | `your-aws-secret-access-key` | AWS secret key |
-| `SMTP_PASSWORD` | `SG.FbjNOo6YSxOf3eI2_KUu3Q...` | SendGrid API key |
+| `SMTP_PASSWORD` | `your-sendgrid-api-key` | SendGrid API key |
 | `EMAIL_FROM` | `commandline-commandos@seasonsanta.com` | Email sender |
 | `OPENAI_API_KEY` | `your-openai-api-key` | OpenAI API key |
 
