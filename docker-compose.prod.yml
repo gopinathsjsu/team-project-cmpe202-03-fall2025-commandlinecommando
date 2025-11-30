@@ -182,8 +182,8 @@ services:
       # AWS S3 Configuration
       AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME:-webapp-s3-bucket-2025}
       AWS_REGION: ${AWS_REGION:-us-west-1}
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-AKIAZPTIR2WZ33YQAD63}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-fBFCI3I6EgtFgdxWXuw+rpncqMJ7hrKM0Y0hO3X0}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-your-aws-access-key-id}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-your-aws-secret-access-key}
 
       # File Upload Configuration
       FILE_UPLOAD_MAX_SIZE: ${FILE_UPLOAD_MAX_SIZE:-10485760}
