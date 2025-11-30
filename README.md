@@ -29,22 +29,36 @@ A marketplace platform for university students to buy and sell items within thei
 ### Using Docker (Recommended)
 
 ```bash
-# Start all services
-docker-compose up -d
+# Copy environment template (defaults are already set)
+cp env.example .env
 
+# Start all services (includes AI service by default)
+docker-compose -f docker-compose.prod.yml up -d
+
+# Frontend: http://localhost
 # Backend API: http://localhost:8080/api
-# Frontend: http://localhost:5173
+# AI Service: http://localhost:3001/api
+# Database: localhost:5432
+# Redis: localhost:6379
 ```
+
+**Production Docker Features:**
+- Resource limits (CPU/Memory) to prevent runaway processes
+- Log rotation (10-50MB max per service)
+- Optimized health checks for ALB
+- JVM tuning for production workloads
+- Network isolation with custom subnet
+- Volume labels for backup management
 
 ### Local Development
 
 ```bash
-# 1. Start database
-docker-compose up -d postgres redis
+# 1. Start database and Redis
+docker-compose -f docker-compose.prod.yml up -d postgres redis
 
 # 2. Start backend
 cd backend
-cp .env.example .env  # Add your AWS S3 and SMTP credentials
+cp ../env.example .env  # Defaults are already set
 ./run-with-postgres.sh
 
 # 3. Start frontend
@@ -64,11 +78,60 @@ npm run dev
 
 ## Architecture
 
+### Production Deployment (AWS EC2 + ALB)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         Users / Internet                        │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    AWS Application Load Balancer (ALB)          │
+│                    HTTP (80) / HTTPS (443)                      │
+│                    Health Checks: /health, /api/actuator/health │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        │                     │                     │
+        ▼                     ▼                     ▼
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│   Frontend   │    │   Backend    │    │ AI Service   │
+│  (Nginx:80)  │    │ (Spring:8080)│    │  (Java:3001) │
+└──────────────┘    └──────────────┘    └──────────────┘
+        │                     │                     │
+        └─────────────────────┼─────────────────────┘
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        │                     │                     │
+        ▼                     ▼                     ▼
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│  PostgreSQL  │    │    Redis     │    │   AWS S3     │
+│  (Port 5432) │    │  (Port 6379) │    │   Storage    │
+│   Database   │    │    Cache     │    │  (Images)    │
+└──────────────┘    └──────────────┘    └──────────────┘
+        │                     │                     │
+        └─────────────────────┴─────────────────────┘
+                              │
+                    ┌─────────┴──────────┐
+                    │   AWS EC2 Instance │
+                    │  Docker Containers │
+                    │  (All Services)    │
+                    └────────────────────┘
+                              │
+                    ┌─────────┴──────────┐
+                    │   SendGrid SMTP    │
+                    │  (Email Service)   │
+                    └────────────────────┘
+```
+
+### Local Development
+
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                         Frontend                                 │
-│                  React + Vite + TypeScript                       │
-│                      (Port 5173)                                 │
+│              React + Nginx (Docker: Port 80)                     │
+│              React + Vite (Local Dev: Port 5173)                 │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
@@ -87,7 +150,8 @@ npm run dev
 ┌──────────────┐      ┌──────────────┐      ┌──────────────┐
 │  PostgreSQL  │      │    Redis     │      │   AWS S3     │
 │   Database   │      │    Cache     │      │   Storage    │
-│  (Port 5432) │      │  (Port 6379) │      │              │
+│  (Port 5432) │      │  (Port 6379) │      │  (Images)     │
+│  Exposed     │      │   Exposed    │      │              │
 └──────────────┘      └──────────────┘      └──────────────┘
 ```
 
@@ -228,26 +292,27 @@ See [API Documentation](docs/api/README.md) for complete reference with request/
 
 ## Environment Variables
 
-### Backend (.env)
+All environment variables have **defaults already configured** in `env.example`. Simply copy it to `.env`:
 
 ```bash
-# Required - AWS S3 for image uploads
-AWS_S3_BUCKET_NAME=your-bucket
-AWS_REGION=us-west-1
-AWS_ACCESS_KEY_ID=your-key
-AWS_SECRET_ACCESS_KEY=your-secret
-
-# Optional - Email notifications
-SMTP_PASSWORD=your-sendgrid-api-key
-EMAIL_FROM=no-reply@yourdomain.com
+cp env.example .env
 ```
 
-### Frontend (.env)
+### Key Environment Variables (with defaults)
 
-```bash
-VITE_API_BASE_URL=http://localhost:8080/api
-VITE_AI_API_SERVICE_URL=http://localhost:3001
-```
+| Variable | Default Value | Description |
+|----------|---------------|-------------|
+| `DB_APP_USER` | `cm_app_user` | Database username |
+| `DB_APP_PASSWORD` | `changeme` | Database password |
+| `JWT_SECRET` | `9775e9d9fbc257c6990d59a75430a81c2f9ed364e65ec2da8b927bab5444394d` | JWT signing secret |
+| `AWS_S3_BUCKET_NAME` | `webapp-s3-bucket-2025` | S3 bucket for images |
+| `AWS_ACCESS_KEY_ID` | `your-aws-access-key-id` | AWS access key |
+| `AWS_SECRET_ACCESS_KEY` | `your-aws-secret-access-key` | AWS secret key |
+| `SMTP_PASSWORD` | `SG.FbjNOo6YSxOf3eI2_KUu3Q...` | SendGrid API key |
+| `EMAIL_FROM` | `commandline-commandos@seasonsanta.com` | Email sender |
+| `OPENAI_API_KEY` | `your-openai-api-key` | OpenAI API key |
+
+**Note:** For production, override these values in your `.env` file or set them as environment variables.
 
 ---
 
@@ -272,10 +337,23 @@ cd backend
 ### Docker Commands
 
 ```bash
-docker-compose up -d          # Start services
-docker-compose logs -f        # View logs
-docker-compose down           # Stop services
-docker-compose down -v        # Stop and remove data
+# Start all services (AI service included by default)
+docker-compose -f docker-compose.prod.yml up -d
+
+# View logs
+docker-compose -f docker-compose.prod.yml logs -f
+
+# View specific service logs
+docker-compose -f docker-compose.prod.yml logs -f backend
+
+# Stop services
+docker-compose -f docker-compose.prod.yml down
+
+# Stop and remove volumes (deletes data)
+docker-compose -f docker-compose.prod.yml down -v
+
+# Rebuild and restart
+docker-compose -f docker-compose.prod.yml up -d --build
 ```
 
 ---
@@ -296,8 +374,10 @@ docker-compose down -v        # Stop and remove data
 
 | Issue | Solution |
 |-------|----------|
-| Port 8080 in use | `lsof -ti:8080 \| xargs kill -9` |
-| Database connection failed | `docker-compose up -d postgres redis` |
-| Tests failing | Check `backend/.env` has valid credentials |
+| Port 80 in use | `sudo lsof -ti:80 \| xargs kill -9` or change `FRONTEND_PORT` in `.env` |
+| Port 8080 in use | `lsof -ti:8080 \| xargs kill -9` or change `BACKEND_PORT` in `.env` |
+| Database connection failed | `docker-compose -f docker-compose.prod.yml up -d postgres redis` |
+| Containers unhealthy | Check logs: `docker-compose -f docker-compose.prod.yml logs` |
+| Out of memory | Increase Docker Desktop memory limits or reduce resource limits in `docker-compose.prod.yml` |
 
 ---
