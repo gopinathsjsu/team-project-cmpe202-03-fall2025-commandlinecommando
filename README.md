@@ -30,10 +30,10 @@ To divide the work clearly, each team member took responsibility for one major p
 
 | Team Member | Component Owned |
 |-------------|-----------------|
+| **Vineet** | Backend Dev, AWS Deployment, Infrastructure Setup, Ask AI Feature Dev, Frontend Theme Dev, Frontend & Backend Integration, S3 File Storage, ALB Integration |
 | **Lam** | User Management System (backend), Search Integration, Authentication |
-| **Vineet** | AWS Deployment, Infrastructure Setup, ChatGPT Search Feature |
-| **Wilson** | Listing API, Database Integration, File Upload Service |
 | **Sakshat** | Frontend UI (Login, Listings, Management), E2E UI Integration |
+| **Wilson** | Listing API, Database Integration, File Upload Service |
 
 ---
 
