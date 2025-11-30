@@ -152,7 +152,7 @@ INSERT INTO user_roles (user_id, role)
 SELECT user_id, 'SELLER' FROM users WHERE username IN ('mike_chen', 'sarah_wilson', 'jason_park', 'emily_nguyen', 'alex_rod', 'priya_sharma', 'kevin_jones', 'lisa_kim');
 
 -- =============================================================================
--- MORE LISTINGS
+-- LISTINGS
 -- =============================================================================
 
 INSERT INTO listings (
@@ -168,7 +168,9 @@ INSERT INTO listings (
     is_active,
     moderation_status,
     pickup_location,
-    published_at
+    published_at,
+    primary_image_url,
+    image_urls
 ) VALUES
 -- ELECTRONICS
 (
@@ -184,7 +186,9 @@ INSERT INTO listings (
     true,
     'APPROVED',
     'Student Union',
-    CURRENT_TIMESTAMP - INTERVAL '6 days'
+    CURRENT_TIMESTAMP - INTERVAL '6 days',
+    'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=800',
+    '["https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=800"]'
 ),
 (
     (SELECT user_id FROM users WHERE username = 'priya_sharma'),
@@ -199,7 +203,9 @@ INSERT INTO listings (
     true,
     'APPROVED',
     'MLK Library',
-    CURRENT_TIMESTAMP - INTERVAL '3 days'
+    CURRENT_TIMESTAMP - INTERVAL '3 days',
+    'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=800',
+    '["https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=800"]'
 ),
 (
     (SELECT user_id FROM users WHERE username = 'kevin_jones'),
@@ -214,7 +220,9 @@ INSERT INTO listings (
     true,
     'APPROVED',
     'Engineering Building',
-    CURRENT_TIMESTAMP - INTERVAL '1 day'
+    CURRENT_TIMESTAMP - INTERVAL '1 day',
+    'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=800',
+    '["https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=800"]'
 ),
 
 -- TEXTBOOKS
@@ -231,7 +239,9 @@ INSERT INTO listings (
     true,
     'APPROVED',
     'Business Tower Lobby',
-    CURRENT_TIMESTAMP - INTERVAL '8 days'
+    CURRENT_TIMESTAMP - INTERVAL '8 days',
+    'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800',
+    '["https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800"]'
 ),
 (
     (SELECT user_id FROM users WHERE username = 'lisa_kim'),
@@ -246,7 +256,9 @@ INSERT INTO listings (
     true,
     'APPROVED',
     'Dudley Moorhead Hall',
-    CURRENT_TIMESTAMP - INTERVAL '5 days'
+    CURRENT_TIMESTAMP - INTERVAL '5 days',
+    'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800',
+    '["https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=800"]'
 ),
 (
     (SELECT user_id FROM users WHERE username = 'mike_chen'),
@@ -261,7 +273,9 @@ INSERT INTO listings (
     true,
     'APPROVED',
     'Engineering Building',
-    CURRENT_TIMESTAMP - INTERVAL '2 days'
+    CURRENT_TIMESTAMP - INTERVAL '2 days',
+    'https://images.unsplash.com/photo-1532012197267-da84d127e765?w=800',
+    '["https://images.unsplash.com/photo-1532012197267-da84d127e765?w=800"]'
 ),
 
 -- CLOTHING
@@ -278,7 +292,9 @@ INSERT INTO listings (
     true,
     'APPROVED',
     'Event Center',
-    CURRENT_TIMESTAMP - INTERVAL '4 days'
+    CURRENT_TIMESTAMP - INTERVAL '4 days',
+    'https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=800',
+    '["https://images.unsplash.com/photo-1556821840-3a63f95609a7?w=800"]'
 ),
 (
     (SELECT user_id FROM users WHERE username = 'alex_rod'),
@@ -293,7 +309,9 @@ INSERT INTO listings (
     true,
     'APPROVED',
     'SRAC Gym',
-    CURRENT_TIMESTAMP - INTERVAL '7 days'
+    CURRENT_TIMESTAMP - INTERVAL '7 days',
+    'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800',
+    '["https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=800"]'
 ),
 
 -- FURNITURE
@@ -310,7 +328,9 @@ INSERT INTO listings (
     true,
     'APPROVED',
     'Campus Village',
-    CURRENT_TIMESTAMP - INTERVAL '9 days'
+    CURRENT_TIMESTAMP - INTERVAL '9 days',
+    'https://images.unsplash.com/photo-1571175443880-49e1d25b2bc5?w=800',
+    '["https://images.unsplash.com/photo-1571175443880-49e1d25b2bc5?w=800"]'
 ),
 (
     (SELECT user_id FROM users WHERE username = 'sarah_wilson'),
@@ -325,25 +345,12 @@ INSERT INTO listings (
     true,
     'APPROVED',
     'CVB Lobby',
-    CURRENT_TIMESTAMP - INTERVAL '2 days'
+    CURRENT_TIMESTAMP - INTERVAL '2 days',
+    'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=800',
+    '["https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=800"]'
 ),
 
 -- SPORTS
-(
-    (SELECT user_id FROM users WHERE username = 'alex_rod'),
-    (SELECT university_id FROM universities WHERE domain = 'sjsu.edu'),
-    'Wilson Tennis Racket + Balls',
-    'Great for beginners. Comes with 3 new tennis balls.',
-    'SPORTS_EQUIPMENT',
-    'GOOD',
-    40.00,
-    1,
-    true,
-    true,
-    'APPROVED',
-    'Tennis Courts',
-    CURRENT_TIMESTAMP - INTERVAL '6 days'
-),
 (
     (SELECT user_id FROM users WHERE username = 'kevin_jones'),
     (SELECT university_id FROM universities WHERE domain = 'sjsu.edu'),
@@ -357,7 +364,9 @@ INSERT INTO listings (
     true,
     'APPROVED',
     'SRAC',
-    CURRENT_TIMESTAMP - INTERVAL '3 days'
+    CURRENT_TIMESTAMP - INTERVAL '3 days',
+    'https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=800',
+    '["https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?w=800"]'
 ),
 
 -- SERVICES
@@ -374,7 +383,9 @@ INSERT INTO listings (
     true,
     'APPROVED',
     'MLK Library or Zoom',
-    CURRENT_TIMESTAMP - INTERVAL '1 day'
+    CURRENT_TIMESTAMP - INTERVAL '1 day',
+    'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800',
+    '["https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800"]'
 ),
 (
     (SELECT user_id FROM users WHERE username = 'emily_nguyen'),
@@ -389,7 +400,9 @@ INSERT INTO listings (
     true,
     'APPROVED',
     'Online delivery',
-    CURRENT_TIMESTAMP - INTERVAL '4 days'
+    CURRENT_TIMESTAMP - INTERVAL '4 days',
+    'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=800',
+    '["https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=800"]'
 ),
 
 -- OTHER
@@ -406,13 +419,51 @@ INSERT INTO listings (
     true,
     'APPROVED',
     'Campus Village',
-    CURRENT_TIMESTAMP - INTERVAL '5 days'
+    CURRENT_TIMESTAMP - INTERVAL '5 days',
+    'https://images.unsplash.com/photo-1585515320310-259814833e62?w=800',
+    '["https://images.unsplash.com/photo-1585515320310-259814833e62?w=800"]'
 );
+
+-- =============================================================================
+-- UPDATE V2 LISTINGS WITH IMAGES
+-- =============================================================================
+
+-- Data Structures and Algorithms textbook
+UPDATE listings 
+SET primary_image_url = 'https://images.unsplash.com/photo-1532012197267-da84d127e765?w=800',
+    image_urls = '["https://images.unsplash.com/photo-1532012197267-da84d127e765?w=800"]'
+WHERE title LIKE 'Data Structures and Algorithms%';
+
+-- Calculus textbook
+UPDATE listings 
+SET primary_image_url = 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800',
+    image_urls = '["https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800"]'
+WHERE title LIKE 'Calculus%';
+
+-- MacBook Pro
+UPDATE listings 
+SET primary_image_url = 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800',
+    image_urls = '["https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800"]'
+WHERE title LIKE 'MacBook Pro%';
+
+-- TI-84 Calculator
+UPDATE listings 
+SET primary_image_url = 'https://images.unsplash.com/photo-1564466809058-bf4114d55352?w=800',
+    image_urls = '["https://images.unsplash.com/photo-1564466809058-bf4114d55352?w=800"]'
+WHERE title LIKE 'TI-84%';
+
+-- IKEA Desk with Chair
+UPDATE listings 
+SET primary_image_url = 'https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=800',
+    image_urls = '["https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=800"]'
+WHERE title LIKE 'IKEA Desk%';
 
 -- =============================================================================
 -- SUMMARY
 -- =============================================================================
 -- Added: 8 new users
--- Added: 15 new listings
+-- Added: 14 new listings with images
+-- Updated: 5 existing V2 listings with images
 -- Categories covered: Electronics, Textbooks, Clothing, Furniture, Sports Equipment, Services, Other
+-- Total listings with images: 19
 
