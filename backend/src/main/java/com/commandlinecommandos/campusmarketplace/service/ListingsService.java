@@ -36,6 +36,9 @@ public class ListingsService {
     @Autowired
     private com.commandlinecommandos.campusmarketplace.repository.UserFavoriteRepository userFavoriteRepository;
 
+    @Autowired(required = false)
+    private EmailService emailService;
+
     /**
      * Get all active listings with pagination
      */
@@ -155,7 +158,32 @@ public class ListingsService {
         product.setActive(true);
         product.publish();
 
-        return productRepository.save(product);
+        Product savedProduct = productRepository.save(product);
+        
+        // Send email notification for listing creation
+        org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(ListingsService.class);
+        log.info("Listing created: {} by {} (email: {})", 
+            savedProduct.getTitle(), seller.getUsername(), seller.getEmail());
+        
+        if (emailService == null) {
+            log.warn("EmailService not available - skipping listing created notification");
+        } else if (seller.getEmail() == null || seller.getEmail().isEmpty()) {
+            log.warn("Seller {} has no email - skipping listing created notification", seller.getUsername());
+        } else {
+            try {
+                log.info("Sending listing created email to {}", seller.getEmail());
+                emailService.sendListingCreatedEmail(
+                    seller.getEmail(),
+                    seller.getUsername(),
+                    savedProduct.getTitle()
+                );
+                log.info("✅ Listing created email sent successfully to {}", seller.getEmail());
+            } catch (Exception e) {
+                log.error("❌ Failed to send listing created email: {}", e.getMessage(), e);
+            }
+        }
+        
+        return savedProduct;
     }
 
     /**
