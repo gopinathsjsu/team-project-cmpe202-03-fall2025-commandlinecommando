@@ -49,6 +49,13 @@ if [ ${#missing_vars[@]} -ne 0 ]; then
     exit 1
 fi
 
+# Check email configuration (optional but recommended)
+if [ -z "$SMTP_PASSWORD" ]; then
+    email_status="⚠️  Not configured (set SMTP_PASSWORD for email notifications)"
+else
+    email_status="✅ Configured (SendGrid)"
+fi
+
 # Display configuration info
 echo "========================================="
 echo "Campus Marketplace - PostgreSQL Mode"
@@ -57,6 +64,7 @@ echo "Profile: postgres"
 echo "Database: PostgreSQL"
 echo "S3 Bucket: $AWS_S3_BUCKET_NAME"
 echo "AWS Region: $AWS_REGION"
+echo "Email: $email_status"
 echo "========================================="
 echo ""
 
