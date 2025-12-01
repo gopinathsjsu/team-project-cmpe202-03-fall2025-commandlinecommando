@@ -104,8 +104,6 @@ npm run dev
 
 ## Architecture
 
-### Production Deployment (AWS Scaled EC2 + ALB)
-
 ![AWS Architecture Diagram](aws-deployment-images/aws-architecture.png)
 
 **Detailed AWS Architecture Diagram** showing the complete deployment with Application Load Balancer, EC2 instance, Docker containers, AWS managed services (RDS, ElastiCache, S3), and external integrations.
