@@ -2,6 +2,12 @@
 
 A campus marketplace for SJSU students to buy and sell items such as textbooks, electronics, gadgets, and essentials. Our team built a full stack web application system by combining multiple services into one clean and modular architecture.
 
+## Live Application
+
+- **With ALB (Application Load Balancer):** [http://cmpe-202-docker-app-asg-1-626152704.us-west-1.elb.amazonaws.com/](http://cmpe-202-docker-app-asg-1-626152704.us-west-1.elb.amazonaws.com/)
+- **Direct EC2 Access (US West 1):** [http://54.153.47.38/](http://54.153.47.38/)
+- **Auto-Scaled EC2 Instance (US West 1):** [http://54.151.14.195/](http://54.151.14.195/)
+
 ---
 
 ## Team Name
@@ -20,7 +26,12 @@ A campus marketplace for SJSU students to buy and sell items such as textbooks, 
 ## Project Links
 
 - **Project Journal:** [project-journal](https://github.com/gopinathsjsu/team-project-cmpe202-03-fall2025-commandlinecommando/tree/main/project-journal) *
-- **Jira Board:** [jira-screenshots](https://github.com/gopinathsjsu/team-project-cmpe202-03-fall2025-commandlinecommando/tree/main/jira-screenshots) *
+- **Jira Board Screenshots:** [jira-screenshots](https://github.com/gopinathsjsu/team-project-cmpe202-03-fall2025-commandlinecommando/tree/main/jira-screenshots) *
+- **UML Diagrams:** [uml-diagrams](https://github.com/gopinathsjsu/team-project-cmpe202-03-fall2025-commandlinecommando/tree/main/uml-diagrams) *
+- **AWS Deployment Images:** [aws-deployment-images](https://github.com/gopinathsjsu/team-project-cmpe202-03-fall2025-commandlinecommando/tree/main/aws-deployment-images) *
+- **Burndown Charts:** [burndown_charts](https://github.com/gopinathsjsu/team-project-cmpe202-03-fall2025-commandlinecommando/tree/main/burndown_charts) *
+- **Wireframes:** [wireframes](https://github.com/gopinathsjsu/team-project-cmpe202-03-fall2025-commandlinecommando/tree/main/wireframes) *
+- **Sprint Artifacts:** [sprint-artifacts](https://github.com/gopinathsjsu/team-project-cmpe202-03-fall2025-commandlinecommando/tree/main/sprint-artifacts) *
 
 ---
 
