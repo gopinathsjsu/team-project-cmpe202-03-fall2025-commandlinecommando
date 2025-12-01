@@ -336,11 +336,7 @@ export function MarketplacePage() {
       <header className="nav-glass px-4 sm:px-8 py-4 sticky top-0 z-20">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2 sm:gap-4">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl gradient-primary flex items-center justify-center shadow-lg">
-              <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-              </svg>
-            </div>
+            <img src="/sjsu-logo.png" alt="SJSU Logo" className="w-12 h-12 sm:w-16 sm:h-16 object-contain" />
             <div className="hidden sm:block">
               <h1 className="text-xl font-bold gradient-text">CampusConnect</h1>
               <p className="text-sm text-muted">Campus Marketplace</p>

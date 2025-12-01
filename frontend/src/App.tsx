@@ -54,11 +54,7 @@ export default function App() {
         <header className="absolute top-0 left-0 right-0 z-20 p-6">
           <div className="flex items-center justify-between max-w-7xl mx-auto">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl gradient-primary flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                </svg>
-              </div>
+              <img src="/sjsu-logo.png" alt="SJSU Logo" className="w-16 h-16 object-contain" />
               <div>
                 <h1 className="text-2xl font-bold gradient-text">CampusConnect</h1>
                 <p className="text-sm text-muted">Campus Marketplace</p>
@@ -177,11 +173,7 @@ export default function App() {
         <header className="absolute top-0 left-0 right-0 z-20 p-6">
           <div className="flex items-center justify-between max-w-7xl mx-auto">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl gradient-accent flex items-center justify-center shadow-lg shadow-purple-500/30">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                </svg>
-              </div>
+              <img src="/sjsu-logo.png" alt="SJSU Logo" className="w-16 h-16 object-contain" />
               <div>
                 <h1 className="text-2xl font-bold gradient-text">CampusConnect</h1>
                 <p className="text-sm text-muted">Campus Marketplace</p>
@@ -219,11 +211,7 @@ export default function App() {
         <header className="absolute top-0 left-0 right-0 z-20 p-6">
           <div className="flex items-center justify-between max-w-7xl mx-auto">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/30">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                </svg>
-              </div>
+              <img src="/sjsu-logo.png" alt="SJSU Logo" className="w-16 h-16 object-contain" />
               <div>
                 <h1 className="text-2xl font-bold gradient-text">CampusConnect</h1>
                 <p className="text-sm text-muted">Campus Marketplace</p>
