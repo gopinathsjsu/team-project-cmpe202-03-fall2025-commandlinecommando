@@ -10,9 +10,9 @@ A campus marketplace for SJSU students to buy and sell items such as textbooks, 
 
 ## Team Members
 
-| Name | Areas of Contribution |
+| Name | Contribution Summary |
 |------|----------------------|
-| **Vineet Kumar** | Backend API development, Authentication & JWT, Database design, AWS S3 integration, DevOps & Docker, Frontend Integration with Backend, Team Leadership |
+| **Vineet Kumar** | Authentication & Authorization Backend Dev, AI Integration Microservice Dev, Backend API's integration with Frontend, Initial database design and seed data generation, AWS S3 integration with policies, DevOps & Docker integration between services, Frontend & Backend proxy integration via nginx, Team Leadership |
 | **Sakshat Patil** | Frontend development, React components, UI/UX design, Marketplace page, Listing details |
 | **Lam Nguyen** | Frontend and Backend components, User authentication flow, Profile management, Backend Testing |
 | **Wilson Huang** | Backend services, Chat/Messaging system, Search functionality, Admin dashboard API |
@@ -29,7 +29,7 @@ To divide the work clearly, each team member took responsibility for one major p
 
 | Team Member | Component Owned |
 |-------------|-----------------|
-| **Vineet** | Backend Dev, AWS Deployment, Infrastructure Setup, Ask AI Feature Dev, Frontend Theme Dev, Frontend & Backend Integration, S3 File Storage, ALB Integration, Leading Team & Coordination |
+| **Vineet** | Authentication Authorization Backend Dev, Ask AI Feature Dev, AWS Architecture Design, Infrastructure Deployment, S3 File Storage, ALB Integration, Leading Team & Coordination |
 | **Lam** | User Management System (backend), Search Integration, Authentication |
 | **Sakshat** | Frontend UI (Login, Listings, Management), E2E UI Integration |
 | **Wilson** | Listing API, Database Integration, File Upload Service |
