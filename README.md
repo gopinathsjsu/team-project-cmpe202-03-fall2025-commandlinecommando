@@ -12,7 +12,7 @@ A campus marketplace for SJSU students to buy and sell items such as textbooks, 
 
 | Name | Contribution Summary |
 |------|----------------------|
-| **Vineet Kumar** | Authentication & Authorization Backend Dev, AI Microservice Development, Backend API's integration with Frontend, Initial database design and seed data generation, AWS S3 integration with policies, DevOps & Docker integration between services, Frontend & Backend proxy integration via nginx, Team Leadership |
+| **Vineet Kumar** | Authentication & Authorization Backend Dev, AI Microservice Development, Backend API's integration with Frontend, Initial database design and seed data generation, AWS S3 integration with policies, DevOps & Docker integration between services, Frontend & Backend proxy integration via nginx, AWS ALB Integreation, Team Leadership |
 | **Sakshat Patil** | Frontend development, React components, UI/UX design, Marketplace page, Listing details |
 | **Lam Nguyen** | Frontend and Backend components, User authentication flow, Profile management, Backend Testing |
 | **Wilson Huang** | Backend services, Chat/Messaging system, Search functionality, Admin dashboard API |
