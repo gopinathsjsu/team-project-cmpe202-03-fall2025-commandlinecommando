@@ -19,8 +19,7 @@ A campus marketplace for SJSU students to buy and sell items such as textbooks, 
 
 ## Project Links
 
-- **Project Journal:** [GitHub Wiki](https://github.com/your-repo/wiki) *(Update with actual link)*
-- **Sprint Board:** [Google Sheet](https://docs.google.com/spreadsheets/d/your-sheet-id) *(Update with actual link)*
+- **Project Journal:** [GitHub Wiki]([https://github.com/your-repo/wiki](https://github.com/gopinathsjsu/team-project-cmpe202-03-fall2025-commandlinecommando/tree/main/project-journal)) *(Update with actual link)*
 
 ---
 
