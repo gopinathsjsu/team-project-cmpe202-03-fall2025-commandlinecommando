@@ -197,6 +197,89 @@ npm run dev
 
 ---
 
+## UML Diagrams
+
+All UML diagrams are available in the [`uml-diagrams/`](uml-diagrams/) folder.
+
+### Class Diagram with Design Patterns
+
+Shows all entities with 7 design patterns (Strategy, Factory, Singleton, Observer, State, Composite, Decorator):
+
+![Class Diagram with Design Patterns](uml-diagrams/uml_class_diagram_design_patterns.svg)
+
+### Component Diagram
+
+High-level component relationships showing system modules:
+
+![Component Diagram](uml-diagrams/Component%20Diagram.jpg)
+
+### Deployment Diagram
+
+Infrastructure deployment view with Docker containers and cloud services:
+
+![Deployment Diagram](uml-diagrams/Deployment%20Diagram.jpg)
+
+### Additional Diagrams
+
+| Diagram | Description |
+|---------|-------------|
+| [Architecture Diagram](uml-diagrams/architecture_diagram.svg) | System architecture with AWS deployment |
+| [ER Class Diagram](uml-diagrams/er_class_diagram.svg) | Entity-Relationship diagram |
+
+---
+
+## Design Patterns
+
+The Campus Marketplace implements **7 design patterns** to ensure maintainability, extensibility, and clean architecture:
+
+| Pattern | Type | Application |
+|---------|------|-------------|
+| **Strategy** | Behavioral | Role-based access control - `BuyerRole`, `SellerRole`, `AdminRole` implement different permission strategies |
+| **Factory** | Creational | `ListingFactory` creates different types of listings (Electronics, Books, Clothing, etc.) |
+| **Singleton** | Creational | `AuthService` and `SearchService` ensure single instance across the application |
+| **Observer** | Behavioral | Notification system - `EmailNotifier`, `InAppNotifier` observe events and send notifications |
+| **State** | Behavioral | Listing lifecycle - `ActiveState`, `SoldState`, `ExpiredState` manage listing behavior |
+| **Composite** | Structural | `Conversation` contains multiple `Messages` as a tree structure |
+| **Decorator** | Structural | Reports can be decorated with priority levels (Urgent, Flagged) |
+
+### Pattern Implementation Summary
+
+```
+Strategy Pattern (Role-Based Access Control)
+├── User has roles → Each role implements RoleStrategy
+├── BuyerRole: Can browse, purchase, chat, report
+├── SellerRole: Can create/manage listings, respond to chats
+└── AdminRole: Can moderate, suspend users, manage reports
+
+Factory Pattern (Listing Creation)
+├── ListingFactory.createListing(type, data)
+│   ├── "ELECTRONICS" → ElectronicsListing
+│   ├── "BOOKS" → BooksListing
+│   └── "OTHER" → GenericListing
+
+State Pattern (Listing Lifecycle)
+├── ACTIVE → can edit, can sell, can delete
+├── SOLD → cannot edit, cannot sell
+└── EXPIRED → can reactivate, can delete
+```
+
+---
+
+## Architectural Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| **Unified Spring Boot Backend** | Single codebase for all API modules (Auth, Listings, Chat, Admin) simplifies deployment and reduces complexity |
+| **JWT with Refresh Tokens** | Stateless authentication with secure token refresh for better scalability |
+| **PostgreSQL + Redis** | PostgreSQL for reliable ACID transactions; Redis for session caching and rate limiting |
+| **AWS S3 for Images** | Offload image storage to managed service for scalability and CDN integration |
+| **Flyway Migrations** | Version-controlled database schema changes for reliable deployments |
+| **Docker Compose** | Consistent development and production environments across all team members |
+| **Role-Based Strategy Pattern** | Extensible permission system - easy to add new roles without modifying existing code |
+| **Factory Pattern for Listings** | Simplifies creation of different listing types with category-specific attributes |
+
+---
+
 # Features (Short Summary)
 
 ### User Authentication
