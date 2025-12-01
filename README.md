@@ -12,10 +12,10 @@ A campus marketplace for SJSU students to buy and sell items such as textbooks, 
 
 | Name | Contribution Summary |
 |------|----------------------|
-| **Vineet Kumar** | Authentication & Authorization Backend Dev, AI Microservice Development, Backend API's integration with Frontend, Initial database design and seed data generation, AWS S3 integration with policies, DevOps & Docker integration between services, Frontend & Backend proxy integration via nginx, AWS ALB Integreation, Team Leadership |
-| **Sakshat Patil** | Frontend development, React components, UI/UX design, Marketplace page, Listing details |
-| **Lam Nguyen** | Frontend and Backend components, User authentication flow, Profile management, Backend Testing |
-| **Wilson Huang** | Backend services, Chat/Messaging system, Search functionality, Admin dashboard API |
+| **Vineet Kumar** | Authentication & authorization backend development, AI microservice development, Backend API's integration with frontend, Initial database design and seed data generation, AWS S3 integration with policies, DevOps & Docker integration between services, Frontend & backend proxy integration via nginx, AWS ALB Integreation, Team Leadership |
+| **Sakshat Patil** | Frontend development, React components, UI/UX design, Marketplace page, Listing details, Sprint artifacts & documentation |
+| **Lam Nguyen** | Frontend and backend components, User authentication flow, Profile management, Backend testing & refactoring |
+| **Wilson Huang** | Listing services, Chat/messaging system, Search functionality, Admin features, Backend & database integration |
 
 ## Project Links
 
@@ -32,21 +32,19 @@ To divide the work clearly, each team member took responsibility for one major p
 | **Vineet** | Authentication Authorization Backend Dev, Ask AI Feature Dev, AWS Architecture Design, Infrastructure Deployment, S3 File Storage, ALB Integration, Leading Team & Coordination |
 | **Lam** | User Management System (backend), Search Integration, Authentication |
 | **Sakshat** | Frontend UI (Login, Listings, Management), E2E UI Integration |
-| **Wilson** | Listing API, Database Integration, File Upload Service |
+| **Wilson** | Listing API, Database Integration, File Upload Service, Chat System |
 
 ---
 
 # Project Journal & Scrum Artifacts
 
-All project documentation is maintained inside the `/project-journal` folder.
-
 | Artifact | Location |
 |----------|----------|
-| Weekly Scrum Reports | `project-journal/week1...week12` |
-| XP Core Values | `project-journal/xp-values.md` |
-| Sprint Backlogs (all 6 sprints) | `project-journal/sprint-artifacts/` |
-| Task Board Summary | `project-journal/task-board/task-board-summary.md` |
-| Burndown Chart Data | `project-journal/burndown/` |
+| Weekly Scrum Reports | [`project-journal/week1...week12`](project-journal/) |
+| XP Core Values | [`project-journal/xp-values.md`](project-journal/xp-values.md) |
+| Sprint Backlogs (all 6 sprints) | [`sprint-artifacts`](sprint-artifacts/) |
+| Spring Summary | [`burndown_charts/Sprint_Summary.png`](burndown_charts/Sprint_Summary.png) |
+| Burndown Chart Data | [`burndown_charts`](burndown_charts/) |
 
 ---
 
@@ -157,20 +155,20 @@ npm run dev
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                         Frontend                                 │
-│              React + Nginx (Docker: Port 80)                     │
-│              React + Vite (Local Dev: Port 5173)                 │
+│                         Frontend                                │
+│              React + Nginx (Docker: Port 80)                    │
+│              React + Vite (Local Dev: Port 5173)                │
 └─────────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                    Unified Backend API                           │
-│                   Spring Boot (Port 8080)                        │
-├─────────────┬─────────────┬─────────────┬──────────────────────┤
-│    Auth     │  Listings   │    Chat     │       Admin          │
-│   Module    │   Module    │   Module    │      Module          │
-├─────────────┴─────────────┴─────────────┴──────────────────────┤
-│                    Shared Services                               │
+│                    Unified Backend API                          │
+│                   Spring Boot (Port 8080)                       │
+├─────────────┬─────────────┬─────────────┬───────────────────────┤
+│    Auth     │  Listings   │    Chat     │       Admin           │
+│   Module    │   Module    │   Module    │      Module           │
+├─────────────┴─────────────┴─────────────┴───────────────────────┤
+│                    Shared Services                              │
 │         JWT Security │ Email Service │ S3 Storage               │
 └─────────────────────────────────────────────────────────────────┘
         │                       │                    │
@@ -178,7 +176,7 @@ npm run dev
 ┌──────────────┐      ┌──────────────┐      ┌──────────────┐
 │  PostgreSQL  │      │    Redis     │      │   AWS S3     │
 │   Database   │      │    Cache     │      │   Storage    │
-│  (Port 5432) │      │  (Port 6379) │      │  (Images)     │
+│  (Port 5432) │      │  (Port 6379) │      │  (Images)    │
 │  Exposed     │      │   Exposed    │      │              │
 └──────────────┘      └──────────────┘      └──────────────┘
 ```
