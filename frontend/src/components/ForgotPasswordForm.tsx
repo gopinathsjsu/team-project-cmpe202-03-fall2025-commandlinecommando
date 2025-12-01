@@ -233,7 +233,7 @@ export function ForgotPasswordForm({
             <input
               type="email"
               className="input-glass pl-12"
-              placeholder="your.email@university.edu"
+              placeholder="your.email@sjsu.edu"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required

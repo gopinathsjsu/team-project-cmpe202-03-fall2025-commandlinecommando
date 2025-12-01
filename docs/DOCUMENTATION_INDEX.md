@@ -1,6 +1,5 @@
 # Campus Marketplace - Documentation Index
 
-**Last Updated:** November 2025  
 **Project Status:** ✅ Production Ready - All 129 Tests Passing
 
 ---
@@ -20,6 +19,7 @@ This project has a clean, focused documentation structure. All essential docs ar
 | **E2E Testing Guide** | `docs/E2E_TESTING_GUIDE.md` | End-to-end testing instructions |
 | **Deployment Guide** | `docs/DEPLOYMENT_GUIDE.md` | Docker deployment instructions |
 | **Docker Deployment** | `docs/DOCKER_DEPLOYMENT.md` | Advanced Docker configuration |
+| **AWS Deployment Guide** | `docs/AWS_DEPLOYMENT_GUIDE.md` | EC2 + ALB deployment guide |
 | **Auth & Security** | `docs/Authentication_Authorization_ReadMe.md` | JWT authentication details |
 
 ---
@@ -57,6 +57,7 @@ This project has a clean, focused documentation structure. All essential docs ar
 │   ├── E2E_TESTING_GUIDE.md            # ⭐ E2E testing guide
 │   ├── DEPLOYMENT_GUIDE.md             # Docker deployment
 │   ├── DOCKER_DEPLOYMENT.md            # Advanced Docker config
+│   ├── AWS_DEPLOYMENT_GUIDE.md         # ⭐ AWS EC2 + ALB deployment
 │   ├── Authentication_Authorization_ReadMe.md
 │   ├── api/
 │   │   └── BACKEND_API_DOCUMENTATION.md  # ⭐ Complete API reference
@@ -79,8 +80,7 @@ This project has a clean, focused documentation structure. All essential docs ar
 ├── frontend/
 │   └── src/
 │
-└── scripts/
-    └── *.sh                            # Database setup scripts
+└── aws-deploy-ec2.sh                  # AWS EC2 deployment script
 ```
 
 ---
@@ -91,6 +91,7 @@ This project has a clean, focused documentation structure. All essential docs ar
 |--------------|-------|
 | Get started quickly | [README.md](../README.md) |
 | Deploy with Docker | [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) |
+| Deploy on AWS EC2 | [AWS_DEPLOYMENT_GUIDE.md](AWS_DEPLOYMENT_GUIDE.md) |
 | Run E2E tests | [E2E_TESTING_GUIDE.md](E2E_TESTING_GUIDE.md) |
 | Integrate with API | [BACKEND_API_DOCUMENTATION.md](api/BACKEND_API_DOCUMENTATION.md) |
 | Set up the database | [db/docs/DATABASE_SETUP.md](../db/docs/DATABASE_SETUP.md) |
@@ -135,6 +136,3 @@ This project has a clean, focused documentation structure. All essential docs ar
 | **Documentation** | ✅ Clean & consolidated |
 
 ---
-
-**Last Cleanup:** November 2025
-

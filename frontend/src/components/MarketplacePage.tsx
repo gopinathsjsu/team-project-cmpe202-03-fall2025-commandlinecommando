@@ -43,6 +43,7 @@ export interface Listing {
   condition: string;
   location?: string;
   imageUrl?: string;
+  imageUrls?: string[];
   createdAt: string;
   seller: {
     id: string;
@@ -83,7 +84,11 @@ export function MarketplacePage() {
     condition: 'NEW',
     location: '',
     negotiable: false,
+    imageUrls: [] as string[],
   });
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   useEffect(() => {
     if (viewMode === 'marketplace') {
@@ -104,7 +109,7 @@ export function MarketplacePage() {
     try {
       setLoading(true);
       const response = await listingsApi.getListings(page, 20);
-      
+
       let listingsArray: Listing[] = [];
       if (Array.isArray(response)) {
         listingsArray = response;
@@ -116,7 +121,7 @@ export function MarketplacePage() {
         console.warn('Unexpected listings response format:', response);
         listingsArray = [];
       }
-      
+
       setListings(listingsArray);
       setTotalPages(response.totalPages || 1);
     } catch (err) {
@@ -186,7 +191,28 @@ export function MarketplacePage() {
 
   async function handleCreateListing() {
     try {
-      await listingsApi.createListing(newListing);
+      let imageUrls: string[] = [];
+      
+      // Upload images first if any selected
+      if (selectedFiles.length > 0) {
+        setUploadingImages(true);
+        try {
+          const uploadResult = await listingsApi.uploadImages(selectedFiles);
+          imageUrls = uploadResult.imageUrls;
+        } catch (uploadErr: any) {
+          alert('Failed to upload images: ' + (uploadErr?.response?.data?.error || uploadErr.message));
+          setUploadingImages(false);
+          return;
+        }
+        setUploadingImages(false);
+      }
+      
+      // Create listing with image URLs
+      await listingsApi.createListing({
+        ...newListing,
+        imageUrls,
+      });
+      
       alert('Listing created successfully!');
       setShowCreateModal(false);
       setNewListing({
@@ -197,11 +223,53 @@ export function MarketplacePage() {
         condition: 'NEW',
         location: '',
         negotiable: false,
+        imageUrls: [],
       });
+      setSelectedFiles([]);
+      setImagePreviews([]);
       await loadListings();
     } catch (err: any) {
       alert(err?.response?.data?.message || err?.response?.data?.error || 'Failed to create listing');
     }
+  }
+
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files) return;
+    
+    const fileArray = Array.from(files);
+    
+    // Validate file types and sizes
+    const validFiles = fileArray.filter(file => {
+      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        alert(`Invalid file type: ${file.name}. Allowed types: JPEG, PNG, GIF, WebP`);
+        return false;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert(`File too large: ${file.name}. Maximum size is 5MB`);
+        return false;
+      }
+      return true;
+    });
+    
+    // Limit to 5 images total
+    const totalFiles = [...selectedFiles, ...validFiles].slice(0, 5);
+    setSelectedFiles(totalFiles);
+    
+    // Create previews
+    const previews = totalFiles.map(file => URL.createObjectURL(file));
+    setImagePreviews(previews);
+  }
+
+  function removeImage(index: number) {
+    const newFiles = selectedFiles.filter((_, i) => i !== index);
+    setSelectedFiles(newFiles);
+    
+    // Revoke the old preview URL to prevent memory leaks
+    URL.revokeObjectURL(imagePreviews[index]);
+    const newPreviews = imagePreviews.filter((_, i) => i !== index);
+    setImagePreviews(newPreviews);
   }
 
   async function handleToggleFavorite(listingId: string, e: React.MouseEvent) {
@@ -209,6 +277,11 @@ export function MarketplacePage() {
     try {
       const result = await listingsApi.toggleFavorite(listingId);
       setListings(prev =>
+        prev.map(l =>
+          l.id === listingId ? { ...l, favorite: result.favorited } : l
+        )
+      );
+      setTrendingListings(prev =>
         prev.map(l =>
           l.id === listingId ? { ...l, favorite: result.favorited } : l
         )
@@ -303,7 +376,7 @@ export function MarketplacePage() {
                 </div>
               </div>
             )}
-            <button 
+            <button
               onClick={() => setShowCreateModal(true)}
               className="nav-button-primary !px-2 sm:!px-4"
             >
@@ -313,7 +386,7 @@ export function MarketplacePage() {
               <span className="hidden sm:inline">Sell Item</span>
             </button>
             <ThemeToggle />
-            <button 
+            <button
               onClick={handleLogout}
               className="nav-button !px-2 sm:!px-4 hover:bg-red-500/20 hover:text-red-500 hover:border-red-500/30"
             >
@@ -327,7 +400,8 @@ export function MarketplacePage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-8 py-6">
-        {trendingListings.length > 0 && !searchQuery && (
+        {/* Temporarily disabled - TODO: fix image loading issues */}
+        {false && trendingListings.length > 0 && !searchQuery && (
           <div className="mb-8">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <svg className="w-5 h-5 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
@@ -335,20 +409,32 @@ export function MarketplacePage() {
               </svg>
               Trending Now
             </h2>
-            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {trendingListings.map(item => (
-                <button
+                <div
                   key={item.id}
                   onClick={() => setSelectedListingId(item.id)}
-                  className="flex-shrink-0 w-56 glass-card overflow-hidden card-hover text-left group"
+                  className="glass-card overflow-hidden card-hover cursor-pointer group"
                 >
-                  <div className="h-40 bg-gray-100 dark:bg-gray-800 relative overflow-hidden">
-                    <img src={item.imageUrl} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  <div className="relative aspect-square bg-gray-100 dark:bg-gray-800">
+                    <img
+                      src={item.imageUrl || 'https://via.placeholder.com/300'}
+                      alt={item.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <button
+                      onClick={(e) => handleToggleFavorite(item.id, e)}
+                      className={`absolute top-3 right-3 w-9 h-9 rounded-full flex items-center justify-center transition-all ${item.favorite ? 'bg-red-500 text-white scale-110' : 'glass-button'}`}
+                    >
+                      <svg className="w-5 h-5" fill={item.favorite ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                      </svg>
+                    </button>
                   </div>
                   <div className="p-4">
-                    <p className="font-semibold truncate">{item.title}</p>
-                    <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                    <h3 className="font-semibold truncate">{item.title}</h3>
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
                       <span className="badge badge-primary text-xs">
                         {item.category?.replace(/_/g, ' ')}
                       </span>
@@ -359,9 +445,33 @@ export function MarketplacePage() {
                         <span className="badge badge-warning text-xs">Negotiable</span>
                       )}
                     </div>
-                    <p className="text-lg font-bold gradient-text mt-3">${item.price?.toFixed(2)}</p>
+                    <p className="text-muted text-sm mt-2 line-clamp-2">{item.description}</p>
+                    <div className="flex items-center justify-between mt-4">
+                      <span className="text-xl font-bold gradient-text">${item.price?.toFixed(2)}</span>
+                      <span className="text-xs text-muted flex items-center gap-1">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        {item.viewCount || 0}
+                      </span>
+                    </div>
+                    {item.seller && (
+                      <div className="flex items-center gap-2 mt-4 pt-4 border-t border-glass">
+                        <div className="w-7 h-7 rounded-full gradient-primary flex items-center justify-center overflow-hidden text-white text-xs font-bold">
+                          {item.seller.avatarUrl ? (
+                            <img src={item.seller.avatarUrl} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            item.seller.name?.charAt(0) || item.seller.username?.charAt(0) || 'S'
+                          )}
+                        </div>
+                        <span className="text-sm text-muted truncate">
+                          {item.seller.name || item.seller.username}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           </div>
@@ -625,8 +735,12 @@ export function MarketplacePage() {
                 </div>
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Create New Listing</h2>
               </div>
-              <button 
-                onClick={() => setShowCreateModal(false)} 
+              <button
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setSelectedFiles([]);
+                  setImagePreviews([]);
+                }}
                 className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl transition-colors"
               >
                 ×
@@ -726,19 +840,95 @@ export function MarketplacePage() {
                 />
                 <label htmlFor="negotiable" className="text-sm text-gray-700 dark:text-gray-300">Price is negotiable</label>
               </div>
+              
+              {/* Image Upload Section */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Product Images
+                  <span className="text-gray-400 dark:text-gray-500 font-normal ml-2">(Max 5 images, up to 5MB each)</span>
+                </label>
+                
+                {/* Image Previews */}
+                {imagePreviews.length > 0 && (
+                  <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-3">
+                    {imagePreviews.map((preview, index) => (
+                      <div key={index} className="relative aspect-square rounded-lg overflow-hidden border border-gray-200 dark:border-slate-600 group">
+                        <img
+                          src={preview}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeImage(index)}
+                          className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                        {index === 0 && (
+                          <span className="absolute bottom-1 left-1 px-2 py-0.5 bg-indigo-500 text-white text-xs rounded-full">
+                            Primary
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Upload Button */}
+                {imagePreviews.length < 5 && (
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-xl cursor-pointer hover:border-indigo-500 dark:hover:border-indigo-500 transition-colors bg-gray-50 dark:bg-slate-700/50">
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                      <svg className="w-8 h-8 text-gray-400 dark:text-gray-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <span className="font-semibold text-indigo-500">Click to upload</span> or drag and drop
+                      </p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                        PNG, JPG, GIF, WebP (max 5MB)
+                      </p>
+                    </div>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/jpeg,image/png,image/gif,image/webp"
+                      multiple
+                      onChange={handleFileSelect}
+                    />
+                  </label>
+                )}
+              </div>
+              
               <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700">
                 <button
-                  onClick={() => setShowCreateModal(false)}
+                  onClick={() => {
+                    setShowCreateModal(false);
+                    setSelectedFiles([]);
+                    setImagePreviews([]);
+                  }}
                   className="px-6 py-2.5 border border-gray-200 dark:border-slate-600 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleCreateListing}
-                  disabled={!newListing.title || !newListing.description || !newListing.price}
-                  className="px-6 py-2.5 gradient-primary text-white rounded-xl hover:opacity-90 disabled:opacity-50 transition-all font-medium shadow-lg shadow-indigo-500/30"
+                  disabled={!newListing.title || !newListing.description || !newListing.price || uploadingImages}
+                  className="px-6 py-2.5 gradient-primary text-white rounded-xl hover:opacity-90 disabled:opacity-50 transition-all font-medium shadow-lg shadow-indigo-500/30 flex items-center gap-2"
                 >
-                  Create Listing
+                  {uploadingImages ? (
+                    <>
+                      <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Uploading...
+                    </>
+                  ) : (
+                    'Create Listing'
+                  )}
                 </button>
               </div>
             </div>

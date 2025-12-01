@@ -211,10 +211,11 @@ public class AuthService {
         refreshTokenOpt.ifPresent(token -> {
             token.setRevoked(true);
             refreshTokenRepository.save(token);
-            
-            // Audit log
-            if (auditService != null) {
-                auditService.logLogout(token.getUser());
+
+            // Audit log - eagerly fetch user data before async call
+            if (auditService != null && token.getUser() != null) {
+                User user = token.getUser();
+                auditService.logLogout(user.getUserId(), user.getUsername());
             }
         });
     }

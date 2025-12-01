@@ -12,33 +12,37 @@
 
 ### Option 1: Docker Compose (Recommended)
 
-**Complete environment with database and cache:**
+**Complete environment with frontend, backend, AI service, database, and cache:**
 
 ```bash
 # 1. Clone the repository
 git clone <repository-url>
-cd team-project-cmpe202-03-fall2025-commandlinecommando-fork
+cd Project
 
-# 2. Create environment file (optional)
-cp .env.example .env
-# Edit .env with your settings
+# 2. Create environment file (optional - defaults are already set)
+cp env.example .env
+# Edit .env to override any defaults if needed
 
 # 3. Build and start all services
-docker-compose up --build
+docker-compose -f docker-compose.prod.yml up --build -d
 
 # 4. Wait for services to be healthy
+# Frontend will be available at http://localhost
 # Backend will be available at http://localhost:8080
+# AI Service will be available at http://localhost:3001
 # Database migrations run automatically via Flyway
 ```
 
 **Services Started:**
+- Frontend (Nginx): `http://localhost`
+- Backend (Spring Boot): `http://localhost:8080`
+- AI Integration Service: `http://localhost:3001`
 - PostgreSQL: `localhost:5432`
 - Redis: `localhost:6379`
-- Unified Backend: `localhost:8080`
 
 **Default Credentials:**
 - Database User: `cm_app_user`
-- Database Password: `changeme` (change in production!)
+- Database Password: `changeme` (default, change in production!)
 - Database Name: `campus_marketplace`
 
 ### Option 2: Local Development with Docker Database
@@ -47,7 +51,7 @@ docker-compose up --build
 
 ```bash
 # 1. Start only the database and Redis (without backend)
-docker-compose up -d postgres redis
+docker-compose -f docker-compose.prod.yml up -d postgres redis
 
 # 2. Wait for database to be ready
 sleep 5
@@ -64,14 +68,17 @@ SPRING_PROFILES_ACTIVE=prod ./mvnw spring-boot:run
 # Press Ctrl+C to stop
 ```
 
-**Note:** The `./mvnw flyway:migrate` command requires additional Maven plugin configuration and is not needed since Spring Boot runs migrations automatically.
+The `./mvnw flyway:migrate` command isn't needed since Spring Boot runs migrations automatically on startup.
 
 ## Environment Variables
 
-Create a `.env` file in the project root:
+All environment variables have defaults set in `env.example`, so you can deploy right away. Create a `.env` file if you want to override any values:
 
 ```bash
-# Database Configuration
+# Copy template (defaults are already set)
+cp env.example .env
+
+# Database Configuration (defaults: cm_app_user / changeme)
 DB_APP_USER=cm_app_user
 DB_APP_PASSWORD=your_secure_password_here
 DB_PORT=5432
@@ -79,18 +86,27 @@ DB_PORT=5432
 # Application Port
 APP_PORT=8080
 
-# JWT Configuration
+# JWT Configuration (default is set)
 JWT_SECRET=your_very_long_secure_secret_key_here_at_least_256_bits
 JWT_ACCESS_TOKEN_EXPIRATION=3600000    # 1 hour in milliseconds
 JWT_REFRESH_TOKEN_EXPIRATION=604800000 # 7 days in milliseconds
 
-# Email Configuration (Optional)
+# AWS S3 Configuration (defaults are set)
+AWS_S3_BUCKET_NAME=webapp-s3-bucket-2025
+AWS_REGION=us-west-1
+AWS_ACCESS_KEY_ID=your-access-key
+AWS_SECRET_ACCESS_KEY=your-secret-key
+
+# Email Configuration (defaults are set)
 EMAIL_NOTIFICATIONS_ENABLED=true
-SMTP_HOST=smtp.gmail.com
+SMTP_HOST=smtp.sendgrid.net
 SMTP_PORT=587
-SMTP_USERNAME=your-email@gmail.com
-SMTP_PASSWORD=your-app-password
-EMAIL_FROM=noreply@campusmarketplace.com
+SMTP_USERNAME=apikey
+SMTP_PASSWORD=your-sendgrid-api-key
+EMAIL_FROM=commandline-commandos@seasonsanta.com
+
+# OpenAI Configuration (default is set)
+OPENAI_API_KEY=your-openai-api-key
 
 # File Upload Configuration
 FILE_UPLOAD_MAX_SIZE=10485760  # 10MB in bytes
@@ -114,16 +130,16 @@ If you need to run migrations manually using Docker:
 
 ```bash
 # Access the database container
-docker exec -it campus-marketplace-db psql -U cm_app_user -d campus_marketplace
+docker-compose -f docker-compose.prod.yml exec postgres psql -U cm_app_user -d campus_marketplace
 
 # Or run SQL files directly
-docker exec -i campus-marketplace-db psql -U cm_app_user -d campus_marketplace < db/migrations/V1__campus_marketplace_core_schema.sql
+docker-compose -f docker-compose.prod.yml exec -T postgres psql -U cm_app_user -d campus_marketplace < backend/src/main/resources/db/migrations/V1__campus_marketplace_core_schema.sql
 ```
 
 ### Check Migration Status
 ```bash
 # Query Flyway history table
-docker exec -it campus-marketplace-db psql -U cm_app_user -d campus_marketplace -c "SELECT version, description, success, installed_on FROM flyway_schema_history ORDER BY installed_rank;"
+docker-compose -f docker-compose.prod.yml exec postgres psql -U cm_app_user -d campus_marketplace -c "SELECT version, description, success, installed_on FROM flyway_schema_history ORDER BY installed_rank;"
 ```
 
 ### Migration History
@@ -136,7 +152,9 @@ The V8 migration (`db/migrations/V8__unify_schemas.sql`) performs:
 
 ## API Endpoints
 
-All endpoints are now unified under `http://localhost:8080/api`
+All backend endpoints are under `http://localhost:8080/api`
+AI service endpoints are under `http://localhost:3001/api`
+Frontend is available at `http://localhost`
 
 ### Authentication & Users
 - `POST /api/auth/login` - User login
@@ -190,24 +208,24 @@ curl http://localhost:8080/api/actuator/health
 ### Backend won't start
 ```bash
 # Check logs
-docker logs campus-marketplace-backend
+docker-compose -f docker-compose.prod.yml logs backend
 
 # Common issues:
 # 1. Database not ready - wait for health check
 # 2. Port 8080 already in use - stop other services
-# 3. Invalid JWT_SECRET - must be at least 256 bits
+# 3. Invalid JWT_SECRET - must be at least 256 bits (default is set)
 ```
 
 ### Database connection failed
 ```bash
 # Verify PostgreSQL is running
-docker ps | grep postgres
+docker-compose -f docker-compose.prod.yml ps postgres
 
 # Test connection
-docker exec -it campus-marketplace-db psql -U cm_app_user -d campus_marketplace
+docker-compose -f docker-compose.prod.yml exec postgres psql -U cm_app_user -d campus_marketplace
 
 # Check database logs
-docker logs campus-marketplace-db
+docker-compose -f docker-compose.prod.yml logs postgres
 ```
 
 ### Migration failed
@@ -217,7 +235,7 @@ cd backend
 ./mvnw flyway:info
 
 # View migration details
-docker exec -it campus-marketplace-db psql -U cm_app_user -d campus_marketplace -c "SELECT * FROM flyway_schema_history;"
+docker-compose -f docker-compose.prod.yml exec postgres psql -U cm_app_user -d campus_marketplace -c "SELECT * FROM flyway_schema_history;"
 
 # If V8 migration failed, check for:
 # 1. Existing data conflicts
@@ -228,11 +246,11 @@ docker exec -it campus-marketplace-db psql -U cm_app_user -d campus_marketplace 
 ### Redis connection issues
 ```bash
 # Check Redis status
-docker exec -it campus-marketplace-redis redis-cli ping
+docker-compose -f docker-compose.prod.yml exec redis redis-cli ping
 # Should return: PONG
 
 # View Redis logs
-docker logs campus-marketplace-redis
+docker-compose -f docker-compose.prod.yml logs redis
 ```
 
 ### File upload errors
@@ -242,7 +260,7 @@ mkdir -p uploads
 chmod 755 uploads
 
 # In Docker, check volume mount
-docker volume inspect campus-marketplace-file-uploads
+docker volume inspect project-file-uploads
 ```
 
 ## Testing the Deployment
@@ -327,20 +345,22 @@ spring:
 ```
 
 ### Monitoring
-- Backend logs: `docker logs -f campus-marketplace-backend`
-- Database logs: `docker logs -f campus-marketplace-db`
-- Redis logs: `docker logs -f campus-marketplace-redis`
+- Frontend logs: `docker-compose -f docker-compose.prod.yml logs -f frontend`
+- Backend logs: `docker-compose -f docker-compose.prod.yml logs -f backend`
+- AI Service logs: `docker-compose -f docker-compose.prod.yml logs -f ai-integration-server`
+- Database logs: `docker-compose -f docker-compose.prod.yml logs -f postgres`
+- Redis logs: `docker-compose -f docker-compose.prod.yml logs -f redis`
 
 ### Backup Strategy
 ```bash
 # Database backup
-docker exec campus-marketplace-db pg_dump -U cm_app_user campus_marketplace > backup_$(date +%Y%m%d).sql
+docker-compose -f docker-compose.prod.yml exec postgres pg_dump -U cm_app_user campus_marketplace > backup_$(date +%Y%m%d).sql
 
 # Restore from backup
-docker exec -i campus-marketplace-db psql -U cm_app_user campus_marketplace < backup_20250110.sql
+docker-compose -f docker-compose.prod.yml exec -T postgres psql -U cm_app_user campus_marketplace < backup_20250110.sql
 
 # Redis backup (automatic via AOF persistence)
-docker exec campus-marketplace-redis redis-cli BGSAVE
+docker-compose -f docker-compose.prod.yml exec redis redis-cli BGSAVE
 ```
 
 ## Scaling Considerations
@@ -349,11 +369,10 @@ docker exec campus-marketplace-redis redis-cli BGSAVE
 The unified backend can be scaled horizontally:
 
 ```bash
-# In docker-compose.yml
-backend:
-  deploy:
-    replicas: 3
-  # Add load balancer in front
+# Scale backend to 3 instances
+docker-compose -f docker-compose.prod.yml up -d --scale backend=3
+
+# For AWS deployment with ALB, see AWS_DEPLOYMENT_GUIDE.md
 ```
 
 ### Database Scaling
@@ -369,12 +388,12 @@ backend:
 ## Support
 
 For issues or questions:
-1. Check logs: `docker-compose logs`
+1. Check logs: `docker-compose -f docker-compose.prod.yml logs`
 2. Review documentation: `/docs` directory
 3. Check migration status: `./mvnw flyway:info`
-4. Contact development team
+4. See [AWS_DEPLOYMENT_GUIDE.md](AWS_DEPLOYMENT_GUIDE.md) for EC2 deployment
+5. Contact development team
 
 ---
 
-**Last Updated**: January 10, 2025
 **Version**: 1.0.0 (Unified Architecture)

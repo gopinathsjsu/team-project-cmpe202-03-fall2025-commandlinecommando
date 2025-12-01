@@ -34,37 +34,32 @@ public class PaymentMethod {
     @Column(name = "method_type", nullable = false, length = 20)
     private PaymentMethodType methodType;
     
-    @Column(name = "token", length = 255)
-    private String token; // Payment gateway token
-    
+    @NotNull
+    @Column(name = "payment_token", length = 255, nullable = false)
+    private String paymentToken; // Payment gateway token
+
     @Column(name = "last_four", length = 4)
     private String lastFour; // Last 4 digits for display
-    
+
     @Column(name = "card_brand", length = 50)
     private String cardBrand; // Visa, Mastercard, etc.
-    
+
     @Column(name = "expiry_month")
     private Integer expiryMonth;
-    
+
     @Column(name = "expiry_year")
     private Integer expiryYear;
-    
-    @Column(name = "billing_name", length = 255)
-    private String billingName;
-    
-    @Column(name = "billing_zip", length = 20)
-    private String billingZip;
+
+    @Column(name = "billing_address_id")
+    private UUID billingAddressId;
     
     @NotNull
     @Column(name = "is_default", nullable = false)
     private Boolean isDefault = false;
-    
+
     @NotNull
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
-    
-    @Column(name = "gateway_customer_id", length = 255)
-    private String gatewayCustomerId; // Stripe customer ID, etc.
     
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
@@ -125,12 +120,12 @@ public class PaymentMethod {
         this.methodType = methodType;
     }
     
-    public String getToken() {
-        return token;
+    public String getPaymentToken() {
+        return paymentToken;
     }
-    
-    public void setToken(String token) {
-        this.token = token;
+
+    public void setPaymentToken(String paymentToken) {
+        this.paymentToken = paymentToken;
     }
     
     public String getLastFour() {
@@ -165,20 +160,12 @@ public class PaymentMethod {
         this.expiryYear = expiryYear;
     }
     
-    public String getBillingName() {
-        return billingName;
+    public UUID getBillingAddressId() {
+        return billingAddressId;
     }
-    
-    public void setBillingName(String billingName) {
-        this.billingName = billingName;
-    }
-    
-    public String getBillingZip() {
-        return billingZip;
-    }
-    
-    public void setBillingZip(String billingZip) {
-        this.billingZip = billingZip;
+
+    public void setBillingAddressId(UUID billingAddressId) {
+        this.billingAddressId = billingAddressId;
     }
     
     public Boolean getIsDefault() {
@@ -192,17 +179,9 @@ public class PaymentMethod {
     public Boolean getIsActive() {
         return isActive;
     }
-    
+
     public void setIsActive(Boolean isActive) {
         this.isActive = isActive;
-    }
-    
-    public String getGatewayCustomerId() {
-        return gatewayCustomerId;
-    }
-    
-    public void setGatewayCustomerId(String gatewayCustomerId) {
-        this.gatewayCustomerId = gatewayCustomerId;
     }
     
     public LocalDateTime getCreatedAt() {

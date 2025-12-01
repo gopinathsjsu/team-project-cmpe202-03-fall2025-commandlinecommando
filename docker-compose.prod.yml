@@ -1,0 +1,306 @@
+# ==============================================
+# Campus Marketplace - Production Docker Compose
+# Optimized for AWS EC2 + ALB Deployment
+# ==============================================
+# 
+# Usage:
+#   docker-compose -f docker-compose.prod.yml up -d  (includes AI service by default)
+#
+# ALB Configuration:
+#   - Target Group 1: Frontend (port 80) - Health check: /health
+#   - Target Group 2: Backend (port 8080) - Health check: /api/actuator/health
+#   - Target Group 3: AI Service (port 3001) - Health check: /api/health
+
+services:
+  # ==============================================
+  # Frontend Service (Nginx + React)
+  # ALB Target: Port 80, Health Check: /health
+  # ==============================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api
+        VITE_AI_SERVICE_URL: /ai
+    container_name: campus-marketplace-frontend
+    restart: always
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "80:80"
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - campus-marketplace-network
+
+  # ==============================================
+  # PostgreSQL Database Service
+  # ==============================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: campus-marketplace-db
+    restart: always
+    environment:
+      POSTGRES_DB: campus_marketplace
+      POSTGRES_USER: ${DB_APP_USER:-cm_app_user}
+      POSTGRES_PASSWORD: ${DB_APP_PASSWORD:-changeme}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
+      # Performance tuning for production
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_APP_USER:-cm_app_user} -d campus_marketplace"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - campus-marketplace-network
+    # Note: In production, consider using AWS RDS instead
+
+  # ==============================================
+  # Redis Cache Service
+  # ==============================================
+  redis:
+    image: redis:7-alpine
+    container_name: campus-marketplace-redis
+    restart: always
+    command: >
+      redis-server 
+      --appendonly yes 
+      --maxmemory 512mb 
+      --maxmemory-policy allkeys-lru
+      --tcp-keepalive 60
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - campus-marketplace-network
+    # Note: In production, consider using AWS ElastiCache instead
+
+  # ==============================================
+  # Backend Service (Spring Boot)
+  # ALB Target: Port 8080, Health Check: /api/actuator/health
+  # ==============================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: campus-marketplace-backend
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      # Spring Profile
+      SPRING_PROFILES_ACTIVE: prod
+
+      # Database Configuration
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: campus_marketplace
+      DB_APP_USER: ${DB_APP_USER:-cm_app_user}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:-changeme}
+
+      # JWT Configuration (MUST be set in production)
+      JWT_SECRET: ${JWT_SECRET:-9775e9d9fbc257c6990d59a75430a81c2f9ed364e65ec2da8b927bab5444394d}
+      JWT_ACCESS_TOKEN_EXPIRATION: ${JWT_ACCESS_TOKEN_EXPIRATION:-3600000}
+      JWT_REFRESH_TOKEN_EXPIRATION: ${JWT_REFRESH_TOKEN_EXPIRATION:-604800000}
+
+      # Redis Configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+
+      # Email Configuration (SendGrid SMTP)
+      EMAIL_NOTIFICATIONS_ENABLED: ${EMAIL_NOTIFICATIONS_ENABLED:-true}
+      SMTP_HOST: ${SMTP_HOST:-smtp.sendgrid.net}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-apikey}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-your-sendgrid-api-key}
+      EMAIL_FROM: ${EMAIL_FROM:-commandline-commandos@seasonsanta.com}
+
+      # AWS S3 Configuration
+      AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME:-webapp-s3-bucket-2025}
+      AWS_REGION: ${AWS_REGION:-us-west-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-your-aws-access-key-id}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-your-aws-secret-access-key}
+
+      # File Upload Configuration
+      FILE_UPLOAD_MAX_SIZE: ${FILE_UPLOAD_MAX_SIZE:-10485760}
+      FILE_UPLOAD_DIR: /app/uploads
+
+      # JVM Options for production
+      JAVA_OPTS: >-
+        -Xms512m 
+        -Xmx1024m 
+        -XX:+UseG1GC 
+        -XX:MaxGCPauseMillis=200
+        -XX:+HeapDumpOnOutOfMemoryError
+        -XX:HeapDumpPath=/app/logs/heapdump.hprof
+
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      SQL_LOG_LEVEL: ${SQL_LOG_LEVEL:-WARN}
+    volumes:
+      - backend_logs:/app/logs
+      - file_uploads:/app/uploads
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1536M
+        reservations:
+          cpus: '1'
+          memory: 1024M
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    networks:
+      - campus-marketplace-network
+
+  # ==============================================
+  # AI Integration Service
+  # ALB Target: Port 3001, Health Check: /api/health
+  # ==============================================
+  ai-integration-server:
+    build:
+      context: ./ai-integration-server
+      dockerfile: Dockerfile
+    container_name: campus-marketplace-ai-service
+    restart: always
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-your-openai-api-key}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      PORT: 3001
+      # JVM Options
+      JAVA_OPTS: >-
+        -Xms256m 
+        -Xmx512m 
+        -XX:+UseG1GC
+    ports:
+      - "3001:3001"
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 768M
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/api/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 45s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+    networks:
+      - campus-marketplace-network
+
+# ==============================================
+# Named Volumes with Production Labels
+# ==============================================
+volumes:
+  postgres_data:
+    name: campus-marketplace-postgres-data
+    labels:
+      com.campus-marketplace.volume: "database"
+      com.campus-marketplace.backup: "required"
+  backend_logs:
+    name: campus-marketplace-backend-logs
+    labels:
+      com.campus-marketplace.volume: "logs"
+  redis_data:
+    name: campus-marketplace-redis-data
+    labels:
+      com.campus-marketplace.volume: "cache"
+  file_uploads:
+    name: campus-marketplace-file-uploads
+    labels:
+      com.campus-marketplace.volume: "uploads"
+      com.campus-marketplace.backup: "required"
+
+# ==============================================
+# Networks
+# ==============================================
+networks:
+  campus-marketplace-network:
+    name: campus-marketplace-network
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
+

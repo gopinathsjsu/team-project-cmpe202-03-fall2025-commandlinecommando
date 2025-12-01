@@ -593,6 +593,5 @@ When contributing database-related changes:
 
 ---
 
-**Last Updated**: December 2024  
 **Version**: 1.0  
 **Maintainer**: Campus Marketplace Development Team

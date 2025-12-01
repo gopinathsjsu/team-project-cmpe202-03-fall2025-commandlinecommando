@@ -466,7 +466,7 @@ export function ReportListingPage() {
                   <>
                     <button
                       onClick={() => {
-                        handleUpdateReport(selectedReport.reportId, 'RESOLVED');
+                        handleUpdateReport(selectedReport.reportId, 'APPROVED');
                         setSelectedReport(null);
                       }}
                       className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium transition-all duration-200 shadow-sm hover:shadow-md"
@@ -478,7 +478,7 @@ export function ReportListingPage() {
                     </button>
                     <button
                       onClick={() => {
-                        handleUpdateReport(selectedReport.reportId, 'DISMISSED');
+                        handleUpdateReport(selectedReport.reportId, 'REJECTED');
                         setSelectedReport(null);
                       }}
                       className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-medium transition-all duration-200 shadow-sm hover:shadow-md"

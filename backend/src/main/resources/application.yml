@@ -40,14 +40,15 @@ spring:
     baseline-version: 0
     mixed: true  # Allow mixing transactional and non-transactional statements
   
-  # Mail Configuration
+  # Mail Configuration (SendGrid SMTP)
   mail:
-    host: ${SMTP_HOST:smtp.gmail.com}
+    host: ${SMTP_HOST:smtp.sendgrid.net}
     port: ${SMTP_PORT:587}
-    username: ${SMTP_USERNAME:}
-    password: ${SMTP_PASSWORD:}
+    username: ${SMTP_USERNAME:apikey}
+    password: ${SMTP_PASSWORD:your-sendgrid-api-key}
     properties:
       mail:
+        debug: true
         smtp:
           auth: true
           starttls:
@@ -55,7 +56,7 @@ spring:
           connectiontimeout: 5000
           timeout: 5000
           writetimeout: 5000
-    from: ${EMAIL_FROM:noreply@campusmarketplace.com}
+    from: ${EMAIL_FROM:commandline-commandos@seasonsanta.com}
 
 server:
   port: ${PORT:8080}
@@ -64,7 +65,7 @@ server:
 
 # JWT Configuration
 jwt:
-  secret: ${JWT_SECRET:myVerySecureSecretKeyForJWTTokensThatShouldBeAtLeast256BitsLongForHS256AlgorithmUpdated2024}
+  secret: ${JWT_SECRET:9775e9d9fbc257c6990d59a75430a81c2f9ed364e65ec2da8b927bab5444394d}
   access-token:
     expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000}
   refresh-token:
@@ -112,6 +113,15 @@ app:
 # File Upload Configuration
 file:
   upload-dir: ${FILE_UPLOAD_DIR:./uploads}
+
+# AWS S3 Configuration for Image Upload
+aws:
+  s3:
+    bucket-name: ${AWS_S3_BUCKET_NAME:webapp-s3-bucket-2025}
+    region: ${AWS_REGION:us-west-1}
+  credentials:
+    access-key: ${AWS_ACCESS_KEY_ID:your-aws-access-key-id}
+    secret-key: ${AWS_SECRET_ACCESS_KEY:your-aws-secret-access-key}
 
 ---
 # ==============================================
@@ -174,7 +184,7 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: validate  # Flyway handles schema management
+      ddl-auto: none  # Flyway handles schema management
     show-sql: true
     format-sql: true
     properties:
@@ -214,7 +224,7 @@ spring:
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:campus_marketplace}?sslmode=${SSL_MODE:disable}&serverTimezone=UTC
     username: ${DB_APP_USER:cm_app_user}
-    password: ${DB_APP_PASSWORD}
+    password: ${DB_APP_PASSWORD:changeme}
     driver-class-name: org.postgresql.Driver
     hikari:
       auto-commit: false
@@ -310,3 +320,4 @@ logging:
     org.springframework.web: DEBUG
     org.hibernate.SQL: WARN
     com.commandlinecommandos.campusmarketplace: DEBUG
+

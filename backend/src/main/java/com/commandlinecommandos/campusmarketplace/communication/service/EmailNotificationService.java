@@ -4,15 +4,13 @@ import com.commandlinecommandos.campusmarketplace.communication.model.Conversati
 import com.commandlinecommandos.campusmarketplace.communication.model.Message;
 import com.commandlinecommandos.campusmarketplace.communication.model.NotificationPreference;
 import com.commandlinecommandos.campusmarketplace.communication.repository.NotificationPreferenceRepository;
-import com.commandlinecommandos.campusmarketplace.service.ListingsService;
-import com.commandlinecommandos.campusmarketplace.model.Product;
+import com.commandlinecommandos.campusmarketplace.service.EmailService;
+import com.commandlinecommandos.campusmarketplace.model.User;
+import com.commandlinecommandos.campusmarketplace.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.MailException;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +19,7 @@ import java.util.UUID;
 
 /**
  * Service for sending email notifications when messages are sent.
+ * Uses the main EmailService for actual email delivery via SendGrid.
  */
 @Service
 public class EmailNotificationService {
@@ -28,23 +27,21 @@ public class EmailNotificationService {
     private static final Logger logger = LoggerFactory.getLogger(EmailNotificationService.class);
 
     @Autowired(required = false)
-    private JavaMailSender mailSender;
-
-    @Autowired
-    private ListingsService listingsService;
+    private EmailService emailService;
 
     @Autowired
     private NotificationPreferenceRepository preferenceRepository;
 
-    @Value("${spring.mail.from:noreply@campusmarketplace.com}")
-    private String fromEmail;
+    @Autowired
+    private UserRepository userRepository;
 
     @Value("${app.email-notifications.enabled:true}")
     private boolean emailNotificationsEnabled;
 
     /**
      * Sends an email notification to the recipient when a new message is received.
-     * Only sends if the recipient has email notifications enabled.
+     * Sends by default unless user has explicitly disabled notifications.
+     * Falls back to user's email from users table if no notification preference exists.
      * 
      * @param conversation The conversation
      * @param message The message that was sent
@@ -52,8 +49,8 @@ public class EmailNotificationService {
      */
     @Transactional(readOnly = true)
     public void sendMessageNotification(Conversation conversation, Message message, UUID senderId) {
-        if (!emailNotificationsEnabled || mailSender == null) {
-            logger.debug("Email notifications disabled or mail sender not configured");
+        if (!emailNotificationsEnabled || emailService == null) {
+            logger.debug("Email notifications disabled or email service not configured");
             return;
         }
 
@@ -64,58 +61,68 @@ public class EmailNotificationService {
             return;
         }
 
-        // Check if recipient has email notifications enabled
-        Optional<NotificationPreference> preference = preferenceRepository.findByUserId(recipientId);
-        boolean notificationsEnabled = preference.map(NotificationPreference::getEmailNotificationsEnabled).orElse(false);
+        // Get sender information
+        Optional<User> senderOpt = userRepository.findById(senderId);
+        String senderName = senderOpt.map(this::getDisplayName).orElse("Someone");
 
-        if (!notificationsEnabled) {
-            logger.debug("User {} has email notifications disabled", recipientId);
+        // Get recipient user
+        Optional<User> recipientOpt = userRepository.findById(recipientId);
+        if (recipientOpt.isEmpty()) {
+            logger.warn("Recipient user {} not found", recipientId);
+            return;
+        }
+        User recipient = recipientOpt.get();
+
+        // Check notification preferences (default to ENABLED if no preference exists)
+        Optional<NotificationPreference> preference = preferenceRepository.findByUserId(recipientId);
+        
+        // Only skip if user has EXPLICITLY disabled notifications
+        if (preference.isPresent() && !preference.get().getEmailNotificationsEnabled()) {
+            logger.debug("User {} has explicitly disabled email notifications", recipientId);
             return;
         }
 
-        // Get recipient email and firstname
-        String recipientEmail = preference.map(NotificationPreference::getEmail).orElse(null);
-        String recipientFirstName = preference.map(NotificationPreference::getFirstName).orElse(null);
+        // Get email: prefer notification_preferences email, fall back to user's email
+        String recipientEmail = preference
+            .map(NotificationPreference::getEmail)
+            .filter(email -> email != null && !email.trim().isEmpty())
+            .orElse(recipient.getEmail());
+        
+        String recipientFirstName = preference
+            .map(NotificationPreference::getFirstName)
+            .filter(name -> name != null && !name.trim().isEmpty())
+            .orElse(recipient.getFirstName());
 
-        // Get listing title
-        Product listing = listingsService.getListingById(conversation.getListingId());
-        String listingTitle = listing != null ? listing.getTitle() : "listing";
+        if (recipientEmail == null || recipientEmail.trim().isEmpty()) {
+            logger.warn("No email address found for user {}", recipientId);
+            return;
+        }
 
         try {
-            SimpleMailMessage email = new SimpleMailMessage();
-            email.setFrom(fromEmail);
-            email.setTo(recipientEmail);
-            email.setSubject(buildSubject(listingTitle));
-            email.setText(buildMessageBody(recipientFirstName, listingTitle, message.getContent()));
-            
-            mailSender.send(email);
-            logger.info("Email notification sent to {} for message {}", recipientEmail, message.getMessageId());
-        } catch (MailException e) {
-            logger.error("Failed to send email notification to user {}: {}", recipientEmail, e.getMessage(), e);
+            logger.info("Sending message notification to {} from {}", recipientEmail, senderName);
+            emailService.sendMessageReceivedEmail(
+                recipientEmail,
+                recipientFirstName,
+                senderName,
+                message.getContent()
+            );
+            logger.info("✅ Message notification email sent to {} for message {} from {}", 
+                recipientEmail, message.getMessageId(), senderName);
+        } catch (Exception e) {
+            logger.error("❌ Failed to send message notification email to {}: {}", recipientEmail, e.getMessage(), e);
         }
     }
 
     /**
-     * Builds the email subject line.
+     * Gets the display name for a user (firstName lastName or username).
      */
-    private String buildSubject(String listingTitle) {
-        return String.format("New message about your %s listing", listingTitle);
-    }
-
-    /**
-     * Builds the email message body.
-     */
-    private String buildMessageBody(String recipientFirstName, String listingTitle, String messageContent) {
-        String recipient = recipientFirstName != null && !recipientFirstName.trim().isEmpty() ? recipientFirstName : "there";
-        
-        return String.format(
-            "Hi %s,\n\n" +
-            "You have received a new message about your %s listing:\n\n" +
-            "\"%s\"\n\n" +
-            "You can reply to this message by visiting the conversation in the Campus Marketplace.\n\n" +
-            "Best regards,\n" +
-            "Campus Marketplace Team",
-            recipient, listingTitle, messageContent
-        );
+    private String getDisplayName(User user) {
+        if (user.getFirstName() != null && !user.getFirstName().trim().isEmpty()) {
+            if (user.getLastName() != null && !user.getLastName().trim().isEmpty()) {
+                return user.getFirstName() + " " + user.getLastName();
+            }
+            return user.getFirstName();
+        }
+        return user.getUsername();
     }
 }

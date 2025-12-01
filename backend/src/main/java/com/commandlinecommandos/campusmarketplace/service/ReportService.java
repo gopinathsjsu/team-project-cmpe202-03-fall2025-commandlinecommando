@@ -23,6 +23,8 @@ import java.util.UUID;
 @Transactional
 public class ReportService {
     
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(ReportService.class);
+    
     @Autowired
     private UserReportRepository reportRepository;
     
@@ -31,6 +33,9 @@ public class ReportService {
     
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired(required = false)
+    private EmailService emailService;
     
     /**
      * Submit a report
@@ -119,29 +124,77 @@ public class ReportService {
     
     /**
      * Approve report and take action
+     * When a report is approved, it means the report is valid and action should be taken
      */
     public UserReport approveReport(UUID reportId, User admin, String resolutionNotes) {
         UserReport report = getReport(reportId);
         report.approve(admin, resolutionNotes);
-        
+
         // Take action based on report type
         if (report.getReportedProduct() != null) {
-            // Flag or deactivate the product
+            // Deactivate and reject the product to remove it from marketplace
             Product product = report.getReportedProduct();
-            product.setModerationStatus(ModerationStatus.FLAGGED);
+            product.setActive(false);  // Hide from marketplace
+            product.setModerationStatus(ModerationStatus.REJECTED);  // Mark as rejected by admin
             productRepository.save(product);
+            
+            // Send email notification to seller
+            sendListingRejectionEmail(product, resolutionNotes);
         }
-        
+
+        if (report.getReportedUser() != null) {
+            // TODO: Implement action against reported user (e.g., suspension, warning)
+            // For now, only the report status is updated
+        }
+
         return reportRepository.save(report);
     }
     
     /**
-     * Reject report (no action needed)
+     * Reject report and remove the listing
+     * When admin rejects a listing, it should be removed from marketplace
      */
     public UserReport rejectReport(UUID reportId, User admin, String resolutionNotes) {
         UserReport report = getReport(reportId);
         report.reject(admin, resolutionNotes);
+
+        // Take action to remove the listing from marketplace
+        if (report.getReportedProduct() != null) {
+            Product product = report.getReportedProduct();
+            product.setActive(false);  // Hide from marketplace
+            product.setModerationStatus(ModerationStatus.REJECTED);  // Mark as rejected by admin
+            productRepository.save(product);
+            
+            // Send email notification to seller
+            sendListingRejectionEmail(product, resolutionNotes);
+        }
+
         return reportRepository.save(report);
+    }
+    
+    /**
+     * Send email notification when a listing is rejected
+     */
+    private void sendListingRejectionEmail(Product product, String reason) {
+        if (emailService == null) {
+            return;
+        }
+        
+        try {
+            User seller = product.getSeller();
+            if (seller != null && seller.getEmail() != null) {
+                emailService.sendListingRejectedEmail(
+                    seller.getEmail(),
+                    seller.getUsername(),
+                    product.getTitle(),
+                    reason
+                );
+                logger.info("Listing rejection email sent to {} for product {}", 
+                    seller.getEmail(), product.getProductId());
+            }
+        } catch (Exception e) {
+            logger.error("Failed to send listing rejection email: {}", e.getMessage());
+        }
     }
     
     /**

@@ -1,18 +1,26 @@
-# Campus Marketplace – Unified Backend
+# Campus Marketplace
 
-A campus-exclusive marketplace for SJSU students to buy and sell items such as textbooks, electronics, gadgets, and essentials.  
-Our team built a unified backend system by combining multiple services into one clean and modular architecture.
+A campus marketplace for SJSU students to buy and sell items such as textbooks, electronics, gadgets, and essentials. Our team built a full stack web application system by combining multiple services into one clean and modular architecture.
 
 ---
 
 ## Team Name
+
 **Commandline Commandos**
 
 ## Team Members
-1. Vineet Kumar  
-2. Sakshat Patil  
-3. Wilson Huang  
-4. Lam Nguyen  
+
+| Name | Contribution Summary |
+|------|----------------------|
+| **Vineet Kumar** | Authentication & Authorization Backend Dev, AI Microservice Development, Backend API's integration with Frontend, Initial database design and seed data generation, AWS S3 integration with policies, DevOps & Docker integration between services, Frontend & Backend proxy integration via nginx, AWS ALB Integreation, Team Leadership |
+| **Sakshat Patil** | Frontend development, React components, UI/UX design, Marketplace page, Listing details |
+| **Lam Nguyen** | Frontend and Backend components, User authentication flow, Profile management, Backend Testing |
+| **Wilson Huang** | Backend services, Chat/Messaging system, Search functionality, Admin dashboard API |
+
+## Project Links
+
+- **Project Journal:** [GitHub Wiki](https://github.com/your-repo/wiki) *(Update with actual link)*
+- **Sprint Board:** [Google Sheet](https://docs.google.com/spreadsheets/d/your-sheet-id) *(Update with actual link)*
 
 ---
 
@@ -21,10 +29,10 @@ To divide the work clearly, each team member took responsibility for one major p
 
 | Team Member | Component Owned |
 |-------------|-----------------|
+| **Vineet** | Authentication Authorization Backend Dev, Ask AI Feature Dev, AWS Architecture Design, Infrastructure Deployment, S3 File Storage, ALB Integration, Leading Team & Coordination |
 | **Lam** | User Management System (backend), Search Integration, Authentication |
-| **Vineet** | AWS Deployment, Infrastructure Setup, ChatGPT Search Feature |
-| **Wilson** | Listing API, Database Integration, File Upload Service |
 | **Sakshat** | Frontend UI (Login, Listings, Management), E2E UI Integration |
+| **Wilson** | Listing API, Database Integration, File Upload Service |
 
 ---
 
@@ -44,148 +52,360 @@ All project documentation is maintained inside the `/project-journal` folder.
 
 # Quick Start
 
-### Option 1: Docker Compose (Recommended)
+### Using Docker (Recommended)
+
 ```bash
-docker-compose up --build
+# Copy environment template (defaults are already set)
+cp env.example .env
+
+# Start all services (includes AI service by default)
+docker-compose -f docker-compose.prod.yml up -d
+
+# Frontend: http://localhost
+# Backend API: http://localhost:8080/api
+# AI Service: http://localhost:3001/api
+# Database: localhost:5432
+# Redis: localhost:6379
 ```
 
-Backend will be available at **http://localhost:8080**.  
-PostgreSQL, Redis, and migrations start automatically.
+**Production Docker Features:**
+- Resource limits (CPU/Memory) to prevent runaway processes
+- Log rotation (10-50MB max per service)
+- Optimized health checks for ALB
+- JVM tuning for production workloads
+- Network isolation with custom subnet
+- Volume labels for backup management
 
-### Option 2: Local Development
+### Local Development
+
 ```bash
-docker-compose up -d postgres redis
+# 1. Start database and Redis
+docker-compose -f docker-compose.prod.yml up -d postgres redis
+
+# 2. Start backend
 cd backend
-./mvnw spring-boot:run
+cp ../env.example .env  # Defaults are already set
+./run-with-postgres.sh
+
+# 3. Start frontend
+cd frontend
+npm install
+npm run dev
 ```
+
+### Test Accounts
+
+| Username | Password | Role |
+|----------|----------|------|
+| test_buyer | password123 | Buyer/Seller |
+| test_admin | password123 | Admin |
 
 ---
 
-## Test Credentials
+## Architecture
 
-| Username | Password | Roles | Use Case |
-|----------|----------|-------|----------|
-| `test_buyer` | `password123` | BUYER, SELLER | General user testing |
-| `test_admin` | `password123` | ADMIN | Admin functionality testing |
+![AWS Architecture Diagram](aws-deployment-images/aws-architecture.png)
 
----
-
-# API Documentation
-
-Full API reference is available in:
-
-📌 **`docs/api/BACKEND_API_DOCUMENTATION.md`**
-
-### Major API Modules:
-
-| Module | Path | Description |
-|--------|------|-------------|
-| Auth | `/api/auth/*` | Login, register, tokens |
-| Users | `/api/users/*` | Profile management |
-| Listings | `/api/listings/*` | Marketplace item CRUD |
-| Search | `/api/search/*` | Search, autocomplete |
-| Chat | `/api/chat/*` | Buyer–seller messaging |
-| Reports | `/api/reports/*` | Listing/content reports |
-| Admin | `/api/admin/*` | Admin tools |
-
----
-
-# Project Structure
+**Detailed AWS Architecture Diagram** showing the complete deployment with Application Load Balancer, EC2 instance, Docker containers, AWS managed services (RDS, ElastiCache, S3), and external integrations.
 
 ```
-backend/                 # Unified Spring Boot backend (port 8080)
-frontend/                # React/Vite frontend
-ai-integration-server/   # Optional AI microservice
-db/                      # Flyway SQL migrations and DB scripts
-docs/                    # API, deployment, testing docs
-docker-compose.yml       # Local dev environment
-project-journal/         # Scrum reports, XP values, sprint artifacts
+┌─────────────────────────────────────────────────────────────────┐
+│                         Users / Internet                        │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    AWS Application Load Balancer (ALB)          │
+│                    HTTP (80) / HTTPS (443)                      │
+│                    Health Checks: /health, /api/actuator/health │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        │                     │                     │
+        ▼                     ▼                     ▼
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│   Frontend   │    │   Backend    │    │ AI Service   │
+│  (Nginx:80)  │    │ (Spring:8080)│    │  (Java:3001) │
+└──────────────┘    └──────────────┘    └──────────────┘
+        │                     │                     │
+        └─────────────────────┼─────────────────────┘
+                              │
+        ┌─────────────────────┼─────────────────────┐
+        │                     │                     │
+        ▼                     ▼                     ▼
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│  PostgreSQL  │    │    Redis     │    │   AWS S3     │
+│  (Port 5432) │    │  (Port 6379) │    │   Storage    │
+│   Database   │    │    Cache     │    │  (Images)    │
+└──────────────┘    └──────────────┘    └──────────────┘
+        │                     │                     │
+        └─────────────────────┴─────────────────────┘
+                              │
+                    ┌─────────┴──────────┐
+                    │   AWS EC2 Instance │
+                    │  Docker Containers │
+                    │  (All Services)    │
+                    └────────────────────┘
+                              │
+                    ┌─────────┴──────────┐
+                    │   SendGrid SMTP    │
+                    │  (Email Service)   │
+                    └────────────────────┘
 ```
 
----
-
-# Architecture (Simplified)
+### Local Development
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Unified Backend (Spring Boot)            │
-├──────────┬────────────┬────────────┬────────────────────────┤
-│  Auth    │  Listings  │   Chat     │        Admin           │
-├──────────┴────────────┴────────────┴────────────────────────┤
-│              Shared Services, Security, DTOs                │
-├─────────────────────────────────────────────────────────────┤
-│                PostgreSQL + Redis + Flyway                  │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                         Frontend                                 │
+│              React + Nginx (Docker: Port 80)                     │
+│              React + Vite (Local Dev: Port 5173)                 │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Unified Backend API                           │
+│                   Spring Boot (Port 8080)                        │
+├─────────────┬─────────────┬─────────────┬──────────────────────┤
+│    Auth     │  Listings   │    Chat     │       Admin          │
+│   Module    │   Module    │   Module    │      Module          │
+├─────────────┴─────────────┴─────────────┴──────────────────────┤
+│                    Shared Services                               │
+│         JWT Security │ Email Service │ S3 Storage               │
+└─────────────────────────────────────────────────────────────────┘
+        │                       │                    │
+        ▼                       ▼                    ▼
+┌──────────────┐      ┌──────────────┐      ┌──────────────┐
+│  PostgreSQL  │      │    Redis     │      │   AWS S3     │
+│   Database   │      │    Cache     │      │   Storage    │
+│  (Port 5432) │      │  (Port 6379) │      │  (Images)     │
+│  Exposed     │      │   Exposed    │      │              │
+└──────────────┘      └──────────────┘      └──────────────┘
 ```
+
+### Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | React 19, TypeScript, Vite, Tailwind CSS |
+| Backend | Spring Boot 3.5, Java 21, Spring Security |
+| Database | PostgreSQL 16, Flyway migrations |
+| Cache | Redis 7 |
+| Storage | AWS S3 |
+| Email | SendGrid SMTP |
+| Auth | JWT (Access + Refresh tokens) |
 
 ---
 
 # Features (Short Summary)
 
-### 🔐 Authentication
-- JWT access + refresh tokens  
-- Role-based access (Buyer / Seller / Admin)  
-- Password reset and profile management  
+### User Authentication
+- JWT-based login with access and refresh tokens
+- User registration with email verification
+- Password reset via email
+- Role-based access control (Buyer, Seller, Admin)
 
-### 📦 Marketplace
-- Listing creation with photo upload  
-- Search with filters, sorting, autocomplete  
-- Saved items, reports, admin moderation  
+### Marketplace
+- Create, edit, and delete product listings
+- Browse listings with category filters
+- Full-text search with autocomplete
+- Multiple images per listing (AWS S3)
+- Favorites/wishlist functionality
 
-### 💬 Chat
-- Buyer–seller chat  
-- Unread messages  
-- Conversation history  
+### Messaging
+- Real-time chat between buyers and sellers
+- Conversation threads per listing
+- Unread message indicators
+- Email notifications for new messages
 
-### 🛠 Admin Tools
-- User suspension/reactivation  
-- Report moderation  
-- Basic analytics  
+### Email Notifications
+- Listing created confirmation
+- New message alerts
+- Listing rejection notices
+
+### Admin Dashboard
+- User management (suspend, reactivate, delete)
+- Content moderation and reports
+- Platform statistics
 
 ---
 
-# Development Commands
+## API Endpoints
 
-### Run Backend Tests
+Base URL: `http://localhost:8080/api`
+
+### Authentication
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/auth/login` | User login |
+| POST | `/auth/register` | User registration |
+| POST | `/auth/refresh` | Refresh access token |
+| POST | `/auth/logout` | Logout user |
+| POST | `/auth/forgot-password` | Request password reset |
+
+### Listings
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/listings` | Get all listings (paginated) |
+| GET | `/listings/{id}` | Get single listing |
+| POST | `/listings` | Create new listing |
+| PUT | `/listings/{id}` | Update listing |
+| DELETE | `/listings/{id}` | Delete listing |
+
+### Images
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/images/upload` | Upload images |
+| POST | `/images/listing/{id}` | Upload to specific listing |
+| DELETE | `/images/{id}` | Delete image |
+
+### Chat
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/chat/conversations` | Get user conversations |
+| POST | `/chat/conversations` | Start new conversation |
+| GET | `/chat/conversations/{id}/messages` | Get messages |
+| POST | `/chat/conversations/{id}/messages` | Send message |
+
+### Users
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/users/me` | Get current user profile |
+| PUT | `/users/me` | Update profile |
+| GET | `/users/me/listings` | Get user's listings |
+
+### Favorites
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/favorites` | Get user favorites |
+| POST | `/favorites/{listingId}` | Add to favorites |
+| DELETE | `/favorites/{listingId}` | Remove from favorites |
+
+### Search
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/search` | Search listings |
+| GET | `/search/autocomplete` | Search suggestions |
+
+### Admin
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/admin/dashboard` | Get statistics |
+| GET | `/admin/users` | Get all users |
+| POST | `/admin/users/{id}/suspend` | Suspend user |
+| POST | `/admin/moderate/{listingId}` | Moderate listing |
+
+### Reports
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/reports` | Submit report |
+| GET | `/admin/reports` | Get all reports (admin) |
+
+See [API Documentation](docs/api/README.md) for complete reference with request/response examples.
+
+---
+
+## Project Structure
+
+```
+├── backend/                 # Spring Boot API (Port 8080)
+├── frontend/                # React + Vite + TypeScript
+├── ai-integration-server/   # AI chat service (Port 3001)
+├── db/                      # Database migrations and scripts
+├── docs/                    # Documentation
+└── mockdata/                # Mock data for frontend development
+```
+
+---
+
+## Environment Variables
+
+All environment variables have **defaults already configured** in `env.example`. Simply copy it to `.env`:
+
+```bash
+cp env.example .env
+```
+
+### Key Environment Variables (with defaults)
+
+| Variable | Default Value | Description |
+|----------|---------------|-------------|
+| `DB_APP_USER` | `cm_app_user` | Database username |
+| `DB_APP_PASSWORD` | `changeme` | Database password |
+| `JWT_SECRET` | `9775e9d9fbc257c6990d59a75430a81c2f9ed364e65ec2da8b927bab5444394d` | JWT signing secret |
+| `AWS_S3_BUCKET_NAME` | `webapp-s3-bucket-2025` | S3 bucket for images |
+| `AWS_ACCESS_KEY_ID` | `your-aws-access-key-id` | AWS access key |
+| `AWS_SECRET_ACCESS_KEY` | `your-aws-secret-access-key` | AWS secret key |
+| `SMTP_PASSWORD` | `your-sendgrid-api-key` | SendGrid API key |
+| `EMAIL_FROM` | `commandline-commandos@seasonsanta.com` | Email sender |
+| `OPENAI_API_KEY` | `your-openai-api-key` | OpenAI API key |
+
+**Note:** For production, override these values in your `.env` file or set them as environment variables.
+
+---
+
+## Development
+
+### Run Tests
+
 ```bash
 cd backend
 ./mvnw test
 ```
 
-### Flyway Migration Commands
+### Database Commands
+
 ```bash
-./mvnw flyway:info
-./mvnw flyway:migrate
+cd backend
+./setup-database.sh      # Create database
+./teardown-database.sh   # Remove database
+./mvnw flyway:migrate    # Run migrations
 ```
 
 ### Docker Commands
+
 ```bash
-docker-compose up -d
-docker-compose down -v
-docker-compose logs -f backend
+# Start all services (AI service included by default)
+docker-compose -f docker-compose.prod.yml up -d
+
+# View logs
+docker-compose -f docker-compose.prod.yml logs -f
+
+# View specific service logs
+docker-compose -f docker-compose.prod.yml logs -f backend
+
+# Stop services
+docker-compose -f docker-compose.prod.yml down
+
+# Stop and remove volumes (deletes data)
+docker-compose -f docker-compose.prod.yml down -v
+
+# Rebuild and restart
+docker-compose -f docker-compose.prod.yml up -d --build
 ```
 
 ---
 
-# Troubleshooting
+## Documentation
 
-| Issue | Fix |
-|-------|------|
-| Port 8080 busy | Stop other backend instances |
-| DB connection error | `docker-compose up -d postgres redis` |
-| Schema mismatch | `docker-compose down -v && docker-compose up --build` |
-| Build keeps restarting | Reset Postgres volumes and rebuild backend |
-
----
-
-# Contributing
-
-1. Create a feature branch  
-2. Commit with clear messages  
-3. Run tests before PR  
-4. Submit PR for review  
+| Document | Description |
+|----------|-------------|
+| [Backend README](backend/README.md) | Backend setup and API details |
+| [Frontend README](frontend/README.md) | Frontend development guide |
+| [Database README](db/README.md) | Database setup and migrations |
+| [API Documentation](docs/api/README.md) | Complete API reference |
+| [Deployment Guide](docs/DEPLOYMENT_GUIDE.md) | Production deployment |
 
 ---
 
-# Links  
-- **GitHub Classroom**: https://classroom.github.com/a/kvgvOCnV  
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| Port 80 in use | `sudo lsof -ti:80 \| xargs kill -9` or change `FRONTEND_PORT` in `.env` |
+| Port 8080 in use | `lsof -ti:8080 \| xargs kill -9` or change `BACKEND_PORT` in `.env` |
+| Database connection failed | `docker-compose -f docker-compose.prod.yml up -d postgres redis` |
+| Containers unhealthy | Check logs: `docker-compose -f docker-compose.prod.yml logs` |
+| Out of memory | Increase Docker Desktop memory limits or reduce resource limits in `docker-compose.prod.yml` |
+
+---

@@ -1,191 +1,110 @@
-# AI Integration Server (Java)
+# AI Integration Server
 
-A Spring Boot microservice that integrates with OpenAI's GPT-4 Mini to provide AI-powered chat functionality for the Campus Marketplace application.
+A Spring Boot service that provides AI-powered chat functionality for the Campus Marketplace using OpenAI's GPT models.
 
 ## Overview
 
-This service provides intelligent assistance to students using the campus marketplace by:
-- Answering questions about available products
-- Providing product recommendations
-- Comparing prices across items
-- Analyzing reported listings
-- Offering marketplace insights
+Handles AI chat requests from the frontend. Users can ask about listings, get recommendations, or get help with the marketplace.
 
-## Technology Stack
+## Quick Start
 
-- **Java 17**
-- **Spring Boot 3.5.6**
-- **OpenAI Java SDK 0.18.2**
-- **Maven**
-- **Lombok**
+### Prerequisites
 
-## Prerequisites
+- Java 17+
+- Maven
+- OpenAI API key
 
-- Java 17 or higher
-- Maven 3.6+
-- OpenAI API Key
-
-## Configuration
-
-1. Copy the example environment file:
-```bash
-cp .env.example .env
-```
-
-2. Add your OpenAI API key to the `.env` file:
-```
-OPENAI_API_KEY=your-api-key-here
-```
-
-## Building the Application
+### Running Locally
 
 ```bash
-./mvnw clean install
-```
+# Set your OpenAI API key
+export OPENAI_API_KEY=sk-your-api-key
 
-## Running the Application
-
-### Using Maven
-```bash
+# Run the server
 ./mvnw spring-boot:run
 ```
 
-### Using Java
-```bash
-java -jar target/ai-integration-server-0.0.1-SNAPSHOT.jar
-```
+The server starts on port 3001.
 
-The server will start on port **3001** by default.
+### Using Docker
+
+```bash
+# From project root, start all services (AI service starts by default)
+docker-compose -f docker-compose.prod.yml up -d
+
+# Or start only the AI service
+docker-compose -f docker-compose.prod.yml up -d ai-integration-server
+```
 
 ## API Endpoints
 
-### POST /api/chat
-Process user messages and return AI-generated responses.
+### Health Check
 
-**Request Body:**
-```json
+```
+GET /api/health
+```
+
+Returns service health status.
+
+### Chat
+
+```
+POST /api/ai/chat
+Content-Type: application/json
+
 {
   "messages": [
-    { "role": "user", "content": "What laptops are available?" },
-    { "role": "assistant", "content": "I found 3 laptops..." }
-  ],
-  "listingsContext": "Current marketplace listings...",
-  "reportsContext": "Reported listings data..."
+    {"role": "user", "content": "What electronics are available?"}
+  ]
 }
 ```
 
-**Response:**
+Response:
+
 ```json
 {
-  "message": "AI-generated response text"
+  "response": "I can help you find electronics...",
+  "timestamp": "2024-11-30T12:00:00Z"
 }
 ```
 
-### GET /api/health
-Health check endpoint.
+## Configuration
 
-**Response:**
-```json
-{
-  "status": "ok",
-  "hasApiKey": true
-}
-```
-
-## Environment Variables
-
-| Variable | Description | Required | Default |
-|----------|-------------|----------|---------|
-| `OPENAI_API_KEY` | OpenAI API authentication key | Yes | - |
-| `server.port` | Server port | No | 3001 |
+| Variable | Description | Default |
+|----------|-------------|---------|
+| OPENAI_API_KEY | Your OpenAI API key | Required |
+| PORT | Server port | 3001 |
+| LOG_LEVEL | Logging level | INFO |
 
 ## Project Structure
 
 ```
-ai-integration-server/
-├── src/
-│   └── main/
-│       ├── java/com/commandlinecommandos/aiintegration/
-│       │   ├── AiIntegrationServerApplication.java
-│       │   ├── config/
-│       │   │   └── OpenAIConfig.java
-│       │   ├── controller/
-│       │   │   └── AIController.java
-│       │   ├── service/
-│       │   │   └── AIService.java
-│       │   └── dto/
-│       │       ├── ChatMessage.java
-│       │       ├── ChatRequest.java
-│       │       ├── ChatResponse.java
-│       │       ├── HealthResponse.java
-│       │       └── ErrorResponse.java
-│       └── resources/
-│           └── application.properties
-├── pom.xml
-├── .env.example
-└── README.md
+src/main/java/com/commandlinecommandos/aiintegration/
+├── AiIntegrationServerApplication.java   # Main application
+├── config/
+│   └── OpenAIConfig.java                 # OpenAI client configuration
+├── controller/
+│   └── AIController.java                 # REST endpoints
+├── dto/
+│   ├── ChatRequest.java                  # Request model
+│   ├── ChatResponse.java                 # Response model
+│   └── ChatMessage.java                  # Message model
+└── service/
+    └── AIService.java                    # OpenAI integration logic
 ```
 
-## Integration with Frontend
+## Frontend Integration
 
-The frontend component at `frontend/src/components/AskAIPage.tsx` communicates with this service via the `/api/chat` endpoint. It sends:
-- Conversation history
-- Current marketplace listings context
-- Reported listings context
+The frontend connects to this service via the `VITE_AI_API_SERVICE_URL` environment variable:
 
-## Error Handling
-
-The service handles the following error scenarios:
-- Missing OpenAI API key (returns 500 with configuration message)
-- OpenAI API failures (returns 500 with error details)
-- Invalid request data (returns appropriate error response)
-
-## Logging
-
-Logs are configured at DEBUG level for the application package and INFO for root. Check the console output for request/response details and errors.
-
-## Development
-
-### Hot Reload
-Spring Boot DevTools is included for automatic restarts during development.
-
-### Testing
-Run tests with:
-```bash
-./mvnw test
+```typescript
+// frontend/src/api/config.ts
+AI_SERVICE_URL: import.meta.env.VITE_AI_API_SERVICE_URL || 'http://localhost:3001'
 ```
 
-## Production Deployment
+## Notes
 
-1. Build the JAR file:
-```bash
-./mvnw clean package
-```
+- This service is optional. The main application works without it.
+- OpenAI API calls are rate-limited and billed per token.
+- Responses are cached where appropriate to reduce API costs.
 
-2. Run with production profile:
-```bash
-java -jar target/ai-integration-server-0.0.1-SNAPSHOT.jar
-```
-
-3. Ensure `OPENAI_API_KEY` is set in your environment variables.
-
-## Docker Support
-
-To add Docker support, create a `Dockerfile`:
-```dockerfile
-FROM openjdk:17-jdk-slim
-WORKDIR /app
-COPY target/ai-integration-server-0.0.1-SNAPSHOT.jar app.jar
-EXPOSE 3001
-ENTRYPOINT ["java", "-jar", "app.jar"]
-```
-
-Build and run:
-```bash
-docker build -t ai-integration-server .
-docker run -p 3001:3001 -e OPENAI_API_KEY=your-key ai-integration-server
-```
-
-## License
-
-Part of the Campus Marketplace project by Command Line Commandos.

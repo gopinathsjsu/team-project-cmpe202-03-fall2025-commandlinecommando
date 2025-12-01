@@ -41,7 +41,8 @@ interface Analytics {
 }
 
 interface User {
-  userId: string;
+  id?: string;  // Backend returns "id" due to @JsonProperty
+  userId?: string;  // Keep for backwards compatibility
   username: string;
   email: string;
   firstName?: string;
@@ -109,7 +110,7 @@ export function AdminDashboard() {
       alert('Please enter a listing ID');
       return;
     }
-    
+
     try {
       await adminApi.moderateListing(moderateListingId, moderateAction);
       alert(`Listing ${moderateListingId} has been ${moderateAction}d`);
@@ -340,7 +341,7 @@ export function AdminDashboard() {
                   </thead>
                   <tbody className="divide-y divide-white/10">
                     {users.map(user => (
-                      <tr key={user.userId} className="hover:bg-white/30 dark:hover:bg-white/5 transition-colors">
+                      <tr key={user.id || user.userId} className="hover:bg-white/30 dark:hover:bg-white/5 transition-colors">
                         <td className="px-6 py-4">
                           <div>
                             <p className="font-medium">{user.firstName} {user.lastName}</p>
@@ -351,13 +352,12 @@ export function AdminDashboard() {
                         <td className="px-6 py-4">
                           <div className="flex flex-wrap gap-1">
                             {(user.roles || []).map(role => (
-                              <span 
-                                key={role} 
-                                className={`badge ${
-                                  role === 'ADMIN' ? 'badge-primary' : 
-                                  role === 'SELLER' ? 'badge-warning' : 
-                                  'badge-success'
-                                }`}
+                              <span
+                                key={role}
+                                className={`badge ${role === 'ADMIN' ? 'badge-primary' :
+                                  role === 'SELLER' ? 'badge-warning' :
+                                    'badge-success'
+                                  }`}
                               >
                                 {role}
                               </span>
@@ -374,7 +374,7 @@ export function AdminDashboard() {
                         </td>
                         <td className="px-6 py-4">
                           <button
-                            onClick={() => handleDeleteUser(user.userId)}
+                            onClick={() => handleDeleteUser(user.id || user.userId || '')}
                             className="nav-button text-xs hover:bg-red-500/20 hover:text-red-500 hover:border-red-500/30"
                           >
                             Delete

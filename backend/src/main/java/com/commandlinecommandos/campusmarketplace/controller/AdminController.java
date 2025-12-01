@@ -3,12 +3,14 @@ package com.commandlinecommandos.campusmarketplace.controller;
 import com.commandlinecommandos.campusmarketplace.dto.CreateAdminRequest;
 import com.commandlinecommandos.campusmarketplace.dto.UserResponse;
 import com.commandlinecommandos.campusmarketplace.model.ModerationStatus;
+import com.commandlinecommandos.campusmarketplace.model.Product;
 import com.commandlinecommandos.campusmarketplace.model.User;
 import com.commandlinecommandos.campusmarketplace.model.UserRole;
 import com.commandlinecommandos.campusmarketplace.repository.ProductRepository;
 import com.commandlinecommandos.campusmarketplace.repository.UserRepository;
 import com.commandlinecommandos.campusmarketplace.repository.UserReportRepository;
 import com.commandlinecommandos.campusmarketplace.security.RequireRole;
+import com.commandlinecommandos.campusmarketplace.service.EmailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +50,8 @@ public class AdminController {
     @Autowired
     private PasswordEncoder passwordEncoder;
     
+    @Autowired(required = false)
+    private EmailService emailService;
     
     /**
      * Get admin dashboard with real statistics
@@ -80,9 +84,10 @@ public class AdminController {
     @RequireRole(UserRole.ADMIN)
     public ResponseEntity<?> moderateListing(
             @PathVariable UUID listingId, 
-            @RequestParam String action) {
+            @RequestParam String action,
+            @RequestParam(required = false) String reason) {
         try {
-            var product = productRepository.findById(listingId)
+            Product product = productRepository.findById(listingId)
                 .orElseThrow(() -> new RuntimeException("Listing not found"));
             
             ModerationStatus newStatus;
@@ -103,6 +108,24 @@ public class AdminController {
             
             product.setModerationStatus(newStatus);
             productRepository.save(product);
+            
+            // Send email notification for rejected listings
+            if (newStatus == ModerationStatus.REJECTED && emailService != null) {
+                try {
+                    User seller = product.getSeller();
+                    if (seller != null && seller.getEmail() != null) {
+                        emailService.sendListingRejectedEmail(
+                            seller.getEmail(),
+                            seller.getUsername(),
+                            product.getTitle(),
+                            reason
+                        );
+                        logger.info("Rejection email sent to {} for listing {}", seller.getEmail(), listingId);
+                    }
+                } catch (Exception e) {
+                    logger.error("Failed to send rejection email: {}", e.getMessage());
+                }
+            }
             
             Map<String, Object> response = new HashMap<>();
             response.put("message", String.format("Listing %s has been %s", listingId, action + "d"));

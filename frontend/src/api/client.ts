@@ -1,9 +1,15 @@
 import axios from 'axios'
 
 // Vite exposes env vars on import.meta.env
-const baseURL = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_BACKEND_API_BASE_URL)
-  ? String(import.meta.env.VITE_BACKEND_API_BASE_URL)
-  : 'http://localhost:8080/api'
+// Use relative path by default (Nginx will proxy /api/ to backend:8080)
+// For local development, set VITE_BACKEND_API_BASE_URL=http://localhost:8080/api
+const baseURL = (typeof import.meta !== 'undefined' && import.meta.env && (
+  import.meta.env.VITE_BACKEND_API_BASE_URL || 
+  import.meta.env.VITE_API_BASE_URL || 
+  import.meta.env.VITE_API_URL
+))
+  ? String(import.meta.env.VITE_BACKEND_API_BASE_URL || import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL)
+  : '/api'
 
 const api = axios.create({
   baseURL,

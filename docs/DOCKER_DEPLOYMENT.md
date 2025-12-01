@@ -1,24 +1,30 @@
 # Docker Deployment Guide
 
-This guide explains how to deploy the Campus Marketplace application using Docker and Docker Compose with separate containers for the backend service and PostgreSQL database.
+Deploy the Campus Marketplace application using Docker and Docker Compose. The stack includes frontend (React + Nginx), backend (Spring Boot), AI service, PostgreSQL database, and Redis cache.
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────┐
-│         Docker Compose Network              │
-│                                             │
-│  ┌──────────────┐      ┌───────────────┐    │
-│  │   Backend    │─────▶│  PostgreSQL   │    │
-│  │  Container   │      │   Container   │    │
-│  │ (Spring Boot)│      │   (DB Only)   │    │
-│  │  Port: 8080  │      │  Port: 5432   │    │
-│  └──────────────┘      └───────────────┘    │
-│         ▲                       ▲           │
-│         │                       │           │
-│    backend_logs          postgres_data      │
-│      (volume)              (volume)         │
-└─────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│              Docker Compose Network                          │
+│                                                              │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐        │
+│  │  Frontend    │  │   Backend    │  │ AI Service  │        │
+│  │  (Nginx:80)  │  │ (Spring:8080)│  │ (Java:3001) │        │
+│  └──────┬───────┘  └──────┬───────┘  └──────────────┘        │
+│         │                  │                                  │
+│         └──────────┬────────┘                                  │
+│                    │                                           │
+│         ┌──────────┴──────────┐                               │
+│         │                      │                               │
+│  ┌──────▼──────┐      ┌───────▼──────┐                        │
+│  │  PostgreSQL │      │    Redis     │                        │
+│  │  (Port 5432)│      │  (Port 6379) │                        │
+│  └─────────────┘      └──────────────┘                        │
+│                                                               │
+│  Volumes: postgres_data, redis_data, backend_logs,           │
+│           file_uploads                                       │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ## Prerequisites
@@ -46,48 +52,56 @@ cd CLONED_GIT_REPOSITORY
 ### 2. Setup Environment Variables
 
 ```bash
-# Copy the template
-cp .env.docker.example .env
+# Copy the template (defaults are already set)
+cp env.example .env
 
-# Edit the file and update passwords
+# Edit the file if you need to override any defaults
 nano .env
 ```
 
-**Required Changes:**
-- `DB_APP_PASSWORD`: Set a strong database password
-- `JWT_SECRET`: Generate using `openssl rand -base64 64`
+Default values are already configured, so you can skip editing `.env` if the defaults work for you.
 
 ### 3. Start Services
 
 ```bash
-# Start all services in detached mode
-docker-compose up -d
+# Start all services in detached mode (includes frontend, backend, AI service, database, Redis)
+docker-compose -f docker-compose.prod.yml up -d
 
 # View logs
-docker-compose logs -f
+docker-compose -f docker-compose.prod.yml logs -f
 
-# View only backend logs
-docker-compose logs -f backend
+# View specific service logs
+docker-compose -f docker-compose.prod.yml logs -f backend
+docker-compose -f docker-compose.prod.yml logs -f frontend
 ```
 
 ### 4. Verify Deployment
 
 ```bash
 # Check service status
-docker-compose ps
+docker-compose -f docker-compose.prod.yml ps
+
+# Check frontend health
+curl http://localhost/health
 
 # Check backend health
 curl http://localhost:8080/api/actuator/health
 
+# Check AI service health
+curl http://localhost:3001/api/health
+
 # Check database connection
-docker-compose exec postgres psql -U cm_app_user -d campus_marketplace -c "\dt"
+docker-compose -f docker-compose.prod.yml exec postgres psql -U cm_app_user -d campus_marketplace -c "\dt"
 ```
 
 ### 5. Access the Application
 
+- **Frontend**: http://localhost
 - **Backend API**: http://localhost:8080/api
+- **AI Service**: http://localhost:3001/api
 - **Health Check**: http://localhost:8080/api/actuator/health
 - **Database**: localhost:5432 (use credentials from .env)
+- **Redis**: localhost:6379
 
 ## Common Commands
 
@@ -95,71 +109,79 @@ docker-compose exec postgres psql -U cm_app_user -d campus_marketplace -c "\dt"
 
 ```bash
 # Start services
-docker-compose up -d
+docker-compose -f docker-compose.prod.yml up -d
 
 # Stop services (keeps data)
-docker-compose stop
+docker-compose -f docker-compose.prod.yml stop
 
 # Stop and remove containers (keeps data volumes)
-docker-compose down
+docker-compose -f docker-compose.prod.yml down
 
 # Stop and remove everything including volumes (CAUTION: DATA LOSS)
-docker-compose down -v
+docker-compose -f docker-compose.prod.yml down -v
 
 # Restart a specific service
-docker-compose restart backend
-docker-compose restart postgres
+docker-compose -f docker-compose.prod.yml restart backend
+docker-compose -f docker-compose.prod.yml restart frontend
+docker-compose -f docker-compose.prod.yml restart postgres
 ```
 
 ### Viewing Logs
 
 ```bash
 # All services
-docker-compose logs -f
+docker-compose -f docker-compose.prod.yml logs -f
 
 # Specific service
-docker-compose logs -f backend
-docker-compose logs -f postgres
+docker-compose -f docker-compose.prod.yml logs -f backend
+docker-compose -f docker-compose.prod.yml logs -f frontend
+docker-compose -f docker-compose.prod.yml logs -f postgres
 
 # Last 100 lines
-docker-compose logs --tail=100 backend
+docker-compose -f docker-compose.prod.yml logs --tail=100 backend
 ```
 
 ### Rebuilding After Code Changes
 
 ```bash
-# Rebuild and restart backend
-docker-compose up -d --build backend
+# Rebuild and restart all services
+docker-compose -f docker-compose.prod.yml up -d --build
+
+# Rebuild specific service
+docker-compose -f docker-compose.prod.yml up -d --build backend
 
 # Force complete rebuild
-docker-compose build --no-cache backend
-docker-compose up -d backend
+docker-compose -f docker-compose.prod.yml build --no-cache backend
+docker-compose -f docker-compose.prod.yml up -d backend
 ```
 
 ### Database Operations
 
 ```bash
 # Connect to PostgreSQL
-docker-compose exec postgres psql -U cm_app_user -d campus_marketplace
+docker-compose -f docker-compose.prod.yml exec postgres psql -U cm_app_user -d campus_marketplace
 
 # Run SQL file
-docker-compose exec -T postgres psql -U cm_app_user -d campus_marketplace < your_script.sql
+docker-compose -f docker-compose.prod.yml exec -T postgres psql -U cm_app_user -d campus_marketplace < your_script.sql
 
 # Create database backup
-docker-compose exec postgres pg_dump -U cm_app_user campus_marketplace > backup_$(date +%Y%m%d).sql
+docker-compose -f docker-compose.prod.yml exec postgres pg_dump -U cm_app_user campus_marketplace > backup_$(date +%Y%m%d).sql
 
 # Restore from backup
-docker-compose exec -T postgres psql -U cm_app_user -d campus_marketplace < backup_20241030.sql
+docker-compose -f docker-compose.prod.yml exec -T postgres psql -U cm_app_user -d campus_marketplace < backup_20241030.sql
 ```
 
 ### Container Shell Access
 
 ```bash
 # Access backend container shell
-docker-compose exec backend sh
+docker-compose -f docker-compose.prod.yml exec backend sh
+
+# Access frontend container shell
+docker-compose -f docker-compose.prod.yml exec frontend sh
 
 # Access postgres container shell
-docker-compose exec postgres bash
+docker-compose -f docker-compose.prod.yml exec postgres bash
 ```
 
 ## Volume Management
@@ -225,28 +247,31 @@ docker-compose up -d
 
 ```bash
 # Check logs
-docker-compose logs
+docker-compose -f docker-compose.prod.yml logs
 
 # Check if ports are already in use
-lsof -i :8080
-lsof -i :5432
+lsof -i :80      # Frontend
+lsof -i :8080    # Backend
+lsof -i :3001    # AI Service
+lsof -i :5432    # Database
+lsof -i :6379    # Redis
 
 # Remove old containers and try again
-docker-compose down
-docker-compose up -d
+docker-compose -f docker-compose.prod.yml down
+docker-compose -f docker-compose.prod.yml up -d
 ```
 
 ### Backend Can't Connect to Database
 
 ```bash
 # Check if postgres is healthy
-docker-compose ps
+docker-compose -f docker-compose.prod.yml ps
 
 # Verify network
 docker network inspect campus-marketplace-network
 
 # Check environment variables
-docker-compose exec backend env | grep DB_
+docker-compose -f docker-compose.prod.yml exec backend env | grep DB_
 ```
 
 ### Database Initialization Issues
@@ -255,13 +280,13 @@ If the database schema isn't created:
 
 ```bash
 # Stop services
-docker-compose down
+docker-compose -f docker-compose.prod.yml down
 
 # Remove postgres volume
 docker volume rm campus-marketplace-postgres-data
 
 # Start again (will re-initialize)
-docker-compose up -d
+docker-compose -f docker-compose.prod.yml up -d
 ```
 
 ### Out of Disk Space
@@ -278,10 +303,10 @@ docker volume prune
 
 ```bash
 # Check if backend started successfully
-docker-compose logs backend
+docker-compose -f docker-compose.prod.yml logs backend
 
 # Check if port 8080 is accessible inside container
-docker-compose exec backend wget -O- http://localhost:8080/api/actuator/health
+docker-compose -f docker-compose.prod.yml exec backend wget -O- http://localhost:8080/api/actuator/health
 ```
 
 ## Production Considerations
@@ -296,22 +321,10 @@ docker-compose exec backend wget -O- http://localhost:8080/api/actuator/health
 
 ### Performance
 
-1. **Resource Limits**: Add to `docker-compose.yml`:
-```yaml
-services:
-  backend:
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
-          memory: 2G
-        reservations:
-          cpus: '1'
-          memory: 1G
-```
-
+1. **Resource Limits**: Already configured in `docker-compose.prod.yml` with CPU and memory limits for all services
 2. **Connection Pooling**: Already configured in application.yml
 3. **Monitoring**: Use actuator endpoints for health checks
+4. **Log Rotation**: Configured to prevent disk space issues
 
 ### Backups
 
@@ -325,9 +338,10 @@ For horizontal scaling:
 
 ```bash
 # Scale backend to 3 instances
-docker-compose up -d --scale backend=3
+docker-compose -f docker-compose.prod.yml up -d --scale backend=3
 
-# Use nginx/traefik for load balancing
+# Use ALB (Application Load Balancer) for AWS deployments
+# See AWS_DEPLOYMENT_GUIDE.md for details
 ```
 
 ## Development Workflow
@@ -345,10 +359,10 @@ cd backend
 ```bash
 # Make code changes
 # Rebuild and restart
-docker-compose up -d --build backend
+docker-compose -f docker-compose.prod.yml up -d --build backend
 
 # Watch logs
-docker-compose logs -f backend
+docker-compose -f docker-compose.prod.yml logs -f backend
 ```
 
 ## CI/CD Integration
@@ -369,10 +383,11 @@ docker push your-registry/campus-marketplace:v1.0
 ## Support
 
 For issues or questions:
-1. Check logs: `docker-compose logs`
+1. Check logs: `docker-compose -f docker-compose.prod.yml logs`
 2. Review this documentation
 3. Check Docker and Docker Compose versions
 4. Ensure all prerequisites are met
+5. See [AWS_DEPLOYMENT_GUIDE.md](AWS_DEPLOYMENT_GUIDE.md) for EC2 deployment
 
 ## Clean Up
 
@@ -380,12 +395,12 @@ To completely remove the application:
 
 ```bash
 # Stop and remove containers, networks (keeps volumes)
-docker-compose down
+docker-compose -f docker-compose.prod.yml down
 
 # Remove everything including volumes (WARNING: DATA LOSS)
-docker-compose down -v
+docker-compose -f docker-compose.prod.yml down -v
 
 # Remove images
-docker rmi campus-marketplace-backend
-docker rmi postgres:16-alpine
+docker rmi project-frontend project-backend project-ai-integration-server
+docker rmi postgres:16-alpine redis:7-alpine
 ```

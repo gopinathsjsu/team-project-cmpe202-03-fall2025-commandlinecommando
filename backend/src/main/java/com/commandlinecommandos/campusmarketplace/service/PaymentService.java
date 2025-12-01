@@ -39,18 +39,17 @@ public class PaymentService {
     /**
      * Add payment method
      */
-    public PaymentMethod addPaymentMethod(User user, PaymentMethodType methodType, 
-                                         String token, String lastFour, String cardBrand,
+    public PaymentMethod addPaymentMethod(User user, PaymentMethodType methodType,
+                                         String paymentToken, String lastFour, String cardBrand,
                                          Integer expiryMonth, Integer expiryYear,
-                                         String billingName, String billingZip) {
+                                         UUID billingAddressId) {
         PaymentMethod paymentMethod = new PaymentMethod(user, methodType);
-        paymentMethod.setToken(token);
+        paymentMethod.setPaymentToken(paymentToken);
         paymentMethod.setLastFour(lastFour);
         paymentMethod.setCardBrand(cardBrand);
         paymentMethod.setExpiryMonth(expiryMonth);
         paymentMethod.setExpiryYear(expiryYear);
-        paymentMethod.setBillingName(billingName);
-        paymentMethod.setBillingZip(billingZip);
+        paymentMethod.setBillingAddressId(billingAddressId);
         
         // If this is the first payment method, make it default
         long count = paymentMethodRepository.countByUserAndIsActive(user, true);

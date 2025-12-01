@@ -1,22 +1,52 @@
 package com.commandlinecommandos.campusmarketplace.service;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import jakarta.annotation.PostConstruct;
 
 /**
- * Email Service for sending verification emails, password reset emails, etc.
+ * Email Service for sending emails via SendGrid SMTP.
  * 
- * NOTE: This is a basic implementation that logs emails.
- * For production, integrate with actual email service (SendGrid, AWS SES, etc.)
+ * Handles all email notifications including:
+ * - Listing creation confirmations
+ * - Message notifications
+ * - Listing rejection notifications
+ * - Account-related emails
  */
 @Service
 public class EmailService {
     
     private static final Logger logger = LoggerFactory.getLogger(EmailService.class);
     
-    private static final String FROM_EMAIL = "noreply@campusmarketplace.edu";
+    @Autowired(required = false)
+    private JavaMailSender mailSender;
+    
+    @Value("${spring.mail.from:no-reply@seasonsanta.com}")
+    private String fromEmail;
+    
+    @Value("${app.email-notifications.enabled:true}")
+    private boolean emailEnabled;
+    
+    @Value("${spring.mail.host:not-configured}")
+    private String smtpHost;
+    
     private static final String SUPPORT_EMAIL = "support@campusmarketplace.edu";
+    
+    @PostConstruct
+    public void init() {
+        if (mailSender != null) {
+            logger.info("✅ EmailService initialized - SendGrid SMTP configured (host: {})", smtpHost);
+            logger.info("📧 Email notifications enabled: {}, From: {}", emailEnabled, fromEmail);
+        } else {
+            logger.warn("⚠️  EmailService initialized - Mail sender NOT available (SMTP_PASSWORD may be missing)");
+            logger.warn("📧 Email notifications will be logged but NOT sent");
+        }
+    }
     
     /**
      * Send email verification email
@@ -107,27 +137,73 @@ public class EmailService {
     }
     
     /**
-     * Core email sending method
-     * TODO: Replace with actual email service integration
+     * Send notification when a new listing is created
+     */
+    public void sendListingCreatedEmail(String to, String username, String listingTitle) {
+        String subject = "Your listing has been created - " + listingTitle;
+        String body = buildListingCreatedEmailBody(username, listingTitle);
+        sendEmail(to, subject, body);
+        logger.info("Listing created email sent to: {}", to);
+    }
+    
+    /**
+     * Send notification when a message is received
+     */
+    public void sendMessageReceivedEmail(String to, String recipientName, String senderName, String messageContent) {
+        String subject = "New message received from " + senderName;
+        String body = buildMessageReceivedEmailBody(recipientName, senderName, messageContent);
+        sendEmail(to, subject, body);
+        logger.info("Message notification email sent to: {}", to);
+    }
+    
+    /**
+     * Send notification when a listing is rejected
+     */
+    public void sendListingRejectedEmail(String to, String username, String listingTitle, String reason) {
+        String subject = "Your listing has been rejected - " + listingTitle;
+        String body = buildListingRejectedEmailBody(username, listingTitle, reason);
+        sendEmail(to, subject, body);
+        logger.info("Listing rejected email sent to: {}", to);
+    }
+    
+    /**
+     * Core email sending method using SendGrid SMTP
      */
     private void sendEmail(String to, String subject, String body) {
-        // For now, just log the email
-        // In production, integrate with email service
-        logger.info("=== EMAIL ===");
-        logger.info("To: {}", to);
-        logger.info("From: {}", FROM_EMAIL);
-        logger.info("Subject: {}", subject);
-        logger.info("Body: {}", body);
-        logger.info("=============");
+        if (!emailEnabled) {
+            logger.debug("Email notifications disabled, skipping email to: {}", to);
+            return;
+        }
         
-        // TODO: Integrate with actual email service
-        // Example with Spring Mail:
-        // SimpleMailMessage message = new SimpleMailMessage();
-        // message.setFrom(FROM_EMAIL);
-        // message.setTo(to);
-        // message.setSubject(subject);
-        // message.setText(body);
-        // javaMailSender.send(message);
+        if (mailSender == null) {
+            logger.warn("Mail sender not configured. Email to {} not sent. Subject: {}", to, subject);
+            logger.info("=== EMAIL (NOT SENT - NO MAIL SENDER) ===");
+            logger.info("To: {}", to);
+            logger.info("From: {}", fromEmail);
+            logger.info("Subject: {}", subject);
+            logger.info("Body: {}", body);
+            logger.info("==========================================");
+            return;
+        }
+        
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(to);
+            message.setSubject(subject);
+            message.setText(body);
+            
+            mailSender.send(message);
+            logger.info("Email sent successfully to: {} with subject: {}", to, subject);
+        } catch (Exception e) {
+            logger.error("Failed to send email to {}: {}", to, e.getMessage(), e);
+            // Log the email content for debugging
+            logger.info("=== EMAIL (FAILED TO SEND) ===");
+            logger.info("To: {}", to);
+            logger.info("From: {}", fromEmail);
+            logger.info("Subject: {}", subject);
+            logger.info("==============================");
+        }
     }
     
     // Email template builders
@@ -230,6 +306,49 @@ public class EmailService {
             "Best regards,\n" +
             "Campus Marketplace Team",
             username, SUPPORT_EMAIL
+        );
+    }
+    
+    private String buildListingCreatedEmailBody(String username, String listingTitle) {
+        return String.format(
+            "Hello %s,\n\n" +
+            "Your listing \"%s\" has been successfully created on Campus Marketplace!\n\n" +
+            "Your listing is now visible to other users and they can contact you if interested.\n\n" +
+            "You can manage your listings from your dashboard.\n\n" +
+            "Best regards,\n" +
+            "Campus Marketplace Team",
+            username, listingTitle
+        );
+    }
+    
+    private String buildMessageReceivedEmailBody(String recipientName, String senderName, String messageContent) {
+        String recipient = (recipientName != null && !recipientName.trim().isEmpty()) ? recipientName : "there";
+        return String.format(
+            "Hi %s,\n\n" +
+            "You have received a new message from %s:\n\n" +
+            "---\n" +
+            "%s\n" +
+            "---\n\n" +
+            "Log in to Campus Marketplace to reply to this message.\n\n" +
+            "Best regards,\n" +
+            "Campus Marketplace Team",
+            recipient, senderName, messageContent
+        );
+    }
+    
+    private String buildListingRejectedEmailBody(String username, String listingTitle, String reason) {
+        String rejectionReason = (reason != null && !reason.trim().isEmpty()) 
+            ? reason 
+            : "The listing did not meet our marketplace guidelines.";
+        return String.format(
+            "Hello %s,\n\n" +
+            "We regret to inform you that your listing \"%s\" has been rejected from Campus Marketplace.\n\n" +
+            "Reason: %s\n\n" +
+            "If you believe this was a mistake or have questions, please contact our support team at %s.\n\n" +
+            "You can create a new listing that follows our guidelines.\n\n" +
+            "Best regards,\n" +
+            "Campus Marketplace Team",
+            username, listingTitle, rejectionReason, SUPPORT_EMAIL
         );
     }
 }

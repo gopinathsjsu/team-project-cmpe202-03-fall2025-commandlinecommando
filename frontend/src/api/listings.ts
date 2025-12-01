@@ -17,6 +17,7 @@ export interface Listing {
     username: string
   }
   imageUrl?: string
+  imageUrls?: string[]  // Array of all image URLs
   favorite?: boolean
   viewCount?: number
   favoriteCount?: number
@@ -134,4 +135,53 @@ export async function autocomplete(query: string) {
 export async function getSearchHistory(limit = 10) {
   const res = await api.get(`/search/history?limit=${limit}`)
   return res.data
+}
+
+/**
+ * Upload images for temporary storage before creating a listing
+ * Returns array of image URLs that can be used when creating the listing
+ */
+export async function uploadImages(files: File[]): Promise<{ imageUrls: string[], tempId: string }> {
+  const formData = new FormData()
+  files.forEach(file => {
+    formData.append('files', file)
+  })
+  
+  const res = await api.post('/images/upload/temp', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
+  return res.data
+}
+
+/**
+ * Upload images to an existing listing
+ */
+export async function uploadListingImages(listingId: string, files: File[]): Promise<{ imageUrls: string[] }> {
+  const formData = new FormData()
+  files.forEach(file => {
+    formData.append('files', file)
+  })
+  
+  const res = await api.post(`/images/upload/${listingId}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
+  return res.data
+}
+
+/**
+ * Delete an image from a listing
+ */
+export async function deleteListingImage(listingId: string, imageUrl: string): Promise<void> {
+  await api.delete(`/images/${listingId}?imageUrl=${encodeURIComponent(imageUrl)}`)
+}
+
+/**
+ * Set primary image for a listing
+ */
+export async function setPrimaryImage(listingId: string, imageUrl: string): Promise<void> {
+  await api.put(`/images/${listingId}/primary?imageUrl=${encodeURIComponent(imageUrl)}`)
 }

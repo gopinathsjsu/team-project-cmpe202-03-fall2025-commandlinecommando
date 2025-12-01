@@ -2,6 +2,19 @@ import React, { useState, useRef, useEffect } from 'react';
 import { listingsApi, adminApi } from '../api';
 import { Listing } from '../types';
 
+// UUID generator with fallback for browsers that don't support crypto.randomUUID
+function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  // Fallback UUID v4 generator
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 interface Message {
   id: string;
   role: 'user' | 'assistant';
@@ -40,11 +53,9 @@ export function AskAIPage() {
 
   async function loadData() {
     try {
-      const [listingsResponse, reportsResponse] = await Promise.all([
-        listingsApi.getListings(0, 100),
-        adminApi.getReports()
-      ]);
-      
+      // Fetch listings (available to all users)
+      const listingsResponse = await listingsApi.getListings(0, 100);
+
       let listingsArray: Listing[] = [];
       if (Array.isArray(listingsResponse)) {
         listingsArray = listingsResponse;
@@ -54,12 +65,24 @@ export function AskAIPage() {
         listingsArray = listingsResponse.listings;
       }
       setListings(listingsArray);
-      
-      if (Array.isArray(reportsResponse)) {
-        setReports(reportsResponse);
+      console.log('Loaded listings:', listingsArray.length);
+
+      // Try to fetch reports (admin only - will fail gracefully for non-admin users)
+      try {
+        const reportsResponse = await adminApi.getReports();
+        if (Array.isArray(reportsResponse)) {
+          setReports(reportsResponse);
+          console.log('Loaded reports:', reportsResponse.length);
+        }
+      } catch (reportErr: any) {
+        // Reports require admin access - this is expected for non-admin users
+        console.log('Reports not available (admin access required)');
+        setReports([]);
       }
     } catch (err) {
       console.error('Failed to load data:', err);
+      setListings([]);
+      setReports([]);
     }
   }
 
@@ -83,16 +106,20 @@ export function AskAIPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!input.trim() || loading) return;
+    if (!input.trim() || loading) {
+      console.log('Submit blocked:', { input: input.trim(), loading });
+      return;
+    }
 
     const userMessage: Message = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       role: 'user',
       content: input.trim(),
       timestamp: new Date(),
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentInput = input.trim();
     setInput('');
     setLoading(true);
 
@@ -100,7 +127,10 @@ export function AskAIPage() {
       const listingsContext = formatListingsContext(listings);
       const reportsContext = formatReportsContext(reports);
       
-      const response = await fetch('/api/chat', {
+      console.log('Sending AI request to /ai/chat');
+      
+      // Use AI service endpoint - /ai/chat will be proxied by Nginx to ai-integration-server:3001/api/chat
+      const response = await fetch('/ai/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -108,24 +138,33 @@ export function AskAIPage() {
         body: JSON.stringify({
           messages: [
             ...messages.map(m => ({ role: m.role, content: m.content })),
-            { role: 'user', content: userMessage.content },
+            { role: 'user', content: currentInput },
           ],
           listingsContext,
           reportsContext,
         }),
       });
 
+      console.log('AI response status:', response.status, response.statusText);
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to get AI response');
+        let errorMessage = 'Failed to get AI response';
+        try {
+          const error = await response.json();
+          errorMessage = error.error || error.message || errorMessage;
+        } catch (e) {
+          errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
+      console.log('AI response data:', data);
 
       const assistantMessage: Message = {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         role: 'assistant',
-        content: data.message,
+        content: data.message || data.response || 'No response received',
         timestamp: new Date(),
       };
 
@@ -133,9 +172,9 @@ export function AskAIPage() {
     } catch (err: any) {
       console.error('AI Error:', err);
       const errorMessage: Message = {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         role: 'assistant',
-        content: `Sorry, I encountered an error: ${err.message}. Please make sure the OpenAI API key is configured in your secrets.`,
+        content: `Sorry, I encountered an error: ${err.message || 'Unknown error'}. Please check the browser console for details.`,
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -260,8 +299,14 @@ export function AskAIPage() {
             />
             <button
               type="submit"
+              onClick={(e) => {
+                e.preventDefault();
+                if (input.trim() && !loading) {
+                  handleSubmit(e);
+                }
+              }}
               disabled={!input.trim() || loading}
-              className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-white disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
+              className="w-10 h-10 rounded-xl gradient-primary flex items-center justify-center text-white disabled:opacity-50 disabled:cursor-not-allowed transition-opacity hover:opacity-90"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />

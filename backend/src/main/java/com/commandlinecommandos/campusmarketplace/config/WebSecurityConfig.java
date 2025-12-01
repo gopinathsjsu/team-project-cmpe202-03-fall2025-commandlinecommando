@@ -131,25 +131,8 @@ public class WebSecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // Allow specific origins instead of all origins
-        configuration.setAllowedOriginPatterns(Arrays.asList(
-            "http://localhost:3000",           // React development server
-            "http://localhost:3001",           // Alternative React port
-            "http://localhost:3002",           // Alternative React port
-            "http://localhost:5000",           // Vite development server
-            "http://localhost:5001",           // Alternative Vite port
-            "http://localhost:5002",           // Alternative Vite port
-            "http://localhost:5173",           // Vite default port
-            "http://127.0.0.1:3000",          // Localhost alternative
-            "http://127.0.0.1:3001",          // Localhost alternative
-            "http://127.0.0.1:3002",          // Localhost alternative
-            "http://127.0.0.1:5000",          // Vite localhost alternative
-            "http://127.0.0.1:5001",          // Vite localhost alternative
-            "http://127.0.0.1:5002",          // Vite localhost alternative
-            "http://127.0.0.1:5173",          // Vite default localhost alternative
-            "https://campus-marketplace.sjsu.edu",  // Production domain
-            "https://*.sjsu.edu"              // SJSU subdomains
-        ));
+        // Allow all origins
+        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
         
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList(

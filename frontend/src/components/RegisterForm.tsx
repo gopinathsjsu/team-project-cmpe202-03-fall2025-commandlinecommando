@@ -150,7 +150,7 @@ export function RegisterForm({
             <input
               type="email"
               className="input-glass pl-12"
-              placeholder="your.email@university.edu"
+              placeholder="your.email@sjsu.edu"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             />
