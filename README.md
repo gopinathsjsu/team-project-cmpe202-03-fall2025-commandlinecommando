@@ -18,7 +18,7 @@ A campus marketplace for SJSU students to buy and sell items such as textbooks, 
 
 | Name | SJSU ID | Contribution Summary |
 |------|---------|----------------------|
-| **Vineet Kumar** | 019140433 | Authentication & authorization backend development (include 40 unit tests), AI microservice development, Backend API's integration with frontend, Initial database design and seed data generation, AWS S3 integration with policies, DevOps & Docker integration between services, Frontend & backend proxy integration via nginx, AWS ALB Integration, Team Leadership |
+| **Vineet Kumar** | 019140433 | Authentication & authorization backend development (include 40+ unit tests), AI microservice development, Backend API's integration with frontend, Initial database design and seed data generation, AWS S3 integration with policies, DevOps & Docker integration between services, Frontend & backend proxy integration via nginx, AWS ALB Integration, Team Leadership |
 | **Sakshat Patil** | | Frontend development, React components, UI/UX design, Marketplace page, Listing details, Sprint artifacts & documentation |
 | **Lam Nguyen** | 018229432 | User Management System (backend APIs for profile, password reset, account deactivation, admin operations), Search & Discovery System (full-text search, filters, autocomplete, pagination), Authentication flow (JWT improvements, role-based access), Backend testing (100+ unit/integration tests), Frontend AuthContext & API integration, Database migrations & schema design |
 | **Wilson Huang** | | Listing services, Chat/messaging system, Search functionality, Admin features, Backend & database integration |
