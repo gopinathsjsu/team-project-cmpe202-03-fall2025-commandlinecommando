@@ -19,7 +19,7 @@ A campus marketplace for SJSU students to buy and sell items such as textbooks, 
 | Name | SJSU ID | Contribution Summary |
 |------|---------|----------------------|
 | **Vineet Kumar** | 019140433 | Authentication & authorization backend development (include 40+ unit tests), AI microservice development, Frontend AI Product search dev, Backend API's integration with frontend, Initial database design and seed data generation, AWS S3 integration with policies, DevOps & Docker integration between services, Frontend & backend proxy integration via nginx, AWS ALB Integration, Team Leadership |
-| **[Sakshat Patil](https://github.com/sakshat-patil)** | 018318287 | Frontend development, React components, UI/UX design, Marketplace page, Listing details, Sprint artifacts & documentation |
+| **[Sakshat Patil](https://github.com/sakshat-patil)** | 018318287 | Frontend development, React components, UI/UX design, Marketplace page, Listing details, Sprint artifacts & Documentation, Scrum Master, Frontend and Backend Integration, Designing and Creating Wireframes |
 | **[Lam Nguyen](https://github.com/Lambert-Nguyen)** | 018229432 | User Management System (backend APIs for profile, password reset, account deactivation, admin operations), Search & Discovery System (full-text search, filters, autocomplete, pagination), Authentication flow (JWT improvements, role-based access), Backend testing (100+ unit/integration tests), Frontend AuthContext & API integration, Database migrations & schema design |
 | **Wilson Huang** | 013925769 | Listing services, Chat/messaging system, Search functionality, Admin features, Backend & database integration |
 
@@ -42,7 +42,7 @@ To divide the work clearly, each team member took responsibility for one major p
 |-------------|-----------------|
 | **Vineet** | Authentication Authorization Backend Dev, Ask AI Feature Dev, AWS Architecture Design, Infrastructure Deployment, S3 File Storage, ALB Integration, Leading Team & Coordination |
 | **Lam** | User Management System (backend), Search Integration, Authentication |
-| **Sakshat** | Frontend UI (Login, Listings, Management), E2E UI Integration |
+| **Sakshat** | Frontend UI (Login, Listings, Management), E2E UI Integration, Scrum Master, Wireframes Design |
 | **Wilson** | Listing API, Database Integration, File Upload Service, Chat System |
 
 ---
